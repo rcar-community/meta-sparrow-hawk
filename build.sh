@@ -44,26 +44,27 @@ if [[ "${IS_BUILD_INSIDE_REPO}" == "yes" ]]; then
     rm -f meta-sparrow-hawk
     ln -sfd ${SCRIPT_DIR} meta-sparrow-hawk
 else
-    git clone https://github.com/renesas-rcar/meta-renesas-upstream-bsp.git
+    git clone https://github.com/rcar-community/meta-sparrow-hawk.git
 fi
 
 git -C poky checkout -b scarthgap origin/scarthgap
 git -C meta-openembedded checkout -b scarthgap origin/scarthgap
 if [[ "${IS_BUILD_INSIDE_REPO}" == "no" ]]; then
-    git -C meta-renesas-upstream-bsp checkout -b scarthgap origin/scarthgap
+    git -C meta-sparrow-hawk checkout -b scarthgap origin/scarthgap
 fi
 
 cd $WORK
 rm -rf build-$MACHINE/conf
-TEMPLATECONF=${SCRIPT_DIR}/conf/templates/$MACHINE  . poky/oe-init-build-env build-$MACHINE
+TEMPLATECONF=${WORK}/meta-sparrow-hawk/conf/templates/$MACHINE  . poky/oe-init-build-env build-$MACHINE
 
 if [[ "${MACHINE}" == "sparrow-hawk" ]]; then
     FIRMWARE_LIST=("rcar_gen4_pcie.bin" "renesas_usb_fw.mem")
     for item in ${FIRMWARE_LIST[@]}; do
-        if [[ ! -e ${SCRIPT_DIR}/firmware/${item} ]]; then
-            echo "${SCRIPT_DIR}/firmware/${item} is not found !!"
-            echo "Dummy file is created: ${SCRIPT_DIR}/firmware/${item}"
-            touch ${SCRIPT_DIR}/firmware/${item}
+        if [[ ! -e ${WORK}/meta-sparrow-hawk/firmware/${item} ]]; then
+            echo "${WORK}/meta-sparrow-hawk/firmware/${item} is not found !!"
+            echo "Dummy file is created: ${WORK}/meta-sparrow-hawk/firmware/${item}"
+            mkdir -p ${WORK}/meta-sparrow-hawk/firmware/
+            touch ${WORK}/meta-sparrow-hawk/firmware/${item}
         fi
     done
 fi

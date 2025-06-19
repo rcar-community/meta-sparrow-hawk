@@ -5,7 +5,7 @@ PR = "r0"
 PACKAGE_ARCH = "${MACHINE_ARCH}"
 COMPATIBLE_MACHINE = "sparrow-hawk"
 
-FILESEXTRAPATHS:prepend:sparrow-hawk = "${TOPDIR}/../../firmware:"
+FILESEXTRAPATHS:prepend:sparrow-hawk = "${THISDIR}/../../firmware:"
 
 SRC_URI:append:sparrow-hawk = " \
     file://rcar_gen4_pcie.bin \
