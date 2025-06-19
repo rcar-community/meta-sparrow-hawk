@@ -61,11 +61,6 @@ jobs:
           git config --global user.name "ations-user"
           git config --global user.email "action@github.com"
 
-      - name: Prepare dummy firmware
-        run: |
-          touch firmware/rcar_gen4_pcie.bin
-          touch firmware/renesas_usb_fw.mem
-
       - name: Run build
         run: |
           ./build.sh
