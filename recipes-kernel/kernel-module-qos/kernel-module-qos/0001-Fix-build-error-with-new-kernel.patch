@@ -1,0 +1,38 @@
+From 6c48d5a14b80a149b399015bf9c3017e3b5e8609 Mon Sep 17 00:00:00 2001
+From: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+Date: Mon, 31 Mar 2025 12:41:27 +0900
+Subject: [PATCH] Fix build error with new kernel
+
+Signed-off-by: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+---
+ qos-module/files/qos/drv/qos_drv.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/qos-module/files/qos/drv/qos_drv.c b/qos-module/files/qos/drv/qos_drv.c
+index 5965aa4..f628109 100644
+--- a/qos-module/files/qos/drv/qos_drv.c
++++ b/qos-module/files/qos/drv/qos_drv.c
+@@ -64,6 +64,7 @@
+ #include <linux/errno.h>
+ #include <linux/fs.h>
+ #include <linux/miscdevice.h>
++#include <linux/of.h>
+ #include <linux/of_device.h>
+ #include <linux/platform_device.h>
+ #include <linux/ioctl.h>
+@@ -198,11 +199,10 @@ static int qos_probe(struct platform_device *pdev)
+ 	return ret;
+ }
+ 
+-static int qos_remove(struct platform_device *pdev)
++static void qos_remove(struct platform_device *pdev)
+ {
+ 	g_qos_pdev = NULL;
+ 	qos_reg_base = NULL;
+-	return 0;
+ }
+ 
+ static const struct of_device_id qos_of_match[] = {
+-- 
+2.34.1
+

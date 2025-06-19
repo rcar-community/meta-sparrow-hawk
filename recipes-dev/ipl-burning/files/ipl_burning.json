@@ -1,0 +1,15 @@
+{
+    "flash_writer": {
+        "sparrow-hawk":     "Flash_writer_V4HSBC_CR52.mot"
+    },
+
+    "ipl": {
+        "sparrow-hawk": [
+            {
+                "name":       "flash.bin",
+                "flash_addr": "0",
+                "write_sel":  "Flash"
+            }
+        ]
+    }
+}
