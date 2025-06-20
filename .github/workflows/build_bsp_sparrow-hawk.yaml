@@ -64,12 +64,38 @@ jobs:
       - name: Run build
         run: |
           ./build.sh
+
+      - name: Generate zip archive to release
+        run: |
           cd ./build/build-sparrow-hawk/tmp/deploy/images/
           zip -ry deploy_sparrow-hawk.zip sparrow-hawk
           cd ../
           zip -ry -s 1900m deploy_spdx_split.zip spdx/
           cd $GITHUB_WORKSPACE
 
+      - name: Generate release message
+        run: |
+          OUTPUT="${{ github.workspace }}-release_msg.txt"
+          cat << 'EOS' > ${OUTPUT}
+          ## This is the latest development build.
+
+          | Layer | Repository | Commit |
+          | --- | --- | --- |
+          EOS
+          for layer in $(ls build/ | grep -v build-); do 
+            URL=$(git -C build/${layer}/ remote -v | head -1 | awk '{print $2}')
+            COMMIT=$(git -C build/${layer}/ log -n1 --pretty="format:%H")
+            echo "| ${layer} | ${URL} | ${COMMIT} |"  >> ${OUTPUT}
+          done
+          cat << 'EOS' >> ${OUTPUT}
+
+          ### How to use PCIe/USB.
+          Please copy correct firmware into /usr/lib/firmware/, then reboot.
+
+          **Note:**
+          There is no support/help to get the firmware.
+          Please do it at your own risk.
+          EOS
       - name: Create or update 'dev-latest' release
         uses: softprops/action-gh-release@v2
         with:
@@ -80,15 +106,7 @@ jobs:
           files: |
             ./build/build-sparrow-hawk/tmp/deploy/images/deploy_sparrow-hawk.zip
             ./build/build-sparrow-hawk/tmp/deploy/deploy_spdx_split.z*
-          body: |
-            This is the latest development build.
-
-            ### How to use PCIe/USB.
-            Please copy correct firmware into /usr/lib/firmware/, then reboot.
-
-            **Note:**
-            There is no support/help to get the firmware.
-            Please do it at your own risk.
+          body_path: ${{ github.workspace }}-release_msg.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
