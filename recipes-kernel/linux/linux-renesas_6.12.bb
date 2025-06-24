@@ -25,6 +25,7 @@ FILESEXTRAPATHS:prepend:sparrow-hawk = "${TOPDIR}/../../firmware:"
 SRC_URI:append:sparrow-hawk = " \
     file://sparrow_hawk.cfg \
     file://sparrow-hawk-enable-i2c3-i2c4.dtsi;subdir=git/arch/arm64/boot/dts/renesas/ \
+    file://0001-HACK-dts-renesas-sparrow-hawk-Change-to-use-IMX219-o.patch \
 "
 KBUILD_DEFCONFIG:sparrow-hawk = "renesas_defconfig"
 KERNEL_DEVICETREE:append:sparrow-hawk = " \
