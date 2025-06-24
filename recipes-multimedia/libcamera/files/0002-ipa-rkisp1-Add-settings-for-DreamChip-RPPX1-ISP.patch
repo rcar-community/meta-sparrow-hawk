@@ -1,0 +1,80 @@
+From fff4e629b1bf8eb005f440ad54dc9b13a7e1dba6 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Niklas=20S=C3=B6derlund?=
+ <niklas.soderlund+renesas@ragnatech.se>
+Date: Tue, 17 Jun 2025 12:38:08 +0200
+Subject: [PATCH 2/3] ipa: rkisp1: Add settings for DreamChip RPPX1 ISP
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The DreamChip RPPX1 ISP appears to be a superset of the Rockchip RkISP1
+ISP V10. The RkISP1 interface and hardware operates at 8-bits color
+depth, while the RPPX1 operates at 24-bits. For this reason the RkISP1
+parameter and buffer formats are deigned around 8-bits.
+
+The kernel driver for RPPX1 can however compensate for this and scale
+down it's internal data structures to 8-bits and produce parameter
+buffers (RK1E) and output statistics (RK1S) that is compatible with the
+RkISP1 IPA.
+
+The one difference is that the RPPX1 have 32 histogram buckets compared
+to RkISP1 V10 16. Add a dedicated hardware revisions descriptor for the
+RPPX1 device so it can reuse the existing IPA.
+
+Signed-off-by: Niklas Söderlund <niklas.soderlund+renesas@ragnatech.se>
+---
+ include/libcamera/ipa/rkisp1.mojom |  8 ++++++++
+ src/ipa/rkisp1/rkisp1.cpp          | 11 +++++++++++
+ 2 files changed, 19 insertions(+)
+
+diff --git a/include/libcamera/ipa/rkisp1.mojom b/include/libcamera/ipa/rkisp1.mojom
+index 043ad27e..608ba82a 100644
+--- a/include/libcamera/ipa/rkisp1.mojom
++++ b/include/libcamera/ipa/rkisp1.mojom
+@@ -8,6 +8,14 @@ module ipa.rkisp1;
+ 
+ import "include/libcamera/ipa/core.mojom";
+ 
++/*
++ * Hardware revisions in rkisp1-config.h (enum rkisp1_cif_isp_version) start at
++ * 10 and increment sequentially. Add a namespace starting at 0x80000000 for
++ * devices not cover by the kernel rkisp1 implementation but still supported
++ * by the IPA.
++ */
++const uint32 HwRevisionExternalRppX1 = 0x80000001;
++
+ struct IPAConfigInfo {
+ 	libcamera.IPACameraSensorInfo sensorInfo;
+ 	libcamera.ControlInfoMap sensorControls;
+diff --git a/src/ipa/rkisp1/rkisp1.cpp b/src/ipa/rkisp1/rkisp1.cpp
+index 1ed7d7d9..00281404 100644
+--- a/src/ipa/rkisp1/rkisp1.cpp
++++ b/src/ipa/rkisp1/rkisp1.cpp
+@@ -113,6 +113,14 @@ const IPAHwSettings ipaHwSettingsV12{
+ 	false,
+ };
+ 
++const IPAHwSettings ipaHwSettingsRPPX1{
++	RKISP1_CIF_ISP_AE_MEAN_MAX_V10,
++	RKISP1_CIF_ISP_HIST_BIN_N_MAX_V12,
++	RKISP1_CIF_ISP_HISTOGRAM_WEIGHT_GRIDS_SIZE_V10,
++	RKISP1_CIF_ISP_GAMMA_OUT_MAX_SAMPLES_V10,
++	false,
++};
++
+ /* List of controls handled by the RkISP1 IPA */
+ const ControlInfoMap::Map rkisp1Controls{
+ 	{ &controls::DebugMetadataEnable, ControlInfo(false, true, false) },
+@@ -148,6 +156,9 @@ int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision,
+ 	case RKISP1_V12:
+ 		context_.hw = &ipaHwSettingsV12;
+ 		break;
++	case HwRevisionExternalRppX1:
++		context_.hw = &ipaHwSettingsRPPX1;
++		break;
+ 	default:
+ 		LOG(IPARkISP1, Error)
+ 			<< "Hardware revision " << hwRevision
+-- 
+2.43.0
+

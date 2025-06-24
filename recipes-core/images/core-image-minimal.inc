@@ -11,6 +11,8 @@ IMAGE_INSTALL:append = " \
     alsa-utils \
     v4l-utils \
     yavta \
+    libcamera \
+    libcamera-pycamera \
     nvme-cli \
     can-utils \
     expand-rootfs \
