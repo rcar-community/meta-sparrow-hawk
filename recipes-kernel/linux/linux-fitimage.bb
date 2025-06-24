@@ -4,6 +4,9 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/GPL-2.0-only;md5=801f80980d171d
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/${BPN}:"
 
+PACKAGE_ARCH = "${MACHINE_ARCH}"
+COMPATIBLE_MACHINE = "sparrow-hawk"
+
 inherit deploy
 
 DEPENDS += "u-boot-mkimage-native dtc-native"
