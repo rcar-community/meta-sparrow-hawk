@@ -34,7 +34,6 @@ KERNEL_DEVICETREE:append:sparrow-hawk = " \
 
 do_compile:prepend:sparrow-hawk () {
     echo '#include "sparrow-hawk-enable-i2c3-i2c4.dtsi"' >>  ${S}/arch/arm64/boot/dts/renesas/r8a779g3-sparrow-hawk.dts
-    sed -i "s/#define CAM_J1 0/#define CAM_J1 1/" ${S}/arch/arm64/boot/dts/renesas/r8a779g3-sparrow-hawk.dts
 }
 
 do_src_package_preprocess () {
