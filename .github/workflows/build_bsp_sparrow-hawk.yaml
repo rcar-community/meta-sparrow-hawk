@@ -79,7 +79,7 @@ jobs:
             find ./spdx/sparrow_hawk | grep $pkg | xargs cp -t kernel_deb_package/
             find ./spdx/recipes | grep $pkg | xargs cp -t kernel_deb_package/
           done
-          find ./deb/ | grep -e kernel- -e linux-fitimage | xargs cp -t kernel_deb_package/
+          find ./deb/ | grep -e /kernel- -e linux-fitimage | xargs cp -t kernel_deb_package/
           zip -r kernel_deb_package.zip kernel_deb_package
 
           cd $GITHUB_WORKSPACE
