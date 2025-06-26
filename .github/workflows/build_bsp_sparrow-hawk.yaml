@@ -107,6 +107,23 @@ jobs:
           There is no support/help to get the firmware.
           Please do it at your own risk.
           EOS
+
+      - name: Delete old release/tags if exists
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG_NAME="dev-latest"
+          # Release
+          if gh release view "$TAG_NAME" --repo ${{ github.repository }} >/dev/null 2>&1; then
+            echo "Deleting old release: $TAG_NAME"
+            gh release delete "$TAG_NAME" --repo ${{ github.repository }} --yes
+          fi
+          # Tag
+          #if git ls-remote --tags origin | grep "refs/tags/$TAG_NAME$"; then
+          #  echo "Deleting old tag: $TAG_NAME"
+          #  git push origin :refs/tags/$TAG_NAME
+          #fi
+
       - name: Create or update 'dev-latest' release
         uses: softprops/action-gh-release@v2
         with:
