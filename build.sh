@@ -11,6 +11,7 @@ export WORK=`pwd`
 TARGET_IMAGE=core-image-minimal
 USE_GPU=no
 IS_BUILD_INSIDE_REPO=yes
+IS_BUILD_SDK=no
 
 Usage () {
     echo "Usage:"
@@ -20,6 +21,7 @@ Usage () {
     echo "    --weston-nogpu: Use GUI, but no graphics accelaration"
     echo "options:"
     echo "    -h | --help:    Show this help"
+    echo "    -s | --sdk:     Build Yocto SDK"
     exit
 }
 for arg in $@; do
@@ -28,6 +30,8 @@ for arg in $@; do
         TARGET_IMAGE=core-image-weston
     elif [[ "$arg" == "-h" ]] || [[ "$arg" == "--help" ]]; then
         Usage; exit
+    elif [[ "$arg" == "-s" ]] || [[ "$arg" == "--sdk" ]]; then
+        IS_BUILD_SDK=yes
     fi
 done
 
@@ -108,4 +112,7 @@ if [[ "$USE_GPU" == "yes" ]]; then
 fi
 
 bitbake ${TARGET_IMAGE}
+if [[ "${IS_BUILD_SDK}" == "yes" ]]; then
+    bitbake ${TARGET_IMAGE} -c populate_sdk
+fi
 
