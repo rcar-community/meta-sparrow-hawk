@@ -60,6 +60,26 @@
 				algo = "crc32";
 			};
 		};
+		fdt-j1-imx219 {
+			description = "Flattened Device Tree Overlay";
+			data = /incbin/("./sparrow-hawk-enable-j1-imx219.dtbo");
+			type = "flat_dt";
+			arch = "arm64";
+			compression = "none";
+			hash-1 {
+				algo = "crc32";
+			};
+		};
+		fdt-j2-imx219 {
+			description = "Flattened Device Tree Overlay";
+			data = /incbin/("./sparrow-hawk-enable-j2-imx219.dtbo");
+			type = "flat_dt";
+			arch = "arm64";
+			compression = "none";
+			hash-1 {
+				algo = "crc32";
+			};
+		};
 	};
 
 	configurations {
@@ -78,6 +98,12 @@
 		};
 		rpi-display-2 {
 			fdt = "fdt-rpi-display-2";
+		};
+		j1-imx219 {
+			fdt = "fdt-j1-imx219";
+		};
+		j2-imx219 {
+			fdt = "fdt-j2-imx219";
 		};
 	};
 };
