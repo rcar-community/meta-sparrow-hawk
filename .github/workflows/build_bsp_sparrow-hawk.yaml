@@ -70,7 +70,7 @@ jobs:
           cd ./build/build-sparrow-hawk/tmp/deploy/images/
           zip -ry deploy_sparrow-hawk.zip sparrow-hawk
           cd ./sparrow-hawk
-          zip -r ../ipl_burning.zip ./ipl_burning.zip
+          zip -r ../ipl-burning.zip ./ipl-burning
           cd ../../
           zip -ry -s 1900m deploy_spdx_split.zip spdx/
           # Prepara kernel deb packages for debian based distribution
@@ -138,7 +138,7 @@ jobs:
             ./build/build-sparrow-hawk/tmp/deploy/images/deploy_sparrow-hawk.zip
             ./build/build-sparrow-hawk/tmp/deploy/deploy_spdx_split.z*
             ./build/build-sparrow-hawk/tmp/deploy/kernel_deb_package.zip
-            ./build/build-sparrow-hawk/tmp/deploy/ipl_burning.zip
+            ./build/build-sparrow-hawk/tmp/deploy/ipl-burning.zip
           body_path: ${{ github.workspace }}-release_msg.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
