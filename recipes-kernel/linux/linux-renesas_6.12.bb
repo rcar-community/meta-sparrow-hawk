@@ -28,6 +28,8 @@ SRC_URI:append:sparrow-hawk = " \
     file://0001-HACK-arm64-dts-renesas-r8a779g3-sparrow-hawk-Remove-.patch \
     file://sparrow-hawk-enable-j1-imx219.dtso;subdir=git/arch/arm64/boot/dts/renesas/ \
     file://sparrow-hawk-enable-j2-imx219.dtso;subdir=git/arch/arm64/boot/dts/renesas/ \
+    file://sparrow-hawk-enable-j1-imx462.dtso;subdir=git/arch/arm64/boot/dts/renesas/ \
+    file://sparrow-hawk-enable-j2-imx462.dtso;subdir=git/arch/arm64/boot/dts/renesas/ \
 "
 KBUILD_DEFCONFIG:sparrow-hawk = "renesas_defconfig"
 KERNEL_DEVICETREE:append:sparrow-hawk = " \
@@ -35,6 +37,8 @@ KERNEL_DEVICETREE:append:sparrow-hawk = " \
     renesas/r8a779g3-sparrow-hawk-rpi-display-2.dtbo \
     renesas/sparrow-hawk-enable-j1-imx219.dtbo \
     renesas/sparrow-hawk-enable-j2-imx219.dtbo \
+    renesas/sparrow-hawk-enable-j1-imx462.dtbo \
+    renesas/sparrow-hawk-enable-j2-imx462.dtbo \
 "
 
 do_compile:prepend:sparrow-hawk () {

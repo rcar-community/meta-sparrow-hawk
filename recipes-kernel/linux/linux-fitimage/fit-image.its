@@ -80,6 +80,26 @@
 				algo = "crc32";
 			};
 		};
+		fdt-j1-imx462 {
+			description = "Flattened Device Tree Overlay";
+			data = /incbin/("./sparrow-hawk-enable-j1-imx462.dtbo");
+			type = "flat_dt";
+			arch = "arm64";
+			compression = "none";
+			hash-1 {
+				algo = "crc32";
+			};
+		};
+		fdt-j2-imx462 {
+			description = "Flattened Device Tree Overlay";
+			data = /incbin/("./sparrow-hawk-enable-j2-imx462.dtbo");
+			type = "flat_dt";
+			arch = "arm64";
+			compression = "none";
+			hash-1 {
+				algo = "crc32";
+			};
+		};
 	};
 
 	configurations {
@@ -104,6 +124,12 @@
 		};
 		j2-imx219 {
 			fdt = "fdt-j2-imx219";
+		};
+		j1-imx462 {
+			fdt = "fdt-j1-imx462";
+		};
+		j2-imx462 {
+			fdt = "fdt-j2-imx462";
 		};
 	};
 };
