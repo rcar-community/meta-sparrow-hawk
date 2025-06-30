@@ -70,9 +70,9 @@ This layer depends on:
 
 ```bash
     $ cd $WORK
-    $ git -C poky checkout -B scarthgap 6f7e929ea6ea557f107c8ccffea69a7d73439591
-    $ git -C meta-openembedded checkout -B scarthgap e8fd97d86af86cdcc5a6eb3f301cbaf6a2084943
-    $ git -C meta-sparrow-hawk checkout -B scarthgap e514f1da11336ea2a830fe8108655bb7eb7433a3
+    $ git -C poky checkout -B scarthgap origin/scarthgap
+    $ git -C meta-openembedded checkout -B scarthgap origin/scarthgap
+    $ git -C meta-sparrow-hawk checkout -B scarthgap origin/scarthgap-dev
 ```
 
 * Prepare PCIe firmware
