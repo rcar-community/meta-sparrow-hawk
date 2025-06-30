@@ -82,10 +82,10 @@ else
     git clone https://github.com/rcar-community/meta-sparrow-hawk.git
 fi
 
-git -C poky checkout -B scarthgap da5493bf86b3e75bbae4c5789fdfaca67b6f6a65
-git -C meta-openembedded checkout -B scarthgap 06f846a325fde423bb0a6d49d771d8c1e144d7eb
+git -C poky checkout -B scarthgap origin/scarthgap
+git -C meta-openembedded checkout -B scarthgap origin/scarthgap
 if [[ "${IS_BUILD_INSIDE_REPO}" == "no" ]]; then
-    git -C meta-sparrow-hawk checkout -B scarthgap v2026-04-13
+    git -C meta-sparrow-hawk checkout -B scarthgap origin/scarthgap-dev
 fi
 
 cd $WORK
