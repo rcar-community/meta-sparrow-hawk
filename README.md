@@ -70,9 +70,9 @@ This layer depends on:
 
 ```bash
     $ cd $WORK
-    $ git -C poky checkout -b scarthgap origin/scarthgap
-    $ git -C meta-openembedded checkout -b scarthgap origin/scarthgap
-    $ git -C meta-sparrow-hawk checkout -b scarthgap origin/scarthgap
+    $ git -C poky checkout -b scarthgap b8f8125f05e8ece078ba6bf01eebb2900cf2f9bf
+    $ git -C meta-openembedded checkout -b scarthgap 727811eaf256b88fd135be99559f2cbf14c82fce
+    $ git -C meta-sparrow-hawk checkout -b scarthgap c00a8ba860bfa4a435335a22e62e761201a54813
 ```
 
 * Initialize a build using the 'oe-init-build-env' script in Poky. e.g.:
