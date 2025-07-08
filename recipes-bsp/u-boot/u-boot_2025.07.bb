@@ -10,8 +10,7 @@ DEPENDS += "bc-native dtc-native python3-pyelftools-native gnutls-native"
 
 UBOOT_URL = "git://source.denx.de/u-boot/u-boot.git"
 BRANCH = "master"
-SRCREV = "fb4a488eb91b089912ffbc9a74d0527f0f2c79ac"
-SRC_URI[sha256sum] = "9e4706b93585e29ed2dd6cd964954a35f9baf8d218c461cf69a0b6c5d2ac9b4a"
+SRCREV = "e37de002fac3895e8d0b60ae2015e17bb33e2b5b"
 LICENSE = "GPL-2.0-or-later"
 LIC_FILES_CHKSUM = "file://Licenses/README;md5=2ca5f2c35c8cc335f0a19756634782f1"
 
