@@ -20,7 +20,7 @@ SRC_URI:append = " \
     file://ipl_burning.py \
     file://run.bat \
     file://run.sh \
-    file://Flash_writer_V4HSBC_CR52.mot \
+    file://Flash_writer_sparrow_hawk_CR52.mot \
 "
 
 # do_configure() nothing
@@ -46,7 +46,7 @@ do_deploy() {
     install -m 0644 ${WORKDIR}/ipl_burning.json ${DEPLOYDIR}/${PN}
     install -m 0755 ${WORKDIR}/run.sh ${DEPLOYDIR}/${PN}
     install -m 0644 ${WORKDIR}/run.bat ${DEPLOYDIR}/${PN}
-    install -m 0644 ${WORKDIR}/Flash_writer_V4HSBC_CR52.mot ${DEPLOYDIR}/${PN}
+    install -m 0644 ${WORKDIR}/Flash_writer_sparrow_hawk_CR52.mot ${DEPLOYDIR}/${PN}
     install -m 0644 ${DEPLOY_DIR}/images/${MACHINE}/flash.bin ${DEPLOYDIR}/${PN}
 
     # install embedded python binary for Windows environment
