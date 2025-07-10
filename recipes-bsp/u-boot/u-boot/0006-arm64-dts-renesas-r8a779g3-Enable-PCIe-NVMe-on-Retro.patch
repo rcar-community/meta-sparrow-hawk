@@ -1,0 +1,34 @@
+From d7c11487902127240be684174334a1b8ccebac03 Mon Sep 17 00:00:00 2001
+From: Marek Vasut <marek.vasut+renesas@mailbox.org>
+Date: Tue, 17 Jun 2025 10:16:32 +0200
+Subject: [PATCH 6/6] arm64: dts: renesas: r8a779g3: Enable PCIe/NVMe on
+ Retronix R-Car V4H Sparrow Hawk board
+
+Enable support for R-Car Gen4 PCIe controller and NVMe storage
+on Retronix R-Car V4H Sparrow Hawk board .
+
+Signed-off-by: Marek Vasut <marek.vasut+renesas@mailbox.org>
+---
+ configs/r8a779g3_sparrowhawk_defconfig | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/configs/r8a779g3_sparrowhawk_defconfig b/configs/r8a779g3_sparrowhawk_defconfig
+index 47fc536df81..62d0fd4c92f 100644
+--- a/configs/r8a779g3_sparrowhawk_defconfig
++++ b/configs/r8a779g3_sparrowhawk_defconfig
+@@ -24,7 +24,12 @@ CONFIG_CMD_REMOTEPROC=y
+ CONFIG_GPIO_HOG=y
+ CONFIG_REMOTEPROC_RENESAS_APMU=y
+ CONFIG_BITBANGMII=y
++CONFIG_CMD_PCI=y
+ CONFIG_NET_RANDOM_ETHADDR=y
++CONFIG_NVME_PCI=y
++CONFIG_PCI=y
++CONFIG_PCI_RCAR_GEN4=y
++CONFIG_PCI_REGION_MULTI_ENTRY=y
+ CONFIG_PHY_MICREL=y
+ CONFIG_PHY_MICREL_KSZ90X1=y
+ CONFIG_RENESAS_RAVB=y
+-- 
+2.34.1
+

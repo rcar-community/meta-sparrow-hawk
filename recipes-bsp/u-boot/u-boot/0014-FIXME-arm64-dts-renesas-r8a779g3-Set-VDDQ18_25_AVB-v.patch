@@ -1,0 +1,35 @@
+From 2cf69976da1c8b804cda1a74f053c7a207282328 Mon Sep 17 00:00:00 2001
+From: Marek Vasut <marek.vasut+renesas@mailbox.org>
+Date: Fri, 11 Jul 2025 23:23:50 +0200
+Subject: [PATCH 14/14] FIXME: arm64: dts: renesas: r8a779g3: Set VDDQ18_25_AVB
+ voltage on Retronix R-Car V4H Sparrow Hawk EVTB1
+
+The Retronix R-Car V4H Sparrow Hawk EVTB1 uses 1V8 IO voltage supply
+for VDDQ18_25_AVB power rail. Update the AVB0 pinmux to reflect the
+change in IO voltage. Since the VDDQ18_25_AVB power rail is shared,
+all four AVB0, AVB1, AVB2, TSN0 PFC/GPIO POC[7..4] registers have to
+be configured the same way.
+
+Signed-off-by: Marek Vasut <marek.vasut+renesas@mailbox.org>
+---
+ dts/upstream/src/arm64/renesas/r8a779g3-sparrow-hawk.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/dts/upstream/src/arm64/renesas/r8a779g3-sparrow-hawk.dts b/dts/upstream/src/arm64/renesas/r8a779g3-sparrow-hawk.dts
+index 04ae8e064c2..6022158910f 100644
+--- a/dts/upstream/src/arm64/renesas/r8a779g3-sparrow-hawk.dts
++++ b/dts/upstream/src/arm64/renesas/r8a779g3-sparrow-hawk.dts
+@@ -448,6 +448,10 @@
+ 			drive-strength = <21>;
+ 		};
+ 
++		pins-vddq18-25-avb {
++			pins = "PIN_VDDQ_AVB0", "PIN_VDDQ_AVB1", "PIN_VDDQ_AVB2", "PIN_VDDQ_TSN0";
++			power-source = <1800>;
++		};
+ 	};
+ 
+ 	/* Page 28 / CANFD_IF */
+-- 
+2.34.1
+

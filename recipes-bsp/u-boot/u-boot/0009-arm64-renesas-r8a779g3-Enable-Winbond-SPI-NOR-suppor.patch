@@ -1,0 +1,29 @@
+From 3dd200f902a8597cf0147b8f31a6824df5a52ced Mon Sep 17 00:00:00 2001
+From: Marek Vasut <marek.vasut+renesas@mailbox.org>
+Date: Sun, 20 Jul 2025 21:59:44 +0200
+Subject: [PATCH 09/14] arm64: renesas: r8a779g3: Enable Winbond SPI NOR
+ support on Retronix R-Car V4H Sparrow Hawk board
+
+Enable support for Winbond SPI NOR on Retronix R-Car V4H Sparrow Hawk board,
+this is required to support W77Q51NW on new board revision EVTB1 operational.
+
+Signed-off-by: Marek Vasut <marek.vasut+renesas@mailbox.org>
+---
+ configs/r8a779g3_sparrowhawk_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/configs/r8a779g3_sparrowhawk_defconfig b/configs/r8a779g3_sparrowhawk_defconfig
+index 9aa8dc83317..bb8d110dc0d 100644
+--- a/configs/r8a779g3_sparrowhawk_defconfig
++++ b/configs/r8a779g3_sparrowhawk_defconfig
+@@ -33,6 +33,7 @@ CONFIG_PCI_REGION_MULTI_ENTRY=y
+ CONFIG_PHY_MICREL=y
+ CONFIG_PHY_MICREL_KSZ90X1=y
+ CONFIG_RENESAS_RAVB=y
++CONFIG_SPI_FLASH_WINBOND=y
+ 
+ # CONFIG_SPL_SHARES_INIT_SP_ADDR is not set
+ CONFIG_SPL_HAVE_INIT_STACK=y
+-- 
+2.34.1
+

@@ -1,0 +1,39 @@
+From a83def86152d24cf22601844fc922593ad42492b Mon Sep 17 00:00:00 2001
+From: Marek Vasut <marek.vasut+renesas@mailbox.org>
+Date: Tue, 17 Jun 2025 10:16:28 +0200
+Subject: [PATCH 2/6] pci: pcie_dw_meson: Use dw_pcie_link_set_max_link_width()
+
+Use dw_pcie_link_set_max_link_width() instead of local implementation
+of the same functionality. This does change the behavior slightly, as
+the dw_pcie_link_set_max_link_width() implementation also programs the
+LNKCAP register MLW, this should however be correct and is now aligned
+with Linux kernel behavior.
+
+Signed-off-by: Marek Vasut <marek.vasut+renesas@mailbox.org>
+Reviewed-by: Neil Armstrong <neil.armstrong@linaro.org>
+---
+ drivers/pci/pcie_dw_meson.c | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
+
+diff --git a/drivers/pci/pcie_dw_meson.c b/drivers/pci/pcie_dw_meson.c
+index bb78e7874b1..483b07ce078 100644
+--- a/drivers/pci/pcie_dw_meson.c
++++ b/drivers/pci/pcie_dw_meson.c
+@@ -115,13 +115,9 @@ static void meson_pcie_configure(struct meson_pcie *priv)
+ 	val &= ~PORT_LINK_FAST_LINK_MODE;
+ 	val |= PORT_LINK_DLL_LINK_EN;
+ 	val &= ~PORT_LINK_MODE_MASK;
+-	val |= PORT_LINK_MODE_1_LANES;
+ 	writel(val, priv->dw.dbi_base + PCIE_PORT_LINK_CONTROL);
+ 
+-	val = readl(priv->dw.dbi_base + PCIE_LINK_WIDTH_SPEED_CONTROL);
+-	val &= ~PORT_LOGIC_LINK_WIDTH_MASK;
+-	val |= PORT_LOGIC_LINK_WIDTH_1_LANES;
+-	writel(val, priv->dw.dbi_base + PCIE_LINK_WIDTH_SPEED_CONTROL);
++	dw_pcie_link_set_max_link_width(&priv->dw, 1);
+ 
+ 	dw_pcie_dbi_write_enable(&priv->dw, false);
+ }
+-- 
+2.34.1
+

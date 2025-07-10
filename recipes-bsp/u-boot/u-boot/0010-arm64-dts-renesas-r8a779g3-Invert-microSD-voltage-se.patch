@@ -1,0 +1,33 @@
+From aae6d99f2c96f3bb8ef65003e8f05d5f809ae0be Mon Sep 17 00:00:00 2001
+From: Marek Vasut <marek.vasut+renesas@mailbox.org>
+Date: Wed, 6 Aug 2025 02:59:20 +0200
+Subject: [PATCH 10/14] arm64: dts: renesas: r8a779g3: Invert microSD voltage
+ selector on Retronix R-Car V4H Sparrow Hawk EVTB1
+
+Invert the polarity of microSD voltage selector on Retronix R-Car V4H
+Sparrow Hawk board. The voltage selector was not populated on prototype
+EVTA1 boards, and is implemented slightly different on EVTB1 boards. As
+the EVTA1 boards are from a limited run and generally not available,
+update the DT to make it compatible with EVTB1 microSD voltage selector.
+
+Signed-off-by: Marek Vasut <marek.vasut+renesas@mailbox.org>
+---
+ dts/upstream/src/arm64/renesas/r8a779g3-sparrow-hawk.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/dts/upstream/src/arm64/renesas/r8a779g3-sparrow-hawk.dts b/dts/upstream/src/arm64/renesas/r8a779g3-sparrow-hawk.dts
+index a0fda441320..04ae8e064c2 100644
+--- a/dts/upstream/src/arm64/renesas/r8a779g3-sparrow-hawk.dts
++++ b/dts/upstream/src/arm64/renesas/r8a779g3-sparrow-hawk.dts
+@@ -141,7 +141,7 @@
+ 		regulator-max-microvolt = <3300000>;
+ 		gpios = <&gpio8 13 GPIO_ACTIVE_HIGH>;
+ 		gpios-states = <1>;
+-		states = <3300000 0>, <1800000 1>;
++		states = <1800000 0>, <3300000 1>;
+ 	};
+ };
+ 
+-- 
+2.34.1
+
