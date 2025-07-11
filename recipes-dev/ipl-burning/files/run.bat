@@ -8,7 +8,7 @@ if not exist Scripts\pip.exe (
     python.exe get-pip.py > nul
 )
 if not exist Lib\site-packages\serial (
-    python.exe -m pip install pyserial colorama > nul
+    python.exe -m pip install pyserial colorama tqdm > nul
 )
 REM clear console output
 cls

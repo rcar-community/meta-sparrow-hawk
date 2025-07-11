@@ -16,7 +16,7 @@ import time
 import os
 import json
 from serial.tools.list_ports import comports
-
+from tqdm import tqdm
 
 ####################################################################################################
 # Print debug data
@@ -43,6 +43,7 @@ class Serial_conn(serial.Serial):
     """
     Serial connection class
     """
+    debug_flag = False
     # send a command line
     def sendln(self, cmd_to_send=""):
         str_send = cmd_to_send + "\r"
@@ -67,8 +68,9 @@ class Serial_conn(serial.Serial):
             if bytes_to_read:
                 line = self.read(bytes_to_read).decode('ISO-8859-1')
                 buffer += line
-                sys.stdout.write(line)
-                sys.stdout.flush()
+                if self.debug_flag is True:
+                    sys.stdout.write(line)
+                    sys.stdout.flush()
                 if pattern in buffer:
                     time.sleep(delay_send)
                     if cmd_to_send != "NONE":
@@ -85,8 +87,9 @@ class Serial_conn(serial.Serial):
             if bytes_to_read:
                 line = self.read(bytes_to_read).decode('ISO-8859-1')
                 buffer += line
-                sys.stdout.write(line)
-                sys.stdout.flush()
+                if self.debug_flag is True:
+                    sys.stdout.write(line)
+                    sys.stdout.flush()
                 index = 0
                 for pattern in patternList:
                     if pattern in buffer:
@@ -149,7 +152,8 @@ def eMMC_burn_file(dev, index, ipl_path, soc, ipl_config, img_addr, flash_addr):
     dev.sendln()
     dev.sendln()
 
-def flash_burn_file_sparrow_hawk(dev, index, ipl_path, soc, ipl_config, img_addr, flash_addr):
+def flash_burn_file_sparrow_hawk_compat(dev, index, ipl_path, soc, ipl_config, img_addr, flash_addr):
+    dev.debug_flag = True
     dev.sendln()
     dev.wait(">", 0.2, "xls3")
 
@@ -171,6 +175,70 @@ def flash_burn_file_sparrow_hawk(dev, index, ipl_path, soc, ipl_config, img_addr
         time.sleep(0.2)
         dev.sendln()
         dev.sendln()
+    dev.debug_flag = False
+
+def flash_burn_file_sparrow_hawk(dev, index, ipl_path, soc, ipl_config, img_addr, flash_addr):
+    dev.sendln()
+    dev.wait(">", 0.2)
+
+    # Program size
+    program_size = os.path.getsize(ipl_path + "/" + ipl_config["ipl"][soc][index]["name"])
+    file_path = ipl_path + "/" + ipl_config["ipl"][soc][index]["name"]
+    total_size = os.path.getsize(file_path)
+
+    if total_size > 0x100000:
+        progress_flag = True
+    else:
+        progress_flag = False
+
+    chunk_size = 128 * 1024  # 512 KB
+    offset = int(flash_addr)
+    progress_bar = tqdm(total=total_size, unit='B', unit_scale=True, desc=f"Burning {ipl_config['ipl'][soc][index]['name']}")
+
+    try:
+        with open(file_path, "rb") as f:
+            while True:
+                chunk = f.read(chunk_size)
+                if not chunk:
+                    break
+
+                dev.sendln()
+                dev.wait(">", 0.2, "xls3")
+
+                # チャンクサイズを8桁16進数でASCIIに変換
+                size_hex = f"{len(chunk):X}"
+                # オフセットを8桁16進数でASCIIに変換
+                offset_hex = f"{offset:X}"
+
+                dev.wait("Please Input : H", 0.2, size_hex)
+                time.sleep(0.4)
+                # Program top address
+                dev.wait("Please Input : H", 0.2, offset_hex)
+                time.sleep(0.4)
+                dev.wait("please send ! (binary)", 0.2)
+
+                # 送信：チャンクデータ
+                #dev.sendfile(ipl_path + "/" + ipl_config["ipl"][soc][index]["name"])
+                if not dev.write(chunk):
+                    print("ERROR", f"Failed to send chunk data at offset {offset}.")
+                    return False
+                ex_list = ["Clear OK?(y/n)", ">"]
+                res = dev.waitls(ex_list, 0.1, time_out=10)
+                if res == 0:
+                    dev.send("y")
+                    time.sleep(0.2)
+                    dev.sendln()
+                    dev.sendln()
+
+                # 次のオフセットに進める
+                offset += len(chunk)
+                # プログレスバーの更新
+                if progress_flag:
+                    progress_bar.update(len(chunk))
+        return True
+    except Exception as e:
+        print("ERROR", f"Exception during file send: {e}")
+        return False
 
 def get_imgaddr(file):
     """Get Image address in file srec.
@@ -375,9 +443,7 @@ def main(argv):
         else:
             flash_burn_file(test_dev, FILE_INFO_INDEX[i], IPL_DIR, SOC, ipl_config, IMGADR_WILL_BURN[i], FLASHADR_WILL_BURN[i])
 
-    test_dev.wait(">", 1)
     print_debug("INFO", "Download file .srec done")
-    test_dev.baudrate = 115200
     test_dev.close()
 
 
