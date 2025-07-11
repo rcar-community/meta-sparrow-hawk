@@ -39,6 +39,7 @@ do_deploy() {
 
     # Copy license file to distribute
     install -m 0644 ${COMMON_LICENSE_DIR}/MIT ${DEPLOYDIR}/${PN}/MIT
+    install -m 0644 ${COMMON_LICENSE_DIR}/BSD-3-Clause ${DEPLOYDIR}/${PN}/FlashWriter_LICENSE
 
     # Copy to deploy folder
     install -m 0644 ${WORKDIR}/burn.py ${DEPLOYDIR}/${PN}
