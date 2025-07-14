@@ -35,7 +35,7 @@ for arg in $@; do
     fi
 done
 
-if [[ "$(echo $0 | grep '\.sh' )" != "" ]] ;then
+if [[ "$(cat ${SCRIPT_DIR}/conf/layer.conf 2>&1 | grep LAYERDEPENDS_sparrow-hawk )" != "" ]] ;then
     IS_BUILD_INSIDE_REPO=yes
 else
     IS_BUILD_INSIDE_REPO=no
