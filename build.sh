@@ -10,6 +10,7 @@ cd ${SCRIPT_DIR}/build
 export WORK=`pwd`
 TARGET_IMAGE=core-image-minimal
 USE_GPU=no
+USE_SSTATE_MIRROR=no
 IS_BUILD_INSIDE_REPO=yes
 IS_BUILD_SDK=no
 
@@ -20,8 +21,9 @@ Usage () {
     echo "    --console:      Use CLI(default)"
     echo "    --weston-nogpu: Use GUI, but no graphics accelaration"
     echo "options:"
-    echo "    -h | --help:    Show this help"
-    echo "    -s | --sdk:     Build Yocto SDK"
+    echo "    -h | --help:          Show this help"
+    echo "    -s | --sdk:           Build Yocto SDK"
+    echo "       | --sstate-mirror: Use sstate mirror server. This may decrease build time."
     exit
 }
 for arg in $@; do
@@ -32,6 +34,8 @@ for arg in $@; do
         Usage; exit
     elif [[ "$arg" == "-s" ]] || [[ "$arg" == "--sdk" ]]; then
         IS_BUILD_SDK=yes
+    elif [[ "$arg" == "--sstate-mirror" ]]; then
+        USE_SSTATE_MIRROR=yes
     fi
 done
 
@@ -73,12 +77,14 @@ if [[ "${MACHINE}" == "sparrow-hawk" ]]; then
     done
 fi
 
+if [[ "${USE_SSTATE_MIRROR}" == "yes" ]]; then
 cat << EOS >> conf/local.conf
 BB_HASHSERVE_UPSTREAM = "wss://hashserv.yoctoproject.org/ws"
 SSTATE_MIRRORS ?= "file://.* http://cdn.jsdelivr.net/yocto/sstate/all/PATH;downloadfilename=PATH"
 BB_HASHSERVE = "auto"
 BB_SIGNATURE_HANDLER = "OEEquivHash"
 EOS
+fi
 
 cat << EOS >> conf/local.conf
 # added for SBOM
