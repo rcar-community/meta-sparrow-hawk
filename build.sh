@@ -11,6 +11,7 @@ export WORK=`pwd`
 TARGET_IMAGE=core-image-minimal
 USE_GPU=no
 USE_SSTATE_MIRROR=no
+BUILD_SBOM=no
 IS_BUILD_INSIDE_REPO=yes
 IS_BUILD_SDK=no
 
@@ -23,6 +24,7 @@ Usage () {
     echo "options:"
     echo "    -h | --help:          Show this help"
     echo "    -s | --sdk:           Build Yocto SDK"
+    echo "       | --sbom:          Build SBOM files"
     echo "       | --sstate-mirror: Use sstate mirror server. This may decrease build time."
     exit
 }
@@ -34,6 +36,8 @@ for arg in $@; do
         Usage; exit
     elif [[ "$arg" == "-s" ]] || [[ "$arg" == "--sdk" ]]; then
         IS_BUILD_SDK=yes
+    elif [[ "$arg" == "--sbom" ]]; then
+        BUILD_SBOM=yes
     elif [[ "$arg" == "--sstate-mirror" ]]; then
         USE_SSTATE_MIRROR=yes
     fi
@@ -86,6 +90,7 @@ BB_SIGNATURE_HANDLER = "OEEquivHash"
 EOS
 fi
 
+if [[ "${BUILD_SBOM}" == "yes" ]]; then
 cat << EOS >> conf/local.conf
 # added for SBOM
 # required. enable to generate spdx files.
@@ -103,6 +108,7 @@ SPDX_ARCHIVE_SOURCES = "1"
 # optional. if "1", bitbake will create output binary archive for each package.
 SPDX_ARCHIVE_PACKAGED = "1"
 EOS
+fi
 
 if [[ "$TARGET_IMAGE" == "core-image-weston" ]]; then
 cat << EOS >> conf/local.conf
