@@ -67,11 +67,11 @@ jobs:
 
       - name: Generate zip archive to release
         run: |
-          cd ./build/build-sparrow-hawk/tmp/deploy/images/
+          cd ${GITHUB_WORKSPACE}/build/build-sparrow-hawk/tmp/deploy/images/
           zip -ry deploy_sparrow-hawk.zip sparrow-hawk
-          cd ./sparrow-hawk
-          zip -r ../ipl-burning.zip ./ipl-burning
-          cd ../../
+          cd ${GITHUB_WORKSPACE}/build/build-sparrow-hawk/tmp/deploy/images/sparrow-hawk
+          zip -r ${GITHUB_WORKSPACE}/build/build-sparrow-hawk/tmp/deploy/ipl-burning.zip ./ipl-burning
+          cd ${GITHUB_WORKSPACE}/build/build-sparrow-hawk/tmp/deploy
           zip -ry -s 1900m deploy_spdx_split.zip spdx/
           # Prepara kernel deb packages for debian based distribution
           mkdir -p kernel_deb_package
