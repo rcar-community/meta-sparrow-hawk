@@ -70,7 +70,7 @@ rm -rf build-$MACHINE/conf
 TEMPLATECONF=${WORK}/meta-sparrow-hawk/conf/templates/$MACHINE  . poky/oe-init-build-env build-$MACHINE
 
 if [[ "${MACHINE}" == "sparrow-hawk" ]]; then
-    FIRMWARE_LIST=("rcar_gen4_pcie.bin" "renesas_usb_fw.mem")
+    FIRMWARE_LIST=("rcar_gen4_pcie.bin")
     for item in ${FIRMWARE_LIST[@]}; do
         if [[ ! -e ${WORK}/meta-sparrow-hawk/firmware/${item} ]]; then
             echo "${WORK}/meta-sparrow-hawk/firmware/${item} is not found !!"

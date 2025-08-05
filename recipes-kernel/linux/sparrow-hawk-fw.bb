@@ -9,7 +9,6 @@ FILESEXTRAPATHS:prepend:sparrow-hawk = "${THISDIR}/../../firmware:"
 
 SRC_URI:append:sparrow-hawk = " \
     file://rcar_gen4_pcie.bin \
-    file://renesas_usb_fw.mem \
 "
 
 do_compile[noexec] = "1"
@@ -18,6 +17,5 @@ FILES:${PN}:sparrow-hawk += "/usr/lib/firmware/"
 do_install:append:sparrow-hawk () {
     install -d ${D}/usr/lib/firmware
     install -m 755 ${WORKDIR}/rcar_gen4_pcie.bin ${D}/usr/lib/firmware
-    install -m 755 ${WORKDIR}/renesas_usb_fw.mem ${D}/usr/lib/firmware
 }
 
