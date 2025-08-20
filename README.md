@@ -75,6 +75,24 @@ This layer depends on:
     $ git -C meta-sparrow-hawk checkout -b scarthgap e514f1da11336ea2a830fe8108655bb7eb7433a3
 ```
 
+* Prepare PCIe firmware
+
+Building this software needs to store pcie firmware into correct directory.
+Please get and copy "rcar_gen4_pcie.bin" into meta-sparrow-hawk/firmware/.
+
+If you don't have correct firmware or there is no need to implement firmware in rootfs,
+you can use dummy file.
+Please generate dummy file by following command:
+```bash
+    $ cd $WORK
+    $ mkdir -p meta-sparrow-hawk/firmware
+    $ touch meta-sparrow-hawk/firmware/rcar_gen4_pcie.bin
+```
+Note: \
+If you build software using dummy file, PCIe and USB doesn't work.
+But, if you replace dummy file with correct firmware, you can use PCIe/USB without rebuilding.
+Firmware file is located in "/lib/firmware/".
+
 * Initialize a build using the 'oe-init-build-env' script in Poky. e.g.:
 
 ```bash
