@@ -1,0 +1,56 @@
+diff --git a/arch/arm64/boot/dts/renesas/r8a779g0.dtsi b/arch/arm64/boot/dts/renesas/r8a779g0.dtsi
+index b115b1ffa9fc..2561cdd8b39f 100644
+--- a/arch/arm64/boot/dts/renesas/r8a779g0.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a779g0.dtsi
+@@ -1339,6 +1340,15 @@ msiof5: spi@e6c28000 {
+ 			status = "disabled";
+ 		};
+ 
++		gsx: gsx@fd000000 {
++			compatible = "renesas,gsx";
++			reg = <0 0xfd000000 0 0x800000>;
++			interrupts = <GIC_SPI 464 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cpg CPG_MOD 0>;
++			power-domains = <&sysc R8A779G0_PD_A23DGB>;
++			resets = <&cpg 0>;
++		};
++
+ 		vin00: video@e6ef0000 {
+ 			compatible = "renesas,vin-r8a779g0",
+ 				     "renesas,rcar-gen4-vin";
+diff --git a/drivers/clk/renesas/r8a779g0-cpg-mssr.c b/drivers/clk/renesas/r8a779g0-cpg-mssr.c
+index dc376b683d22..718ce980e072 100644
+--- a/drivers/clk/renesas/r8a779g0-cpg-mssr.c
++++ b/drivers/clk/renesas/r8a779g0-cpg-mssr.c
+@@ -150,7 +150,7 @@ static const struct cpg_core_clk r8a779g0_core_clks[] __initconst = {
+ 	DEF_DIV6P1("csi",	R8A779G0_CLK_CSI,	CLK_PLL5_DIV4,	CPG_CSICKCR),
+ 	DEF_FIXED("dsiref",	R8A779G0_CLK_DSIREF,	CLK_PLL5_DIV4,	48, 1),
+ 	DEF_DIV6P1("dsiext",	R8A779G0_CLK_DSIEXT,	CLK_PLL5_DIV4,	CPG_DSIEXTCKCR),
+-
++	DEF_FIXED("zg", R8A779G0_CLK_ZG,    CLK_PLL4_DIV2,  2, 1),
+ 	DEF_GEN4_SDH("sd0h",	R8A779G0_CLK_SD0H,	CLK_SDSRC,	   CPG_SD0CKCR),
+ 	DEF_GEN4_SD("sd0",	R8A779G0_CLK_SD0,	R8A779G0_CLK_SD0H, CPG_SD0CKCR),
+ 	DEF_DIV6P1("mso",	R8A779G0_CLK_MSO,	CLK_PLL5_DIV4,	CPG_MSOCKCR),
+@@ -163,6 +163,7 @@ static const struct cpg_core_clk r8a779g0_core_clks[] __initconst = {
+ };
+ 
+ static const struct mssr_mod_clk r8a779g0_mod_clks[] __initconst = {
++	DEF_MOD("rgx",  	  0,	R8A779G0_CLK_ZG),
+ 	DEF_MOD("isp0",		 16,	R8A779G0_CLK_S0D2_VIO),
+ 	DEF_MOD("isp1",		 17,	R8A779G0_CLK_S0D2_VIO),
+ 	DEF_MOD("avb0",		211,	R8A779G0_CLK_S0D4_HSC),
+diff --git a/drivers/gpu/drm/drm_file.c b/drivers/gpu/drm/drm_file.c
+index e2cf118ff01d..2e975c0e691b 100644
+--- a/drivers/gpu/drm/drm_file.c
++++ b/drivers/gpu/drm/drm_file.c
+@@ -309,8 +309,8 @@ int drm_open_helper(struct file *filp, struct drm_minor *minor)
+ 	if (dev->switch_power_state != DRM_SWITCH_POWER_ON &&
+ 	    dev->switch_power_state != DRM_SWITCH_POWER_DYNAMIC_OFF)
+ 		return -EINVAL;
+-	if (WARN_ON_ONCE(!(filp->f_op->fop_flags & FOP_UNSIGNED_OFFSET)))
+-		return -EINVAL;
++	/*if (WARN_ON_ONCE(!(filp->f_op->fop_flags & FOP_UNSIGNED_OFFSET)))
++		return -EINVAL;*/
+ 
+ 	drm_dbg_core(dev, "comm=\"%s\", pid=%d, minor=%d\n",
+ 		     current->comm, task_pid_nr(current), minor->index);

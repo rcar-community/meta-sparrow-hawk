@@ -2,10 +2,9 @@
 # This file is your local configuration file and is where all local user settings
 # are placed. The comments in this file give some guide to the options a new user
 # to the system might want to change but pretty much any configuration option can
-# be set in this file. More adventurous users can look at
-# local.conf.sample.extended which contains other examples of configuration which
-# can be placed in this file but new users likely won't need any of them
-# initially.
+# be set in this file. More adventurous users can look at local.conf.sample.extended
+# which contains other examples of configuration which can be placed in this file
+# but new users likely won't need any of them initially.
 #
 # Lines starting with the '#' character are commented out and in some cases the
 # default values are provided as comments to show people example syntax. Enabling
@@ -26,7 +25,7 @@
 #MACHINE ?= "qemux86"
 #MACHINE ?= "qemux86-64"
 #
-# There are also the following hardware board target machines included for 
+# There are also the following hardware board target machines included for
 # demonstration purposes:
 #
 #MACHINE ?= "beaglebone-yocto"
@@ -83,12 +82,12 @@ MACHINE ??= "sparrow-hawk"
 #
 # The distribution setting controls which policy settings are used as defaults.
 # The default value is fine for general Yocto project use, at least initially.
-# Ultimately when creating custom policy, people will likely end up subclassing 
+# Ultimately when creating custom policy, people will likely end up subclassing
 # these defaults.
 #
 DISTRO ?= "poky"
 # As an example of a subclass there is a "bleeding" edge policy configuration
-# where many versions are set to the absolute latest code from the upstream 
+# where many versions are set to the absolute latest code from the upstream
 # source control systems. This is just mentioned here as an example, its not
 # useful to most new users.
 # DISTRO ?= "poky-bleeding"
@@ -105,7 +104,7 @@ DISTRO ?= "poky"
 #  - 'package_rpm' for rpm style packages
 # E.g.: PACKAGE_CLASSES ?= "package_rpm package_deb package_ipk"
 # OE-Core defaults to ipkg, whilst Poky defaults to rpm:
-PACKAGE_CLASSES ?= "package_deb"
+PACKAGE_CLASSES ?= "package_rpm"
 
 #
 # SDK target architecture
@@ -238,7 +237,7 @@ BB_DISKMON_DIRS ??= "\
 # By default native qemu will build with a builtin VNC server where graphical output can be
 # seen. The line below enables the SDL UI frontend too.
 PACKAGECONFIG:append:pn-qemu-system-native = " sdl"
-# By default libsdl2-native will be built, if you want to use your host's libSDL instead of 
+# By default libsdl2-native will be built, if you want to use your host's libSDL instead of
 # the minimal libsdl built by libsdl2-native then uncomment the ASSUME_PROVIDED line below.
 #ASSUME_PROVIDED += "libsdl2-native"
 
@@ -280,21 +279,30 @@ DISTRO_FEATURES:append = " usrmerge systemd"
 VIRTUAL-RUNTIME_init_manager = "systemd"
 
 # add the static lib to SDK toolchain
-#SDKIMAGE_FEATURES:append = " staticdev-pkgs"
+SDKIMAGE_FEATURES:append = " staticdev-pkgs"
+
+# Enable Gfx Pkgs
+MACHINE_FEATURES:append = " gsx"
+
+# Enable Wayland/Weston
+DISTRO_FEATURES_NATIVESDK:append = " wayland"
+DISTRO_FEATURES:append = " pam"
+BB_MULTI_PROVIDER_ALLOWED += "virtual/libgl virtual/egl virtual/libgles1 virtual/libgles2"
+PREFERRED_PROVIDER_virtual/libgles1 = ""
+PREFERRED_PROVIDER_virtual/libgles2 = "user-module-gles"
+PREFERRED_PROVIDER_virtual/egl = "libegl"
+PREFERRED_PROVIDER_virtual/libgl = ""
+PREFERRED_PROVIDER_virtual/mesa = ""
+PREFERRED_PROVIDER_virtual/libgbm = "libgbm"
+PREFERRED_PROVIDER_libgbm-dev = "libgbm"
+BBMASK = "mesa-gl"
+
+# To build gstreamer plugins
+LICENSE_FLAGS_ACCEPTED = "commercial"
 
 # Remove ptest to reduce the build time
-DISTRO_FEATURES:remove = "ptest"
-
-# Mask graphic Pkgs
-BBMASK = "kernel-module-gles|user-module-gles|wayland-wsegl|wayland-kms|libgbm"
-
-# Allow non-commercial to be built
-LICENSE_FLAGS_ACCEPTED = "non-commercial"
-
-# Reproducible Builds
-# Set Timestamps at the build start
-export SOURCE_DATE_EPOCH = "${@time.strftime('%s', time.localtime())}"
-REPRODUCIBLE_TIMESTAMP_ROOTFS = "${@time.strftime('%s', time.localtime())}"
+# Remove x11 and vulkan to avoid error after removing mesa
+DISTRO_FEATURES:remove = "ptest x11 vulkan"
 
 # Upstream Kernel Builds
 PREFERRED_VERSION_linux-renesas = "6.12%"
@@ -302,3 +310,7 @@ LINUXLIBCVERSION = "6.12%"
 # nativesdk-linux-libc-headers is depended on Yocto version
 PREFERRED_VERSION_nativesdk-linux-libc-headers = "6.6"
 
+# Reproducible Builds
+# Set Timestamps at the build start
+export SOURCE_DATE_EPOCH = "${@time.strftime('%s', time.localtime())}"
+REPRODUCIBLE_TIMESTAMP_ROOTFS = "${@time.strftime('%s', time.localtime())}"

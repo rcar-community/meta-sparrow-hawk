@@ -26,6 +26,7 @@ SRC_URI:append:sparrow-hawk = " \
     file://sparrow_hawk.cfg \
     file://sparrow-hawk-enable-i2c3-i2c4.dtsi;subdir=git/arch/arm64/boot/dts/renesas/ \
     file://0001-HACK-arm64-dts-renesas-r8a779g3-sparrow-hawk-Remove-.patch \
+    file://0002-arm64-dts-renesas-r8a779g0-Add-new-gsx-node-and-clock-ZG.patch \
     file://sparrow-hawk-enable-j1-imx219.dtso;subdir=git/arch/arm64/boot/dts/renesas/ \
     file://sparrow-hawk-enable-j2-imx219.dtso;subdir=git/arch/arm64/boot/dts/renesas/ \
     file://sparrow-hawk-enable-j1-imx462.dtso;subdir=git/arch/arm64/boot/dts/renesas/ \
