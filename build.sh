@@ -8,19 +8,19 @@ mkdir -p ${SCRIPT_DIR}/build
 cd ${SCRIPT_DIR}/build
 export WORK=`pwd`
 TARGET_IMAGE=core-image-minimal
-USE_GPU=no
 USE_SSTATE_MIRROR=no
 BUILD_SBOM=no
 REMOVE_WORKDIR=no
 IS_BUILD_INSIDE_REPO=yes
 IS_BUILD_SDK=no
+TEMPLATE_POSTFIX=""
 
 Usage () {
     echo "Usage:"
     echo "    $0 <image_option> <options>"
     echo "image option:"
     echo "    --console:      Use CLI(default)"
-    echo "    --weston-nogpu: Use GUI, but no graphics accelaration"
+    echo "    --weston:       Use GUI"
     echo "options:"
     echo "    -h | --help:          Show this help"
     echo "    -s | --sdk:           Build Yocto SDK"
@@ -30,8 +30,11 @@ Usage () {
     exit
 }
 for arg in $@; do
-    if [[ "$arg" == "--weston-nogpu" ]]; then
-        echo "weston(nogpu) image is seletected"
+    if [[ "$arg" == "--console" ]]; then
+        TEMPLATE_POSTFIX=""
+        TARGET_IMAGE=core-image-minimal
+    elif [[ "$arg" == "--weston" ]]; then
+        TEMPLATE_POSTFIX="-weston"
         TARGET_IMAGE=core-image-weston
     elif [[ "$arg" == "-h" ]] || [[ "$arg" == "--help" ]]; then
         Usage; exit
@@ -70,7 +73,8 @@ fi
 
 cd $WORK
 rm -rf build-$MACHINE/conf
-TEMPLATECONF=${WORK}/meta-sparrow-hawk/conf/templates/$MACHINE  . poky/oe-init-build-env build-$MACHINE
+TEMPLATECONF=${WORK}/meta-sparrow-hawk/conf/templates/$MACHINE${TEMPLATE_POSTFIX} \
+    . poky/oe-init-build-env build-$MACHINE
 
 if [[ "${MACHINE}" == "sparrow-hawk" ]]; then
     FIRMWARE_LIST=("rcar_gen4_pcie.bin")
@@ -116,19 +120,6 @@ cat << EOS >> conf/local.conf
 # Disable create-spdx
 INHERIT:remove = "create-spdx"
 EOS
-fi
-
-if [[ "$TARGET_IMAGE" == "core-image-weston" ]]; then
-cat << EOS >> conf/local.conf
-IMAGE_INSTALL:append = " mesa glmark2"
-DISTRO_FEATURES_NATIVESDK:append = " wayland"
-DISTRO_FEATURES:append = " pam"
-IMAGE_INSTALL:append = " glmark2 kernel-devicetree"
-DISTRO_FEATURES:remove = " ptest x11 vulkan"
-EOS
-fi
-if [[ "$USE_GPU" == "yes" ]]; then
-   echo "Not implemented now"
 fi
 
 if [[ "${REMOVE_WORKDIR}" == "yes" ]]; then
