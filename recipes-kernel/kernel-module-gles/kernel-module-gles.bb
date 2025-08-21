@@ -15,6 +15,7 @@ inherit module
 PN = "kernel-module-gles"
 PR = "r0"
 
+FILESEXTRAPATHS:prepend:r8a779g3 = "${THISDIR}/../../proprietary:"
 SRC_URI:r8a779g3 = "file://GSX_KM_V4H_SparrowHawk.tar.bz2"
 
 SRC_URI:append = " file://blacklist.conf"

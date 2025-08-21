@@ -9,6 +9,7 @@ DEPENDS = "kernel-module-gles"
 PN = "user-module-gles"
 PR = "r0"
 
+FILESEXTRAPATHS:prepend:r8a779g3 = "${THISDIR}/../../proprietary:"
 SRC_URI:r8a779g3 = "file://r8a779g3_linux_gsx_binaries_gles.tar.bz2"
 
 SRC_URI:append:rcar-gen4 = " \
