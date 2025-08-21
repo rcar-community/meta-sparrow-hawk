@@ -45,7 +45,7 @@ This layer depends on:
    $ git config --global user.name "Your Name"
 ```
 
-* Then, using one of three way to build Image. (Manual Build, Using template configuration, Using Renesas'script)
+* Then, using one of two way to build Image. ([Manual Build](#manual-build), [Using build script](#using-build-script)
 
 ## Manual Build
 
