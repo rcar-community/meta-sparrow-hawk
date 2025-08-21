@@ -14,6 +14,18 @@ USE_SSTATE_MIRROR=no
 BUILD_SBOM=no
 IS_BUILD_INSIDE_REPO=yes
 IS_BUILD_SDK=no
+TEMPLATE_POSTFIX=""
+
+CheckGraphicsPackage () {
+    PROP_DIR=$SCRIPT_DIR/proprietary
+    ITEM_LIST=("GSX_KM_V4H_SparrowHawk.tar.bz2" "r8a779g3_linux_gsx_binaries_gles.tar.bz2")
+    for item in ${ITEM_LIST[@]}; do
+        if [[ ! -e ${PROP_DIR}/${item} ]]; then
+            echo "${PROP_DIR}/${item} is not found !!"
+            exit -1
+        fi
+    done
+}
 
 Usage () {
     echo "Usage:"
@@ -21,6 +33,7 @@ Usage () {
     echo "image option:"
     echo "    --console:      Use CLI(default)"
     echo "    --weston-nogpu: Use GUI, but no graphics accelaration"
+    echo "    --weston:       Use GUI, Need additonal Graphics pakcage"
     echo "options:"
     echo "    -h | --help:          Show this help"
     echo "    -s | --sdk:           Build Yocto SDK"
@@ -32,6 +45,11 @@ for arg in $@; do
     if [[ "$arg" == "--weston-nogpu" ]]; then
         echo "weston(nogpu) image is seletected"
         TARGET_IMAGE=core-image-weston
+    elif [[ "$arg" == "--weston" ]]; then
+        USE_GPU=yes
+        TEMPLATE_POSTFIX="-weston"
+        TARGET_IMAGE=core-image-weston
+        CheckGraphicsPackage
     elif [[ "$arg" == "-h" ]] || [[ "$arg" == "--help" ]]; then
         Usage; exit
     elif [[ "$arg" == "-s" ]] || [[ "$arg" == "--sdk" ]]; then
@@ -66,8 +84,9 @@ if [[ "${IS_BUILD_INSIDE_REPO}" == "no" ]]; then
 fi
 
 cd $WORK
-rm -rf build-$MACHINE/conf
-TEMPLATECONF=${WORK}/meta-sparrow-hawk/conf/templates/$MACHINE  . poky/oe-init-build-env build-$MACHINE
+rm -rf build-$MACHINE${TEMPLATE_POSTFIX}/conf
+TEMPLATECONF=${WORK}/meta-sparrow-hawk/conf/templates/$MACHINE${TEMPLATE_POSTFIX} \
+    . poky/oe-init-build-env build-$MACHINE${TEMPLATE_POSTFIX}
 
 if [[ "${MACHINE}" == "sparrow-hawk" ]]; then
     FIRMWARE_LIST=("rcar_gen4_pcie.bin")
@@ -115,7 +134,7 @@ INHERIT:remove = "create-spdx"
 EOS
 fi
 
-if [[ "$TARGET_IMAGE" == "core-image-weston" ]]; then
+if [[ "$TARGET_IMAGE" == "core-image-weston" ]] && [[ "$USE_GPU" == "no" ]]; then
 cat << EOS >> conf/local.conf
 IMAGE_INSTALL:append = " mesa glmark2"
 DISTRO_FEATURES_NATIVESDK:append = " wayland"
@@ -123,9 +142,6 @@ DISTRO_FEATURES:append = " pam"
 IMAGE_INSTALL:append = " glmark2 kernel-devicetree"
 DISTRO_FEATURES:remove = " ptest x11 vulkan"
 EOS
-fi
-if [[ "$USE_GPU" == "yes" ]]; then
-   echo "Not implemented now"
 fi
 
 bitbake ${TARGET_IMAGE}
