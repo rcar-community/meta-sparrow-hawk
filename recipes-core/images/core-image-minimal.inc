@@ -16,6 +16,18 @@ IMAGE_INSTALL:append = " \
     nvme-cli \
     can-utils \
     expand-rootfs \
+    pciutils \
+    usbutils \
+    kernel-modules \
+    u-boot \
+    libgpiod \
+    python3-pip \
+    python3-gpiod \
+"
+# Sparrow-hawk specific packages
+IMAGE_INSTALL:append:sparrow-hawk = " \
+    linux-fitimage \
+    sparrow-hawk-fw \
 "
 
 # Qos user packages only supports 64bit.
