@@ -4,7 +4,7 @@
 You can now run 'bitbake <target>'
 
 Common targets are:
-    core-image-graphics
+    core-image-weston
 
 You can also run generated qemu images with a command like 'runqemu qemux86-64'.
 
