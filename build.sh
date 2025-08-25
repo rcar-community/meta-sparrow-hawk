@@ -136,11 +136,10 @@ fi
 
 if [[ "$TARGET_IMAGE" == "core-image-weston" ]] && [[ "$USE_GPU" == "no" ]]; then
 cat << EOS >> conf/local.conf
-IMAGE_INSTALL:append = " mesa glmark2"
+IMAGE_INSTALL:append = " mesa"
 DISTRO_FEATURES_NATIVESDK:append = " wayland"
 DISTRO_FEATURES:append = " pam"
-IMAGE_INSTALL:append = " glmark2 kernel-devicetree"
-DISTRO_FEATURES:remove = " ptest x11 vulkan"
+DISTRO_FEATURES:remove = " x11 vulkan"
 EOS
 fi
 

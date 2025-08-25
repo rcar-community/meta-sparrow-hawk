@@ -286,7 +286,12 @@ VIRTUAL-RUNTIME_init_manager = "systemd"
 DISTRO_FEATURES:remove = "ptest"
 
 # Mask graphic Pkgs
-BBMASK = "kernel-module-gles|user-module-gles|wayland-wsegl|wayland-kms|libgbm"
+BBMASK = "kernel-module-gles|user-module-gles"
+BBMASK:append = "|meta-sparrow-hawk/recipes-graphics/wayland/wayland-wsegl"
+BBMASK:append = "|meta-sparrow-hawk/recipes-graphics/wayland/wayland-kms"
+BBMASK:append = "|meta-sparrow-hawk/recipes-graphics/wayland/libgbm"
+BBMASK:append = "|meta-sparrow-hawk/recipes-graphics/wayland/weston_%.bbappend"
+BBMASK:append = "|meta-sparrow-hawk/recipes-graphics/packagegroups/packagegroup-renesas-graphics.bb"
 
 # Allow non-commercial to be built
 LICENSE_FLAGS_ACCEPTED = "non-commercial"
