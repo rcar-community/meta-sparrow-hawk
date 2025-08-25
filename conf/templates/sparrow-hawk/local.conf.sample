@@ -298,11 +298,4 @@ PREFERRED_VERSION_linux-renesas = "6.12%"
 LINUXLIBCVERSION = "6.12%"
 # nativesdk-linux-libc-headers is depended on Yocto version
 PREFERRED_VERSION_nativesdk-linux-libc-headers = "6.6"
-IMAGE_INSTALL:append = " pciutils usbutils"
-IMAGE_INSTALL:append = " linux-fitimage"
-IMAGE_INSTALL:append = " kernel-modules"
-IMAGE_INSTALL:append = " sparrow-hawk-fw"
-IMAGE_INSTALL:append = " u-boot"
-IMAGE_INSTALL:append = " libgpiod python3-pip python3-gpiod"
-EXTRA_IMAGEDEPENDS += " ipl-burning"
 
