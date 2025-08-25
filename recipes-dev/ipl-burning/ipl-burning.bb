@@ -7,6 +7,7 @@ PACKAGE_ARCH = "${MACHINE_ARCH}"
 
 inherit deploy
 DEPENDS:append = "unzip-native python3-native"
+do_compile[depends] += "u-boot:do_deploy"
 
 COMPATIBLE_MACHINE = "sparrow-hawk"
 
