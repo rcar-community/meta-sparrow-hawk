@@ -84,9 +84,9 @@ if [[ "${IS_BUILD_INSIDE_REPO}" == "no" ]]; then
 fi
 
 cd $WORK
-rm -rf build-$MACHINE${TEMPLATE_POSTFIX}/conf
+rm -rf build-$MACHINE/conf
 TEMPLATECONF=${WORK}/meta-sparrow-hawk/conf/templates/$MACHINE${TEMPLATE_POSTFIX} \
-    . poky/oe-init-build-env build-$MACHINE${TEMPLATE_POSTFIX}
+    . poky/oe-init-build-env build-$MACHINE
 
 if [[ "${MACHINE}" == "sparrow-hawk" ]]; then
     FIRMWARE_LIST=("rcar_gen4_pcie.bin")
