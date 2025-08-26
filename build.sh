@@ -50,6 +50,11 @@ for arg in $@; do
         TEMPLATE_POSTFIX="-weston"
         TARGET_IMAGE=core-image-weston
         CheckGraphicsPackage
+    elif [[ "$arg" == "--weston-minimal" ]]; then
+        USE_GPU=yes
+        TEMPLATE_POSTFIX="-weston"
+        TARGET_IMAGE=core-image-minimal
+        CheckGraphicsPackage
     elif [[ "$arg" == "-h" ]] || [[ "$arg" == "--help" ]]; then
         Usage; exit
     elif [[ "$arg" == "-s" ]] || [[ "$arg" == "--sdk" ]]; then
