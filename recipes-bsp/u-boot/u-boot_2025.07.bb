@@ -45,6 +45,10 @@ SRC_URI:append = "\
     file://0014-FIXME-arm64-dts-renesas-r8a779g3-Set-VDDQ18_25_AVB-v.patch \
 "
 
+SRC_URI:append = "\
+    file://nfs_cmd.cfg \
+"
+
 do_deploy:append() {
     if [ -n "${UBOOT_CONFIG}" ]
     then
