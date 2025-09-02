@@ -62,7 +62,7 @@
 		};
 		fdt-j1-imx219 {
 			description = "Flattened Device Tree Overlay";
-			data = /incbin/("./sparrow-hawk-enable-j1-imx219.dtbo");
+			data = /incbin/("./r8a779g3-sparrow-hawk-camera-j1-imx219.dtbo");
 			type = "flat_dt";
 			arch = "arm64";
 			compression = "none";
@@ -72,7 +72,7 @@
 		};
 		fdt-j2-imx219 {
 			description = "Flattened Device Tree Overlay";
-			data = /incbin/("./sparrow-hawk-enable-j2-imx219.dtbo");
+			data = /incbin/("./r8a779g3-sparrow-hawk-camera-j2-imx219.dtbo");
 			type = "flat_dt";
 			arch = "arm64";
 			compression = "none";
@@ -82,7 +82,7 @@
 		};
 		fdt-j1-imx462 {
 			description = "Flattened Device Tree Overlay";
-			data = /incbin/("./sparrow-hawk-enable-j1-imx462.dtbo");
+			data = /incbin/("./r8a779g3-sparrow-hawk-camera-j1-imx462.dtbo");
 			type = "flat_dt";
 			arch = "arm64";
 			compression = "none";
@@ -92,7 +92,7 @@
 		};
 		fdt-j2-imx462 {
 			description = "Flattened Device Tree Overlay";
-			data = /incbin/("./sparrow-hawk-enable-j2-imx462.dtbo");
+			data = /incbin/("./r8a779g3-sparrow-hawk-camera-j2-imx462.dtbo");
 			type = "flat_dt";
 			arch = "arm64";
 			compression = "none";
@@ -133,4 +133,3 @@
 		};
 	};
 };
-

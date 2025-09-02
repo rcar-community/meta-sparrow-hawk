@@ -25,20 +25,15 @@ FILESEXTRAPATHS:prepend:sparrow-hawk = "${TOPDIR}/../../firmware:"
 SRC_URI:append:sparrow-hawk = " \
     file://sparrow_hawk.cfg \
     file://sparrow-hawk-enable-i2c3-i2c4.dtsi;subdir=git/arch/arm64/boot/dts/renesas/ \
-    file://0001-HACK-arm64-dts-renesas-r8a779g3-sparrow-hawk-Remove-.patch \
-    file://sparrow-hawk-enable-j1-imx219.dtso;subdir=git/arch/arm64/boot/dts/renesas/ \
-    file://sparrow-hawk-enable-j2-imx219.dtso;subdir=git/arch/arm64/boot/dts/renesas/ \
-    file://sparrow-hawk-enable-j1-imx462.dtso;subdir=git/arch/arm64/boot/dts/renesas/ \
-    file://sparrow-hawk-enable-j2-imx462.dtso;subdir=git/arch/arm64/boot/dts/renesas/ \
 "
 KBUILD_DEFCONFIG:sparrow-hawk = "renesas_defconfig"
 KERNEL_DEVICETREE:append:sparrow-hawk = " \
     renesas/r8a779g3-sparrow-hawk-fan-pwm.dtbo \
     renesas/r8a779g3-sparrow-hawk-rpi-display-2.dtbo \
-    renesas/sparrow-hawk-enable-j1-imx219.dtbo \
-    renesas/sparrow-hawk-enable-j2-imx219.dtbo \
-    renesas/sparrow-hawk-enable-j1-imx462.dtbo \
-    renesas/sparrow-hawk-enable-j2-imx462.dtbo \
+    renesas/r8a779g3-sparrow-hawk-camera-j1-imx219.dtbo \
+    renesas/r8a779g3-sparrow-hawk-camera-j2-imx219.dtbo \
+    renesas/r8a779g3-sparrow-hawk-camera-j1-imx462.dtbo \
+    renesas/r8a779g3-sparrow-hawk-camera-j2-imx462.dtbo \
 "
 
 do_compile:prepend:sparrow-hawk () {
@@ -73,4 +68,3 @@ do_deploy:append() {
         rm -f $deployDir/$dtb_base_name-${KERNEL_DTB_LINK_NAME}.$dtb_ext
     done
 }
-
