@@ -1,8 +1,8 @@
-From 13e45cdb8bd05d8e99c774ff1feac3981854eca9 Mon Sep 17 00:00:00 2001
+From 32bb608cf1e41b2ed5afc8a31423cafcbdfa6092 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Niklas=20S=C3=B6derlund?=
  <niklas.soderlund+renesas@ragnatech.se>
 Date: Tue, 17 Jun 2025 12:38:14 +0200
-Subject: [PATCH 3/3] libcamera: pipeline: Add R-Car Gen4 ISP pipeline
+Subject: [PATCH 3/4] libcamera: pipeline: Add R-Car Gen4 ISP pipeline
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -16,17 +16,23 @@ BlackLevelCorrection algorithms and produce a stable and good image.
 
 Signed-off-by: Niklas Söderlund <niklas.soderlund+renesas@ragnatech.se>
 ---
+* Changes since v1
+- Fix camera names. Was 'imx462 2-001a', is now '/base/soc/i2c@e6510000/imx462@1a'.
+- Fix a compiler issue with some versions of gcc.
+- Add dependency on rkisp1.mojom.
+---
+ include/libcamera/ipa/meson.build             |   1 +
  meson.build                                   |   1 +
  meson_options.txt                             |   1 +
- src/libcamera/pipeline/rcar-gen4/frames.cpp   | 283 ++++++
- src/libcamera/pipeline/rcar-gen4/frames.h     |  87 ++
+ src/libcamera/pipeline/rcar-gen4/frames.cpp   | 281 ++++++
+ src/libcamera/pipeline/rcar-gen4/frames.h     |  85 ++
  src/libcamera/pipeline/rcar-gen4/isp.cpp      | 227 +++++
  src/libcamera/pipeline/rcar-gen4/isp.h        |  44 +
  src/libcamera/pipeline/rcar-gen4/meson.build  |   8 +
- .../pipeline/rcar-gen4/rcar-gen4.cpp          | 816 ++++++++++++++++++
- src/libcamera/pipeline/rcar-gen4/vin.cpp      | 386 +++++++++
- src/libcamera/pipeline/rcar-gen4/vin.h        |  68 ++
- 10 files changed, 1921 insertions(+)
+ .../pipeline/rcar-gen4/rcar-gen4.cpp          | 814 ++++++++++++++++++
+ src/libcamera/pipeline/rcar-gen4/vin.cpp      | 392 +++++++++
+ src/libcamera/pipeline/rcar-gen4/vin.h        |  66 ++
+ 11 files changed, 1920 insertions(+)
  create mode 100644 src/libcamera/pipeline/rcar-gen4/frames.cpp
  create mode 100644 src/libcamera/pipeline/rcar-gen4/frames.h
  create mode 100644 src/libcamera/pipeline/rcar-gen4/isp.cpp
@@ -36,11 +42,23 @@ Signed-off-by: Niklas Söderlund <niklas.soderlund+renesas@ragnatech.se>
  create mode 100644 src/libcamera/pipeline/rcar-gen4/vin.cpp
  create mode 100644 src/libcamera/pipeline/rcar-gen4/vin.h
 
+diff --git a/include/libcamera/ipa/meson.build b/include/libcamera/ipa/meson.build
+index 3ee3ada3..48eb19b2 100644
+--- a/include/libcamera/ipa/meson.build
++++ b/include/libcamera/ipa/meson.build
+@@ -66,6 +66,7 @@ pipeline_ipa_mojom_mapping = {
+     'ipu3': 'ipu3.mojom',
+     'mali-c55': 'mali-c55.mojom',
+     'rkisp1': 'rkisp1.mojom',
++    'rcar-gen4': 'rkisp1.mojom',
+     'rpi/pisp': 'raspberrypi.mojom',
+     'rpi/vc4': 'raspberrypi.mojom',
+     'simple': 'soft.mojom',
 diff --git a/meson.build b/meson.build
-index 4ed8017e..478beb27 100644
+index fd508fd7..054e209e 100644
 --- a/meson.build
 +++ b/meson.build
-@@ -214,6 +214,7 @@ pipelines_support = {
+@@ -218,6 +218,7 @@ pipelines_support = {
      'imx8-isi':     arch_arm,
      'ipu3':         arch_x86,
      'mali-c55':     arch_arm,
@@ -62,10 +80,10 @@ index 2104469e..eba94584 100644
              'rpi/vc4',
 diff --git a/src/libcamera/pipeline/rcar-gen4/frames.cpp b/src/libcamera/pipeline/rcar-gen4/frames.cpp
 new file mode 100644
-index 00000000..9185c1e8
+index 00000000..3bef966a
 --- /dev/null
 +++ b/src/libcamera/pipeline/rcar-gen4/frames.cpp
-@@ -0,0 +1,283 @@
+@@ -0,0 +1,281 @@
 +/* SPDX-License-Identifier: LGPL-2.1-or-later */
 +/*
 + * Copyright 2025 Renesas Electronics Co
@@ -87,10 +105,6 @@ index 00000000..9185c1e8
 +namespace libcamera {
 +
 +LOG_DECLARE_CATEGORY(RCar4)
-+
-+RCar4Frames::RCar4Frames()
-+{
-+}
 +
 +int RCar4Frames::start(class RCarISPDevice *isp, class ipa::rkisp1::IPAProxyRkISP1 *ipa)
 +{
@@ -244,22 +258,24 @@ index 00000000..9185c1e8
 +	}
 +
 +	/* Recored the info needed to process one frame. */
-+	std::unique_ptr<Info> info = std::make_unique<Info>();
++	auto [it, inserted] = frameInfo_.try_emplace(frame);
++	if (!inserted)
++		return nullptr;
 +
-+	info->frame = frame;
-+	info->request = request;
-+	info->inputBuffer = inputBuffer;
-+	info->paramBuffer = paramBuffer;
-+	info->statBuffer = statBuffer;
-+	info->outputBuffer = outputBuffer;
-+	info->rawDequeued = false;
-+	info->paramDequeued = false;
-+	info->metadataProcessed = false;
-+	info->outputDequeued = false;
++	auto &info = it->second;
 +
-+	frameInfo_[frame] = std::move(info);
++	info.frame = frame;
++	info.request = request;
++	info.inputBuffer = inputBuffer;
++	info.paramBuffer = paramBuffer;
++	info.statBuffer = statBuffer;
++	info.outputBuffer = outputBuffer;
++	info.rawDequeued = false;
++	info.paramDequeued = false;
++	info.metadataProcessed = false;
++	info.outputDequeued = false;
 +
-+	return frameInfo_[frame].get();
++	return &info;
 +}
 +
 +void RCar4Frames::remove(RCar4Frames::Info *info)
@@ -320,7 +336,7 @@ index 00000000..9185c1e8
 +	const auto &itInfo = frameInfo_.find(frame);
 +
 +	if (itInfo != frameInfo_.end())
-+		return itInfo->second.get();
++		return &itInfo->second;
 +
 +	LOG(RCar4, Fatal) << "Can't find tracking information for frame " << frame;
 +
@@ -329,8 +345,8 @@ index 00000000..9185c1e8
 +
 +RCar4Frames::Info *RCar4Frames::find(FrameBuffer *buffer)
 +{
-+	for (auto const &itInfo : frameInfo_) {
-+		Info *info = itInfo.second.get();
++	for (auto &itInfo : frameInfo_) {
++		Info *info = &itInfo.second;
 +
 +		for (auto const itBuffers : info->request->buffers())
 +			if (itBuffers.second == buffer)
@@ -351,10 +367,10 @@ index 00000000..9185c1e8
 +} /* namespace libcamera */
 diff --git a/src/libcamera/pipeline/rcar-gen4/frames.h b/src/libcamera/pipeline/rcar-gen4/frames.h
 new file mode 100644
-index 00000000..8eab3de8
+index 00000000..24573fe0
 --- /dev/null
 +++ b/src/libcamera/pipeline/rcar-gen4/frames.h
-@@ -0,0 +1,87 @@
+@@ -0,0 +1,85 @@
 +/* SPDX-License-Identifier: LGPL-2.1-or-later */
 +/*
 + * Copyright 2025 Renesas Electronics Co
@@ -406,8 +422,6 @@ index 00000000..8eab3de8
 +		bool outputDequeued;
 +	};
 +
-+	RCar4Frames();
-+
 +	int start(class RCarISPDevice *isp, class ipa::rkisp1::IPAProxyRkISP1 *ipa);
 +	void stop(class RCarISPDevice *isp, class ipa::rkisp1::IPAProxyRkISP1 *ipa);
 +
@@ -423,7 +437,7 @@ index 00000000..8eab3de8
 +	Stream rawStream_;
 +	Stream outputStream_;
 +private:
-+	std::map<unsigned int, std::unique_ptr<Info>> frameInfo_;
++	std::map<unsigned int, Info> frameInfo_;
 +
 +	/* Buffers for internal use, if none is provided in request. */
 +	std::vector<std::unique_ptr<FrameBuffer>> inputBuffers_;
@@ -741,10 +755,10 @@ index 00000000..431eb54e
 +])
 diff --git a/src/libcamera/pipeline/rcar-gen4/rcar-gen4.cpp b/src/libcamera/pipeline/rcar-gen4/rcar-gen4.cpp
 new file mode 100644
-index 00000000..a63c2b1f
+index 00000000..f9c9e984
 --- /dev/null
 +++ b/src/libcamera/pipeline/rcar-gen4/rcar-gen4.cpp
-@@ -0,0 +1,816 @@
+@@ -0,0 +1,814 @@
 +/* SPDX-License-Identifier: LGPL-2.1-or-later */
 +/*
 + * Copyright 2025 Renesas Electronics Co
@@ -1039,10 +1053,8 @@ index 00000000..a63c2b1f
 +
 +RCar4CameraConfiguration::RCar4CameraConfiguration(Camera *camera,
 +						   RCar4CameraData *data)
-+	: CameraConfiguration()
++	: CameraConfiguration(), camera_(camera->shared_from_this()), data_(data)
 +{
-+	camera_ = camera->shared_from_this();
-+	data_ = data;
 +}
 +
 +CameraConfiguration::Status RCar4CameraConfiguration::validate()
@@ -1135,9 +1147,9 @@ index 00000000..a63c2b1f
 +	}
 +
 +	/* Select the sensor format. */
++	std::vector<unsigned int> mbusCodes = { formatToMediaBus.at(vinCfg.pixelFormat) };
 +	sensorFormat_ =
-+		data_->vin_.sensor()->getFormat({ formatToMediaBus.at(vinCfg.pixelFormat) },
-+						vinCfg.size, vinCfg.size);
++		data_->vin_.sensor()->getFormat(mbusCodes, vinCfg.size, vinCfg.size);
 +
 +	return status;
 +}
@@ -1524,7 +1536,7 @@ index 00000000..a63c2b1f
 +	/*
 +	 * Register the camera.
 +	 */
-+	const std::string id = data->vin_.sensor()->entity()->name();
++	const std::string &id = data->vin_.sensor()->id();
 +	std::shared_ptr<Camera> camera = Camera::create(std::move(data), id, streams);
 +
 +	registerCamera(std::move(camera));
@@ -1563,10 +1575,10 @@ index 00000000..a63c2b1f
 +} /* namespace libcamera */
 diff --git a/src/libcamera/pipeline/rcar-gen4/vin.cpp b/src/libcamera/pipeline/rcar-gen4/vin.cpp
 new file mode 100644
-index 00000000..46c647f9
+index 00000000..3ea65254
 --- /dev/null
 +++ b/src/libcamera/pipeline/rcar-gen4/vin.cpp
-@@ -0,0 +1,386 @@
+@@ -0,0 +1,392 @@
 +/* SPDX-License-Identifier: LGPL-2.1-or-later */
 +/*
 + * Copyright 2025 Renesas Electronics Co
@@ -1606,10 +1618,6 @@ index 00000000..46c647f9
 +};
 +
 +} /* namespace */
-+
-+RCarVINDevice::RCarVINDevice()
-+{
-+}
 +
 +/**
 + * \brief Retrieve the list of supported PixelFormats
@@ -1870,6 +1878,16 @@ index 00000000..46c647f9
 +			continue;
 +
 +		for (const Size &sz : sizes) {
++
++			/* No need to check ratios if we have an exact match. */
++			if (sz == size) {
++				bestRatio = 0;
++				bestArea = 0;
++				bestSize = sz;
++				bestCode = code;
++				break;
++			}
++
 +			if (sz.width < size.width || sz.height < size.height)
 +				continue;
 +
@@ -1955,10 +1973,10 @@ index 00000000..46c647f9
 +} /* namespace libcamera */
 diff --git a/src/libcamera/pipeline/rcar-gen4/vin.h b/src/libcamera/pipeline/rcar-gen4/vin.h
 new file mode 100644
-index 00000000..02f98a87
+index 00000000..5ac97be0
 --- /dev/null
 +++ b/src/libcamera/pipeline/rcar-gen4/vin.h
-@@ -0,0 +1,68 @@
+@@ -0,0 +1,66 @@
 +/* SPDX-License-Identifier: LGPL-2.1-or-later */
 +/*
 + * Copyright 2025 Renesas Electronics Co
@@ -1995,8 +2013,6 @@ index 00000000..02f98a87
 +public:
 +	static constexpr unsigned int kBufferCount = 4;
 +
-+	RCarVINDevice();
-+
 +	std::vector<PixelFormat> formats() const;
 +	std::vector<SizeRange> sizes(const PixelFormat &format) const;
 +
@@ -2028,5 +2044,5 @@ index 00000000..02f98a87
 +
 +} /* namespace libcamera */
 -- 
-2.43.0
+2.25.1
 
