@@ -1,8 +1,8 @@
-From fff4e629b1bf8eb005f440ad54dc9b13a7e1dba6 Mon Sep 17 00:00:00 2001
+From f2a35454a6bd1d80f92897ad13bba4644e1d8946 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Niklas=20S=C3=B6derlund?=
  <niklas.soderlund+renesas@ragnatech.se>
 Date: Tue, 17 Jun 2025 12:38:08 +0200
-Subject: [PATCH 2/3] ipa: rkisp1: Add settings for DreamChip RPPX1 ISP
+Subject: [PATCH 2/4] ipa: rkisp1: Add settings for DreamChip RPPX1 ISP
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -47,7 +47,7 @@ index 043ad27e..608ba82a 100644
  	libcamera.IPACameraSensorInfo sensorInfo;
  	libcamera.ControlInfoMap sensorControls;
 diff --git a/src/ipa/rkisp1/rkisp1.cpp b/src/ipa/rkisp1/rkisp1.cpp
-index 1ed7d7d9..00281404 100644
+index cf66d555..14600251 100644
 --- a/src/ipa/rkisp1/rkisp1.cpp
 +++ b/src/ipa/rkisp1/rkisp1.cpp
 @@ -113,6 +113,14 @@ const IPAHwSettings ipaHwSettingsV12{
@@ -65,7 +65,7 @@ index 1ed7d7d9..00281404 100644
  /* List of controls handled by the RkISP1 IPA */
  const ControlInfoMap::Map rkisp1Controls{
  	{ &controls::DebugMetadataEnable, ControlInfo(false, true, false) },
-@@ -148,6 +156,9 @@ int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision,
+@@ -147,6 +155,9 @@ int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision,
  	case RKISP1_V12:
  		context_.hw = &ipaHwSettingsV12;
  		break;
@@ -76,5 +76,5 @@ index 1ed7d7d9..00281404 100644
  		LOG(IPARkISP1, Error)
  			<< "Hardware revision " << hwRevision
 -- 
-2.43.0
+2.25.1
 

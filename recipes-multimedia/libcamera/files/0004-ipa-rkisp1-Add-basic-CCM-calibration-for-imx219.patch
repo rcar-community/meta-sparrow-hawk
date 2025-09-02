@@ -1,0 +1,123 @@
+From 0537e6d09e9d1a19de47f89b9ae211760a5159a3 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Niklas=20S=C3=B6derlund?=
+ <niklas.soderlund+renesas@ragnatech.se>
+Date: Wed, 27 Aug 2025 16:44:24 +0200
+Subject: [PATCH 4/4] ipa: rkisp1: Add basic CCM calibration for imx219
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Add basic CMM calibration tables for imx219. These were generated with
+the rkisp1 tuning script in tree, using an R-Car V4H (Sparrow Hawk) and
+a RPi Camera module v2. The colors temperatures calibrated are 2500K,
+2720K, 5000K, and 6500K in a dark room at night with the ColorChecker
+chart inside a gray box.
+
+Signed-off-by: Niklas Söderlund <niklas.soderlund+renesas@ragnatech.se>
+---
+ src/ipa/rkisp1/data/imx219.yaml | 87 +++++++++++++++++++++++++++++++++
+ 1 file changed, 87 insertions(+)
+
+diff --git a/src/ipa/rkisp1/data/imx219.yaml b/src/ipa/rkisp1/data/imx219.yaml
+index 0d99cb52..ed282830 100644
+--- a/src/ipa/rkisp1/data/imx219.yaml
++++ b/src/ipa/rkisp1/data/imx219.yaml
+@@ -4,8 +4,95 @@
+ version: 1
+ algorithms:
+   - Agc:
++      AeMeteringMode:
++        MeteringCentreWeighted: [ 0, 0, 0, 0, 0, 0, 6, 8, 6, 0, 0, 8, 16, 8, 0, 0, 6, 8, 6, 0, 0, 0, 0, 0, 0 ]
++        MeteringSpot: [ 0, 0, 0, 0, 0, 0, 2, 4, 2, 0, 0, 4, 16, 4, 0, 0, 2, 4, 2, 0, 0, 0, 0, 0, 0 ]
++        MeteringMatrix: [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
++      AeExposureMode:
++        ExposureNormal:
++          exposureTime: [ 100, 10000, 30000, 60000, 120000 ]
++          gain: [ 2.0, 4.0, 6.0, 6.0, 6.0 ]
++        ExposureShort:
++          exposureTime: [ 100, 5000, 10000, 20000, 120000 ]
++          gain: [ 2.0, 4.0, 6.0, 6.0, 6.0 ]
++      AeConstraintMode:
++        ConstraintNormal:
++          lower:
++            qLo: 0.98
++            qHi: 1.0
++            yTarget: 0.5
++        ConstraintHighlight:
++          lower:
++            qLo: 0.98
++            qHi: 1.0
++            yTarget: 0.5
++          upper:
++            qLo: 0.98
++            qHi: 1.0
++            yTarget: 0.8
++      relativeLuminanceTarget: 0.5
+   - Awb:
++      algorithm: "bayes"
++      AwbMode:
++        AwbAuto:
++          lo: 2500
++          hi: 8000
++        AwbIncandescent:
++          lo: 2500
++          hi: 3000
++        AwbTungsten:
++          lo: 3000
++          hi: 3500
++        AwbFluorescent:
++          lo: 4000
++          hi: 4700
++        AwbIndoor:
++          lo: 3000
++          hi: 5000
++        AwbDaylight:
++          lo: 5500
++          hi: 6500
++        AwbCloudy:
++          lo: 6500
++          hi: 8000
++      priors:
++        - lux: 0
++          ct: [ 2000, 3000, 13000 ]
++          probability: [ 1.005, 1.0, 1.0 ]
++        - lux: 800
++          ct: [ 2000, 6000, 13000 ]
++          probability: [ 1.0, 1.01, 1.01 ]
++        - lux: 1500
++          ct: [ 2000, 4000, 6000, 6500, 7000, 13000 ]
++          probability: [ 1.0, 1.005, 1.032, 1.037, 1.01, 1.01 ]
++      colourGains:
++        - ct: 2700
++          gains: [ 0.9992006394884093, 2.4342745861733204 ]
++        - ct: 6500
++          gains: [ 2.0665426741062203, 1.322401481089659 ]
++      transversePos: 0.01
++      transverseNeg: 0.01
+   - BlackLevelCorrection:
++  - Ccm:
++      ccms:
++        - ct: 2500
++          ccm: [
++                 2.18812, -0.56655, -0.62157, -0.79851, 2.56551, -0.76701, -0.11035, -1.62939,
++                 2.73974,
++               ]
++        - ct: 2700
++          ccm: [
++                 2.21236, -0.61129, -0.60106, -0.78969, 2.53923, -0.74954, -0.10081, -1.61741,
++                 2.71821,
++               ]
++        - ct: 6500
++          ccm: [
++                 2.28328, -1.07228, -0.21101, -0.59045, 2.45521, -0.86475, -0.19788, -0.58547,
++                 1.78335,
++               ]
++  - Filter:
++  - GammaOutCorrection:
++      gamma: 2.2
+   - LensShadingCorrection:
+       x-size: [ 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625 ]
+       y-size: [ 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625 ]
+-- 
+2.25.1
+
