@@ -1,0 +1,119 @@
+From d5fa4565435bd9c0710d199da7248d3312e07e90 Mon Sep 17 00:00:00 2001
+From: Valentine Barshak <valentine.barshak@cogentembedded.com>
+Date: Fri, 4 Dec 2020 21:18:54 +0300
+Subject: [PATCH 03/15] uio: uio_pdrv_genirq: renesas: Add clock divisor ioctl
+ support
+
+This adds UIO_PDRV_CLK_GET_DIV/UIO_PDRV_CLK_SET_DIV ioctl
+to the uio_pdrv_genirq driver. These ioctl calls allow to
+get/set the device clock divisor. Setting clock divisor is
+not supported if the CLK_SET_RATE_PARENT clock flag is set.
+Otherwise, the new clock rate is calculated as the closest
+supported rate to the parent clock rate divided
+by the specified divisor.
+
+Signed-off-by: Valentine Barshak <valentine.barshak@cogentembedded.com>
+---
+ drivers/uio/uio_pdrv_genirq.c       | 52 +++++++++++++++++++++++++++++
+ include/uapi/linux/renesas_uioctl.h |  2 ++
+ 2 files changed, 54 insertions(+)
+
+diff --git a/drivers/uio/uio_pdrv_genirq.c b/drivers/uio/uio_pdrv_genirq.c
+index 7914d6eec250..14e4dafdfefe 100644
+--- a/drivers/uio/uio_pdrv_genirq.c
++++ b/drivers/uio/uio_pdrv_genirq.c
+@@ -21,6 +21,7 @@
+ #include <linux/stringify.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/clk.h>
++#include <linux/clk-provider.h>
+ #include <linux/reset.h>
+ #include <linux/slab.h>
+ #include <linux/irq.h>
+@@ -54,6 +55,8 @@ static void priv_set_pwr(struct uio_info *info, int value);
+ static int priv_get_pwr(struct uio_info *info);
+ static void priv_set_clk(struct uio_info *info, int value);
+ static int priv_get_clk(struct uio_info *info);
++static int priv_clk_get_div(struct uio_info *info);
++static int priv_clk_set_div(struct uio_info *info, int value);
+ static void priv_set_rst(struct uio_info *info, int value);
+ static int priv_get_rst(struct uio_info *info);
+ 
+@@ -207,6 +210,45 @@ static int priv_get_clk(struct uio_info *info)
+ 	return priv->clk_cnt;
+ }
+ 
++static int priv_clk_get_div(struct uio_info *info)
++{
++	struct uio_pdrv_genirq_platdata *priv = info->priv;
++	unsigned long rate, div;
++	struct clk *parent;
++
++	rate = clk_get_rate(priv->clk);
++	if (!rate)
++		return 0;
++
++	parent = clk_get_parent(priv->clk);
++	div = clk_get_rate(parent) / rate;
++
++	dev_dbg(&priv->pdev->dev, "Get clock div = %lu\n", div);
++
++	return div;
++}
++
++static int priv_clk_set_div(struct uio_info *info, int div)
++{
++	struct uio_pdrv_genirq_platdata *priv = info->priv;
++	struct clk *parent;
++	unsigned long value;
++
++	if (div <= 0)
++		return -EINVAL;
++
++	value = __clk_get_flags(priv->clk);
++	if (value & CLK_SET_RATE_PARENT)
++		return -ENOTSUPP;
++
++	parent = clk_get_parent(priv->clk);
++	value = clk_get_rate(parent) / div;
++
++	dev_dbg(&priv->pdev->dev, "Set clock div = %i\n", div);
++
++	return clk_set_rate(priv->clk, value);
++}
++
+ static void priv_set_rst(struct uio_info *info, int value)
+ {
+ 	struct uio_pdrv_genirq_platdata *priv = info->priv;
+@@ -270,6 +312,16 @@ static int uio_pdrv_genirq_ioctl(struct uio_info *info, unsigned int cmd,
+ 			return -EFAULT;
+ 		arg = value;
+ 		break;
++	case UIO_PDRV_CLK_GET_DIV:
++		value = priv_clk_get_div(info);
++		if (copy_to_user((int __user *)arg, &value, sizeof(value)))
++			return -EFAULT;
++		arg = value;
++		break;
++	case UIO_PDRV_CLK_SET_DIV:
++		if (copy_from_user(&value, (int __user *)arg, sizeof(value)))
++			return -EFAULT;
++		return priv_clk_set_div(info, value);
+ 	case UIO_PDRV_SET_RESET:
+ 		if (copy_from_user(&value, (int __user *)arg, sizeof(value)))
+ 			return -EFAULT;
+diff --git a/include/uapi/linux/renesas_uioctl.h b/include/uapi/linux/renesas_uioctl.h
+index c88e6eddca8a..cec67d6defad 100644
+--- a/include/uapi/linux/renesas_uioctl.h
++++ b/include/uapi/linux/renesas_uioctl.h
+@@ -18,5 +18,7 @@
+ #define UIO_PDRV_GET_CLK	_IOR(UIO_PDRV_IOCCTL_BASE, 3, int)
+ #define UIO_PDRV_SET_RESET	_IOW(UIO_PDRV_IOCCTL_BASE, 4, int)
+ #define UIO_PDRV_GET_RESET	_IOR(UIO_PDRV_IOCCTL_BASE, 5, int)
++#define UIO_PDRV_CLK_GET_DIV	_IOR(UIO_PDRV_IOCCTL_BASE, 6, int)
++#define UIO_PDRV_CLK_SET_DIV	_IOR(UIO_PDRV_IOCCTL_BASE, 7, int)
+ 
+ #endif /* _RENESAS_UIOCTL_H_ */
+-- 
+2.34.1
+

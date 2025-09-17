@@ -1,0 +1,29 @@
+From 120d6c32273a7f33fe44aef289a566354b47fae5 Mon Sep 17 00:00:00 2001
+From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+Date: Mon, 1 Mar 2021 14:20:59 +0700
+Subject: [PATCH 07/15] uio: Use EOPNOTSUPP, not ENOTSUPP
+
+To follow Linux upstream advice to use EOPNOTSUPP in new kernel patches,
+rather than ENOTSUPP, this patch changes a return value in UIO driver.
+
+Signed-off-by: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+---
+ drivers/uio/uio_pdrv_genirq.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/uio/uio_pdrv_genirq.c b/drivers/uio/uio_pdrv_genirq.c
+index ffaebaa49d1e..1517b9ec2d69 100644
+--- a/drivers/uio/uio_pdrv_genirq.c
++++ b/drivers/uio/uio_pdrv_genirq.c
+@@ -239,7 +239,7 @@ static int priv_clk_set_div(struct uio_info *info, int div)
+ 
+ 	value = __clk_get_flags(priv->clk);
+ 	if (value & CLK_SET_RATE_PARENT)
+-		return -ENOTSUPP;
++		return -EOPNOTSUPP;
+ 
+ 	parent = clk_get_parent(priv->clk);
+ 	value = clk_get_rate(parent) / div;
+-- 
+2.34.1
+

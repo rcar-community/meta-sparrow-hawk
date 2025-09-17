@@ -1,0 +1,64 @@
+From 9287d64ca2005cda5c039e16299a880f4bae2919 Mon Sep 17 00:00:00 2001
+From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+Date: Wed, 13 May 2020 22:41:42 +0300
+Subject: [PATCH 02/15] uio: Add PMA IOCTL to compat list
+
+This adds UIO PMA IOCTL to compat list to be able to use them.
+Also fix compilation warning.
+
+Suggested-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+Signed-off-by: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+---
+ drivers/uio/uio_pdrv_genirq.c | 18 ++++++++++++------
+ 1 file changed, 12 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/uio/uio_pdrv_genirq.c b/drivers/uio/uio_pdrv_genirq.c
+index 35ae1f333c80..7914d6eec250 100644
+--- a/drivers/uio/uio_pdrv_genirq.c
++++ b/drivers/uio/uio_pdrv_genirq.c
+@@ -249,30 +249,36 @@ static int uio_pdrv_genirq_ioctl(struct uio_info *info, unsigned int cmd,
+ 
+ 	switch (cmd) {
+ 	case UIO_PDRV_SET_PWR:
+-		copy_from_user(&value, (int *)arg, sizeof(value));
++		if (copy_from_user(&value, (int __user *)arg, sizeof(value)))
++			return -EFAULT;
+ 		priv_set_pwr(info, value);
+ 		break;
+ 	case UIO_PDRV_GET_PWR:
+ 		value = priv_get_pwr(info);
+-		copy_to_user((int *)arg, &value, sizeof(value));
++		if (copy_to_user((int __user *)arg, &value, sizeof(value)))
++			return -EFAULT;
+ 		arg = value;
+ 		break;
+ 	case UIO_PDRV_SET_CLK:
+-		copy_from_user(&value, (int *)arg, sizeof(value));
++		if (copy_from_user(&value, (int __user *)arg, sizeof(value)))
++			return -EFAULT;
+ 		priv_set_clk(info, value);
+ 		break;
+ 	case UIO_PDRV_GET_CLK:
+ 		value = priv_get_clk(info);
+-		copy_to_user((int *)arg, &value, sizeof(value));
++		if (copy_to_user((int __user *)arg, &value, sizeof(value)))
++			return -EFAULT;
+ 		arg = value;
+ 		break;
+ 	case UIO_PDRV_SET_RESET:
+-		copy_from_user(&value, (int *)arg, sizeof(value));
++		if (copy_from_user(&value, (int __user *)arg, sizeof(value)))
++			return -EFAULT;
+ 		priv_set_rst(info, value);
+ 		break;
+ 	case UIO_PDRV_GET_RESET:
+ 		value = priv_get_rst(info);
+-		copy_to_user((int *)arg, &value, sizeof(value));
++		if (copy_to_user((int __user *)arg, &value, sizeof(value)))
++			return -EFAULT;
+ 		break;
+ 	}
+ 
+-- 
+2.34.1
+
