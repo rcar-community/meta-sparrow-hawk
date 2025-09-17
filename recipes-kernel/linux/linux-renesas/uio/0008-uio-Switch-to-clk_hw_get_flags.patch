@@ -1,0 +1,37 @@
+From 456787c1b3c590cc84a567afa1a45851b53f725c Mon Sep 17 00:00:00 2001
+From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+Date: Mon, 1 Mar 2021 15:40:29 +0700
+Subject: [PATCH 08/15] uio: Switch to clk_hw_get_flags()
+
+The function __clk_get_flags() was removed since v5.9,
+by commit 6cfde88418fe ("clk: drop unused function __clk_get_flags").
+Hence, switch to clk_hw_get_flags() same as upstream code.
+
+Signed-off-by: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+---
+ drivers/uio/uio_pdrv_genirq.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/uio/uio_pdrv_genirq.c b/drivers/uio/uio_pdrv_genirq.c
+index 1517b9ec2d69..ce752dd4d125 100644
+--- a/drivers/uio/uio_pdrv_genirq.c
++++ b/drivers/uio/uio_pdrv_genirq.c
+@@ -232,12 +232,14 @@ static int priv_clk_set_div(struct uio_info *info, int div)
+ {
+ 	struct uio_pdrv_genirq_platdata *priv = info->priv;
+ 	struct clk *parent;
++	struct clk_hw *hw;
+ 	unsigned long value;
+ 
+ 	if (div <= 0)
+ 		return -EINVAL;
+ 
+-	value = __clk_get_flags(priv->clk);
++	hw = __clk_get_hw(priv->clk);
++	value = clk_hw_get_flags(hw);
+ 	if (value & CLK_SET_RATE_PARENT)
+ 		return -EOPNOTSUPP;
+ 
+-- 
+2.34.1
+

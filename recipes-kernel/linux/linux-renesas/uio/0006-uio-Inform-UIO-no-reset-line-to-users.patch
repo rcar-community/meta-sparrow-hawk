@@ -1,0 +1,30 @@
+From 84ce8b62e8628baabb05b321b4a225bdb75b9f28 Mon Sep 17 00:00:00 2001
+From: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+Date: Thu, 4 Feb 2021 21:35:21 +0700
+Subject: [PATCH 06/15] uio: Inform UIO no-reset-line to users
+
+Introduce new -EOPNOTSUPP return value for UIO devices
+without reset line.
+
+Signed-off-by: Khiem Nguyen <khiem.nguyen.xt@renesas.com>
+---
+ drivers/uio/uio_pdrv_genirq.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/uio/uio_pdrv_genirq.c b/drivers/uio/uio_pdrv_genirq.c
+index 9870222600d9..ffaebaa49d1e 100644
+--- a/drivers/uio/uio_pdrv_genirq.c
++++ b/drivers/uio/uio_pdrv_genirq.c
+@@ -278,6 +278,9 @@ static int priv_get_rst(struct uio_info *info)
+ 	struct uio_pdrv_genirq_platdata *priv = info->priv;
+ 	int status;
+ 
++	if (!priv->rst)
++		return -EOPNOTSUPP;
++
+ 	status = reset_control_status(priv->rst);
+ 	dev_dbg(&priv->pdev->dev, "Get reset state 0x%x\n", status);
+ 
+-- 
+2.34.1
+
