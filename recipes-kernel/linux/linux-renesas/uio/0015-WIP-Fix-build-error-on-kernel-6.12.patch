@@ -1,0 +1,26 @@
+From 48abc1545ebd51bae10db2d41ae1922c6d7cad39 Mon Sep 17 00:00:00 2001
+From: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+Date: Wed, 17 Sep 2025 15:07:40 +0900
+Subject: [PATCH 15/15] WIP: Fix build error on kernel 6.12
+
+Signed-off-by: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+---
+ drivers/uio/uio_pdrv_genirq.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/uio/uio_pdrv_genirq.c b/drivers/uio/uio_pdrv_genirq.c
+index ae17648c146d..4a7a30886d49 100644
+--- a/drivers/uio/uio_pdrv_genirq.c
++++ b/drivers/uio/uio_pdrv_genirq.c
+@@ -586,7 +586,7 @@ static int uio_pdrv_genirq_probe(struct platform_device *pdev)
+ 	 */
+ 	pm_runtime_enable(&pdev->dev);
+ 
+-	if (!of_property_read_bool(node, "power-domains")) {
++	if (!node || !of_property_read_bool(to_of_node(node), "power-domains")) {
+ 		dev_dbg(&pdev->dev, "device has not power-domains property\n");
+ 		pm_runtime_get_sync(&pdev->dev);
+ 		pm_runtime_put_sync(&pdev->dev);
+-- 
+2.34.1
+

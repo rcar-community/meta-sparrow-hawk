@@ -27,6 +27,24 @@ SRC_URI:append:sparrow-hawk = " \
     file://0003-arm64-dts-renesas-r8a779g0-Add-qos-node.patch \
     file://0004-arm64-dts-renesas-sparrow-hawk-Add-pcie-ep-dtbo.patch \
 "
+# UIO driver patchset
+SRC_URI:append:sparrow-hawk = " \
+    file://uio/0001-uio-Add-new-ioctl-for-power-management.patch \
+    file://uio/0002-uio-Add-PMA-IOCTL-to-compat-list.patch \
+    file://uio/0003-uio-uio_pdrv_genirq-renesas-Add-clock-divisor-ioctl-.patch \
+    file://uio/0004-uio-Fix-the-logic-of-setting-reset-to-UIO-devices.patch \
+    file://uio/0005-uio-Initialize-reset-struct-of-each-UIO-device.patch \
+    file://uio/0006-uio-Inform-UIO-no-reset-line-to-users.patch \
+    file://uio/0007-uio-Use-EOPNOTSUPP-not-ENOTSUPP.patch \
+    file://uio/0008-uio-Switch-to-clk_hw_get_flags.patch \
+    file://uio/0009-uio-Support-error-notification-to-upper-layer.patch \
+    file://uio/0010-uio-uio_pdrv_genirq-Add-parameter-to-check-device-no.patch \
+    file://uio/0011-uio-uio_pdrv_genirq-Add-parameter-error-in-case-not-.patch \
+    file://uio/0012-uio-uio_pdrv_genirq-Hotfix-clock-and-power-control-f.patch \
+    file://uio/0013-Revert-uio-uio_pdrv_genirq-Add-parameter-error-in-ca.patch \
+    file://uio/0014-uio-uio_pdrv_genirq-Add-parameter-error-in-case-not-.patch \
+    file://uio/0015-WIP-Fix-build-error-on-kernel-6.12.patch \
+"
 S = "${WORKDIR}/git"
 
 KERNEL_DEVICETREE:append:sparrow-hawk = " \
