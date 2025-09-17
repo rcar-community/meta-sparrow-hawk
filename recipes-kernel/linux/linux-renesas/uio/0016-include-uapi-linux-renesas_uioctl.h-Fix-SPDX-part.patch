@@ -1,0 +1,23 @@
+From 6a197f1ef89af7e63cc486ccc1cee40187677d55 Mon Sep 17 00:00:00 2001
+From: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+Date: Thu, 21 May 2026 12:40:49 +0900
+Subject: [PATCH] include: uapi: linux: renesas_uioctl.h: Fix SPDX part
+
+Signed-off-by: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+---
+ include/uapi/linux/renesas_uioctl.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/uapi/linux/renesas_uioctl.h b/include/uapi/linux/renesas_uioctl.h
+index cec67d6defad..58a01b07c139 100644
+--- a/include/uapi/linux/renesas_uioctl.h
++++ b/include/uapi/linux/renesas_uioctl.h
+@@ -1,4 +1,4 @@
+-/* SPDX-License-Identifier: GPL-2.0-only */
++/* SPDX-License-Identifier: GPL-2.0-only WITH Linux-syscall-note */
+ /*
+  * Renesas IOCTL defines for user io drivers;
+  * used to control power, clock and reset
+-- 
+2.34.1
+

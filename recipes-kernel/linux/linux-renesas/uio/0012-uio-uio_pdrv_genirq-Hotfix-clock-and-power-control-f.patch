@@ -1,0 +1,43 @@
+From 3b6b90b4e6014fc10446e0f79ef7175f94f78056 Mon Sep 17 00:00:00 2001
+From: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+Date: Mon, 30 Jan 2023 16:16:12 +0900
+Subject: [PATCH 12/15] uio: uio_pdrv_genirq: Hotfix clock and power control
+ for multi task
+
+This patch fixes clock an power control for multi task.
+If each task close clock, clock is disabled even if
+using by another task. This is tentative version.
+We need check affect to power management driver.
+
+Signed-off-by: Kazuya Mizuguchi <kazuya.mizuguchi.ks@renesas.com>
+---
+ drivers/uio/uio_pdrv_genirq.c | 8 --------
+ 1 file changed, 8 deletions(-)
+
+diff --git a/drivers/uio/uio_pdrv_genirq.c b/drivers/uio/uio_pdrv_genirq.c
+index 56f2252221b6..1cfdaf79a64c 100644
+--- a/drivers/uio/uio_pdrv_genirq.c
++++ b/drivers/uio/uio_pdrv_genirq.c
+@@ -115,19 +115,11 @@ static void local_clk_disable(struct uio_pdrv_genirq_platdata *priv)
+ 
+ static int uio_pdrv_genirq_open(struct uio_info *info, struct inode *inode)
+ {
+-	struct uio_pdrv_genirq_platdata *priv = info->priv;
+-
+-	/* Wait until the Runtime PM code has woken up the device */
+-	local_pm_runtime_get_sync(priv);
+ 	return 0;
+ }
+ 
+ static int uio_pdrv_genirq_release(struct uio_info *info, struct inode *inode)
+ {
+-	struct uio_pdrv_genirq_platdata *priv = info->priv;
+-
+-	/* Tell the Runtime PM code that the device has become idle */
+-	local_pm_runtime_put_sync(priv);
+ 	return 0;
+ }
+ 
+-- 
+2.34.1
+

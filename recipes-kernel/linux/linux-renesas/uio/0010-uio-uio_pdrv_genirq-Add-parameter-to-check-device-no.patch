@@ -1,0 +1,34 @@
+From 8cd8c97d519ae774448a265a675454cdaae11d20 Mon Sep 17 00:00:00 2001
+From: Tam Nguyen <tam.nguyen.xa@renesas.com>
+Date: Thu, 18 Aug 2022 05:30:42 +0700
+Subject: [PATCH 10/15] uio: uio_pdrv_genirq: Add parameter to check device no
+ clock
+
+Some device has been not defined clock in DT but still execute test
+so the patch to avoid that.
+
+Signed-off-by: Tam Nguyen <tam.nguyen.xa@renesas.com>
+---
+ drivers/uio/uio_pdrv_genirq.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/drivers/uio/uio_pdrv_genirq.c b/drivers/uio/uio_pdrv_genirq.c
+index 7ab557d338ac..bc3cede82d96 100644
+--- a/drivers/uio/uio_pdrv_genirq.c
++++ b/drivers/uio/uio_pdrv_genirq.c
+@@ -247,6 +247,12 @@ static int priv_clk_set_div(struct uio_info *info, int div)
+ 		return -EINVAL;
+ 
+ 	hw = __clk_get_hw(priv->clk);
++
++	if (!hw) {
++		dev_err(&priv->pdev->dev, "No define clock for device\n");
++		return -EINVAL;
++	}
++
+ 	value = clk_hw_get_flags(hw);
+ 	if (value & CLK_SET_RATE_PARENT)
+ 		return -EOPNOTSUPP;
+-- 
+2.34.1
+
