@@ -32,6 +32,7 @@ IMAGE_INSTALL:append = " \
 IMAGE_INSTALL:append:sparrow-hawk = " \
     linux-fitimage \
     sparrow-hawk-fw \
+    example-apps \
 "
 
 # Qos user packages only supports 64bit.
