@@ -85,11 +85,10 @@ Install the SDK to the default: `/opt/poky/x.x`
     $ source /opt/poky/x.x/environment-setup-aarch64-poky-linux
 ```
 
+## Reference
 
-## R-Car Information
-
-Refer to the following for more information from eLinux website
-
-- https://elinux.org/R-Car
-- https://elinux.org/R-Car/Boards/SparrowHawk
+- R-Car Community site
+  - https://rcar-community.github.io/
+- Sparrow Hawk board page
+  - https://rcar-community.github.io/Sparrow-Hawk/index.html
 
