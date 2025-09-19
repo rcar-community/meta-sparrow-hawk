@@ -5,6 +5,8 @@ SRCREV = "d54e5537ca0909339bb6950f3a565c9077406a3c"
 SRC_URI:remove = "file://0001-media_device-Add-bool-return-type-to-unlock.patch"
 
 DEPENDS:append = " libpisp python3-pybind11 libdrm tiff libsdl2"
+PACKAGECONFIG[gstreamer] = "-Dgstreamer=enabled,-Dgstreamer=disabled,gstreamer1.0 gstreamer1.0-plugins-base"
+PACKAGECONFIG:append = " gstreamer"
 
 SRC_URI:append = " \
     file://0001-libcamera-ipa_manager-createIPA-Allow-matching-by-IP.patch \
