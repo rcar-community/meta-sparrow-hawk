@@ -1,7 +1,6 @@
 #!/bin/bash
 
 MACHINE=sparrow-hawk
-KERNEL_VERSION=6.12
 
 SCRIPT_DIR=$(cd `dirname $0` && pwd)
 
