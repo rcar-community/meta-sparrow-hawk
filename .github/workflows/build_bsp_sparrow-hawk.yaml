@@ -63,7 +63,7 @@ jobs:
 
       - name: Run build
         run: |
-          ./build.sh --sbom
+          ./build.sh --sbom --rm-work
 
       - name: Generate zip archive to release
         run: |
