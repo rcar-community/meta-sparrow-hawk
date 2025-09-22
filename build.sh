@@ -11,6 +11,7 @@ TARGET_IMAGE=core-image-minimal
 USE_GPU=no
 USE_SSTATE_MIRROR=no
 BUILD_SBOM=no
+REMOVE_WORKDIR=no
 IS_BUILD_INSIDE_REPO=yes
 IS_BUILD_SDK=no
 
@@ -25,6 +26,7 @@ Usage () {
     echo "    -s | --sdk:           Build Yocto SDK"
     echo "       | --sbom:          Build SBOM files"
     echo "       | --sstate-mirror: Use sstate mirror server. This may decrease build time."
+    echo "       | --rm-work:       Remove working directory while building to reduce storage space."
     exit
 }
 for arg in $@; do
@@ -37,6 +39,8 @@ for arg in $@; do
         IS_BUILD_SDK=yes
     elif [[ "$arg" == "--sbom" ]]; then
         BUILD_SBOM=yes
+    elif [[ "$arg" == "--rm-work" ]]; then
+        REMOVE_WORKDIR=yes
     elif [[ "$arg" == "--sstate-mirror" ]]; then
         USE_SSTATE_MIRROR=yes
     fi
@@ -125,6 +129,10 @@ EOS
 fi
 if [[ "$USE_GPU" == "yes" ]]; then
    echo "Not implemented now"
+fi
+
+if [[ "${REMOVE_WORKDIR}" == "yes" ]]; then
+    echo 'INHERIT += "rm_work"' >> conf/local.conf
 fi
 
 bitbake ${TARGET_IMAGE}
