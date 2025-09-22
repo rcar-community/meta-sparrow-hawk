@@ -1,0 +1,59 @@
+From 87b261edec628be93d78eb723666fb74fad0593e Mon Sep 17 00:00:00 2001
+From: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+Date: Fri, 12 Sep 2025 20:29:57 +0900
+Subject: [PATCH] driver: pmdomain: r8a779g0: Backport update
+
+Upstream-Status: Inappropriate [no upstream]
+
+Signed-off-by: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+---
+ drivers/pmdomain/renesas/r8a779g0-sysc.c  | 6 +++---
+ drivers/pmdomain/renesas/rcar-gen4-sysc.c | 2 +-
+ drivers/pmdomain/renesas/rcar-gen4-sysc.h | 1 +
+ 3 files changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/pmdomain/renesas/r8a779g0-sysc.c b/drivers/pmdomain/renesas/r8a779g0-sysc.c
+index 249cf43af45b..dd1ae07ee683 100644
+--- a/drivers/pmdomain/renesas/r8a779g0-sysc.c
++++ b/drivers/pmdomain/renesas/r8a779g0-sysc.c
+@@ -28,9 +28,9 @@ static struct rcar_gen4_sysc_area r8a779g0_areas[] __initdata = {
+ 	{ "a3dul",	R8A779G0_PD_A3DUL, R8A779G0_PD_ALWAYS_ON },
+ 	{ "a3isp0",	R8A779G0_PD_A3ISP0, R8A779G0_PD_ALWAYS_ON },
+ 	{ "a3isp1",	R8A779G0_PD_A3ISP1, R8A779G0_PD_ALWAYS_ON },
+-	{ "a3ir",	R8A779G0_PD_A3IR, R8A779G0_PD_ALWAYS_ON },
+-	{ "a2cn0",	R8A779G0_PD_A2CN0, R8A779G0_PD_A3IR },
+-	{ "a1cnn0",	R8A779G0_PD_A1CNN0, R8A779G0_PD_A2CN0 },
++	{ "a3ir",	R8A779G0_PD_A3IR, R8A779G0_PD_ALWAYS_ON, PD_FORCE_ALWAYS_ON },
++	{ "a2cn0",	R8A779G0_PD_A2CN0, R8A779G0_PD_A3IR, PD_FORCE_ALWAYS_ON },
++	{ "a1cnn0",	R8A779G0_PD_A1CNN0, R8A779G0_PD_A2CN0, PD_FORCE_ALWAYS_ON },
+ 	{ "a1dsp0",	R8A779G0_PD_A1DSP0, R8A779G0_PD_A2CN0 },
+ 	{ "a1dsp1",	R8A779G0_PD_A1DSP1, R8A779G0_PD_A2CN0 },
+ 	{ "a1dsp2",	R8A779G0_PD_A1DSP2, R8A779G0_PD_A2CN0 },
+diff --git a/drivers/pmdomain/renesas/rcar-gen4-sysc.c b/drivers/pmdomain/renesas/rcar-gen4-sysc.c
+index e001b5c25bed..c244b4fe9f80 100644
+--- a/drivers/pmdomain/renesas/rcar-gen4-sysc.c
++++ b/drivers/pmdomain/renesas/rcar-gen4-sysc.c
+@@ -237,7 +237,7 @@ static int __init rcar_gen4_sysc_pd_setup(struct rcar_gen4_sysc_pd *pd)
+ 		 */
+ 		pr_debug("PM domain %s contains %s\n", name, "SCU");
+ 		genpd->flags |= GENPD_FLAG_ALWAYS_ON;
+-	} else if (pd->flags & PD_NO_CR) {
++	} else if (pd->flags & (PD_NO_CR | PD_FORCE_ALWAYS_ON)) {
+ 		/*
+ 		 * This domain cannot be turned off.
+ 		 */
+diff --git a/drivers/pmdomain/renesas/rcar-gen4-sysc.h b/drivers/pmdomain/renesas/rcar-gen4-sysc.h
+index fdf843aa5113..4272ec9c8a9e 100644
+--- a/drivers/pmdomain/renesas/rcar-gen4-sysc.h
++++ b/drivers/pmdomain/renesas/rcar-gen4-sysc.h
+@@ -15,6 +15,7 @@
+ #define PD_CPU		BIT(0)	/* Area contains main CPU core */
+ #define PD_SCU		BIT(1)	/* Area contains SCU and L2 cache */
+ #define PD_NO_CR	BIT(2)	/* Area lacks PWR{ON,OFF}CR registers */
++#define PD_FORCE_ALWAYS_ON  BIT(3) /* Power-on at initialization and remain always-on area */
+ 
+ #define PD_CPU_NOCR	(PD_CPU | PD_NO_CR) /* CPU area lacks CR */
+ #define PD_ALWAYS_ON	PD_NO_CR	  /* Always-on area */
+-- 
+2.34.1
+

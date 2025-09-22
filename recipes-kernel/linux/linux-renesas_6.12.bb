@@ -30,6 +30,7 @@ SRC_URI:append:sparrow-hawk = " \
 # Patchset for power management
 SRC_URI:append:sparrow-hawk = " \
     file://0001-drivers-clk-r8a779g0-cpg-mssr-backport-from-BSP-.patch \
+    file://0001-driver-pmdomain-r8a779g0-Backport-update.patch \
 "
 # UIO driver patchset
 SRC_URI:append:sparrow-hawk = " \
