@@ -11,6 +11,8 @@ IMAGE_INSTALL:append = " \
 # Sparrow-hawk specific packages
 IMAGE_INSTALL:append:sparrow-hawk = " \
     example-apps \
+    udev-rules \
+    bsp-config \
 "
 
 # Installation for cmem kernel module
