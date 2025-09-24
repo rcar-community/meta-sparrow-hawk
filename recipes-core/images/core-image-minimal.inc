@@ -26,6 +26,10 @@ IMAGE_INSTALL:append:kernel-linux-renesas = " \
     ${QOS_USER_PKGS} \
     kernel-module-qos \
 "
+# Installation for cmem kernel module
+IMAGE_INSTALL:append:kernel-linux-renesas = " \
+    kernel-module-cmemdrv \
+"
 
 #Installation for ethtool
 IMAGE_INSTALL:append = " ethtool"
