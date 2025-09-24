@@ -13,6 +13,11 @@ IMAGE_INSTALL:append:sparrow-hawk = " \
     example-apps \
 "
 
+# Installation for cmem kernel module
+IMAGE_INSTALL:append = " \
+    kernel-module-cmemdrv \
+"
+
 # Qos user packages only supports 64bit.
 QOS_USER_PKGS = ""
 QOS_USER_PKGS:aarch64-poky-linux = " \
