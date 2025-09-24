@@ -1,0 +1,30 @@
+From 4cea8d08bfa0953ff28ff5628b3cd4201f6b6479 Mon Sep 17 00:00:00 2001
+From: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+Date: Wed, 10 Sep 2025 11:56:13 +0900
+Subject: [PATCH 2/2] Fix allocation of cmem*_other regions
+
+Signed-off-by: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+---
+ cmemdrv.c | 6 ------
+ 1 file changed, 6 deletions(-)
+
+diff --git a/cmemdrv.c b/cmemdrv.c
+index 67b2244..85b90b4 100644
+--- a/cmemdrv.c
++++ b/cmemdrv.c
+@@ -516,12 +516,6 @@ static int cmemdrv_create_device_other_region(dev_t devt, int index,
+ 	np = of_find_node_by_path("/cmem");
+ 	of_dma_configure(dev, np, true);
+ 
+-	ret = of_reserved_mem_device_init_by_idx(area->dev, np, index);
+-	if (ret) {
+-		dev_err(dev, "Unable to get the reserved memory\n");
+-		goto err;
+-	}
+-
+ 	virt_b_ptr = dmam_alloc_coherent(dev, reserved_size,
+ 					 &phy_b_addr, GFP_KERNEL);
+ 
+-- 
+2.34.1
+
