@@ -1,0 +1,53 @@
+From 7f5b134916a0edad3d2411fc6f1ea7b1f40ff1e5 Mon Sep 17 00:00:00 2001
+From: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+Date: Wed, 10 Sep 2025 19:01:06 +0900
+Subject: [PATCH] Fix bit_ranges is not correct value
+
+Signed-off-by: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+---
+ cmemdrv.c | 13 +++++--------
+ 1 file changed, 5 insertions(+), 8 deletions(-)
+
+diff --git a/cmemdrv.c b/cmemdrv.c
+index 85b90b4..26619ee 100644
+--- a/cmemdrv.c
++++ b/cmemdrv.c
+@@ -364,8 +364,7 @@ static int parse_reserved_mem_dt(struct device_node *np,
+ {
+ 	const __be32 *regaddr_p = NULL, *find;
+ 	struct device_node *node = NULL;
+-	struct resource r;
+-	resource_size_t base_size;
++	phys_addr_t start;
+ 	int ret = 0;
+ 
+ 	node = of_parse_phandle(np, "memory-region", index);
+@@ -374,8 +373,9 @@ static int parse_reserved_mem_dt(struct device_node *np,
+ 		regaddr_p = of_get_address(node, 0, reserved_size, NULL);
+ 
+ 		if (regaddr_p) {
+-			of_translate_address(node, regaddr_p);
++			start = of_read_number(regaddr_p, of_n_addr_cells(node));
+ 			pr_info("Getting reversed memory region size = [%llx]\n", *reserved_size);
++			pr_info("Getting start memory region addr = [%llx]\n", start);
+ 		} else {
+ 			pr_err("No reserved memory node for CMEM was found\n");
+ 			ret = -1;
+@@ -388,12 +388,9 @@ static int parse_reserved_mem_dt(struct device_node *np,
+ 			no_map_skip = 1;
+ 
+ 		/* Identify as if the region is 40-bit or 32-bit */
+-		of_address_to_resource(node, 0, &r);
+-		base_size = r.end;
+-
+-		if (base_size <= 0xFFFFFFFF) { // 32-bit
++		if (start <= 0xFFFFFFFF) { // 32-bit
+ 			bit_ranges = false;
+-		} else if (base_size > 0xFFFFFFFF && base_size <= 0xFFFFFFFFFF) { // 40-bit
++		} else if (start > 0xFFFFFFFF && start <= 0xFFFFFFFFFF) { // 40-bit
+ 			bit_ranges = true;
+ 		} else {
+ 			pr_err("This region is over 40-bit\n");
+-- 
+2.34.1
+

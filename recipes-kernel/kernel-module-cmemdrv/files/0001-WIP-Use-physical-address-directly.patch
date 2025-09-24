@@ -1,0 +1,120 @@
+From bbbdef75492065231232c87d4f58db8169c94583 Mon Sep 17 00:00:00 2001
+From: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+Date: Wed, 17 Sep 2025 17:52:05 +0900
+Subject: [PATCH] WIP: Use physical address directly
+
+Signed-off-by: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+---
+ cmemdrv.c | 42 +++++++++++++-----------------------------
+ 1 file changed, 13 insertions(+), 29 deletions(-)
+
+diff --git a/cmemdrv.c b/cmemdrv.c
+index 26619ee..156316f 100644
+--- a/cmemdrv.c
++++ b/cmemdrv.c
+@@ -360,11 +360,10 @@ static struct file_operations fops = {
+ };
+ 
+ static int parse_reserved_mem_dt(struct device_node *np,
+-				 u64 *reserved_size, int index)
++				 u64 *reserved_size, int index, phys_addr_t *start)
+ {
+ 	const __be32 *regaddr_p = NULL, *find;
+ 	struct device_node *node = NULL;
+-	phys_addr_t start;
+ 	int ret = 0;
+ 
+ 	node = of_parse_phandle(np, "memory-region", index);
+@@ -373,9 +372,9 @@ static int parse_reserved_mem_dt(struct device_node *np,
+ 		regaddr_p = of_get_address(node, 0, reserved_size, NULL);
+ 
+ 		if (regaddr_p) {
+-			start = of_read_number(regaddr_p, of_n_addr_cells(node));
++			*start = of_read_number(regaddr_p, of_n_addr_cells(node));
+ 			pr_info("Getting reversed memory region size = [%llx]\n", *reserved_size);
+-			pr_info("Getting start memory region addr = [%llx]\n", start);
++			pr_info("Getting start memory region addr = [%llx]\n", *start);
+ 		} else {
+ 			pr_err("No reserved memory node for CMEM was found\n");
+ 			ret = -1;
+@@ -388,9 +387,9 @@ static int parse_reserved_mem_dt(struct device_node *np,
+ 			no_map_skip = 1;
+ 
+ 		/* Identify as if the region is 40-bit or 32-bit */
+-		if (start <= 0xFFFFFFFF) { // 32-bit
++		if (*start <= 0xFFFFFFFF) { // 32-bit
+ 			bit_ranges = false;
+-		} else if (start > 0xFFFFFFFF && start <= 0xFFFFFFFFFF) { // 40-bit
++		} else if (*start > 0xFFFFFFFF && *start <= 0xFFFFFFFFFF) { // 40-bit
+ 			bit_ranges = true;
+ 		} else {
+ 			pr_err("This region is over 40-bit\n");
+@@ -472,14 +471,11 @@ err:
+ }
+ 
+ static int cmemdrv_create_device_other_region(dev_t devt, int index,
+-					      u64 reserved_size)
++					      u64 reserved_size, phys_addr_t start)
+ {
+ 	struct mem_area_data *area;
+-	struct device_node *np;
+ 	struct device *dev;
+-	void *virt_b_ptr;
+ 	int ret = 0;
+-	dma_addr_t phy_b_addr;
+ 	u64 *dma_mask;
+ 
+ 	dev = device_create(cmem_class, NULL, devt, NULL, "cmem_other%d", index);
+@@ -510,23 +506,10 @@ static int cmemdrv_create_device_other_region(dev_t devt, int index,
+ 		dma_set_coherent_mask(dev, DMA_BIT_MASK(32));
+ 	}
+ 
+-	np = of_find_node_by_path("/cmem");
+-	of_dma_configure(dev, np, true);
+-
+-	virt_b_ptr = dmam_alloc_coherent(dev, reserved_size,
+-					 &phy_b_addr, GFP_KERNEL);
+-
+-	if (!virt_b_ptr) {
+-		dev_err(dev, "Memory allocation failed.. (size:0x%llx)\n", reserved_size);
+-		ret = -ENOMEM;
+-		goto err;
+-	}
+-
+-	area->virt_ptr = PTR_ALIGN(virt_b_ptr, PAGE_SIZE);
+-	area->phys_addr = phy_b_addr + (area->virt_ptr - virt_b_ptr);
+-	area->size = reserved_size;
+-	area->prop = no_map_skip;
+-	cmem_areas[MINOR(devt)] = area;
++area->phys_addr = start;   // DT で定義した reserved memory の物理アドレス
++area->size = reserved_size;
++area->virt_ptr = phys_to_virt(area->phys_addr);  // CPU からアクセス可能
++cmem_areas[MINOR(devt)] = area;
+ 	dev_notice(dev, "Memory allocated.. 0x%08lx (size:0x%lx) [%ld MiB]\n",
+ 		   (unsigned long)area->phys_addr,
+ 		   (unsigned long)area->size,
+@@ -543,6 +526,7 @@ static int __init cmemdrv_init(void)
+ 	int i = 0, prop_size = 0, index = 0;
+ 	struct device_node *np;
+ 	u64 reserved_size;
++	phys_addr_t start;
+ 	int ret;
+ 
+ 	if (bsize_count == 0)
+@@ -593,11 +577,11 @@ static int __init cmemdrv_init(void)
+ 				cmem_major_plus = ret;
+ 
+ 			/* Parsing reserved memory size from DT*/
+-			parse_reserved_mem_dt(np, &reserved_size, index);
++			parse_reserved_mem_dt(np, &reserved_size, index, &start);
+ 
+ 			ret = cmemdrv_create_device_other_region(MKDEV(cmem_major_plus,
+ 								       cmem_minor_plus),
+-								 index, reserved_size);
++								 index, reserved_size, start);
+ 			if (ret < 0)
+ 				device_destroy(cmem_class, MKDEV(cmem_major_plus,
+ 								 cmem_minor_plus));
+-- 
+2.34.1
+

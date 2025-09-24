@@ -1,0 +1,58 @@
+From 01f5dbe8682a2475a154c2ff6fc0a71b6ff8702a Mon Sep 17 00:00:00 2001
+From: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+Date: Wed, 10 Sep 2025 01:11:39 +0900
+Subject: [PATCH 1/2] WIP: Fix "DMA mask not set"
+
+Signed-off-by: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+---
+ cmemdrv.c | 16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
+
+diff --git a/cmemdrv.c b/cmemdrv.c
+index 54eb6cf..67b2244 100644
+--- a/cmemdrv.c
++++ b/cmemdrv.c
+@@ -483,6 +483,7 @@ static int cmemdrv_create_device_other_region(dev_t devt, int index,
+ 	void *virt_b_ptr;
+ 	int ret = 0;
+ 	dma_addr_t phy_b_addr;
++	u64 *dma_mask;
+ 
+ 	dev = device_create(cmem_class, NULL, devt, NULL, "cmem_other%d", index);
+ 	if (IS_ERR(dev)) {
+@@ -490,7 +491,6 @@ static int cmemdrv_create_device_other_region(dev_t devt, int index,
+ 		return PTR_ERR(dev);
+ 	}
+ 
+-	np = of_find_node_by_path("/cmem");
+ 	area = devm_kzalloc(dev, sizeof(*area), GFP_KERNEL);
+ 	if (!area) {
+ 		ret = -ENOMEM;
+@@ -498,12 +498,22 @@ static int cmemdrv_create_device_other_region(dev_t devt, int index,
+ 	}
+ 	area->dev = dev;
+ 
++	dma_mask = devm_kmalloc(dev, sizeof(u64), GFP_KERNEL);
++	if (!dma_mask) {
++		ret = -ENOMEM;
++		goto err;
++	}
++	dev->dma_mask = dma_mask;
++
+ 	if (bit_ranges) {
+-		dev->coherent_dma_mask = DMA_BIT_MASK(40);
++	    dma_set_mask(dev, DMA_BIT_MASK(40));
++		dma_set_coherent_mask(dev, DMA_BIT_MASK(40));
+ 	} else {
+-		dev->coherent_dma_mask = DMA_BIT_MASK(32);
++	    dma_set_mask(dev, DMA_BIT_MASK(32));
++		dma_set_coherent_mask(dev, DMA_BIT_MASK(32));
+ 	}
+ 
++	np = of_find_node_by_path("/cmem");
+ 	of_dma_configure(dev, np, true);
+ 
+ 	ret = of_reserved_mem_device_init_by_idx(area->dev, np, index);
+-- 
+2.34.1
+
