@@ -70,6 +70,12 @@ KERNEL_DEVICETREE:append:sparrow-hawk = " \
 
 BBCLASSEXTEND ?= ""
 
+# uio_pdrv_genirq configuration
+KERNEL_MODULE_AUTOLOAD:append = " uio_pdrv_genirq"
+KERNEL_MODULE_PROBECONF:append = " uio_pdrv_genirq"
+# nooelint: oelint.vars.mispell.unknown - This is general format for module_conf
+module_conf_uio_pdrv_genirq:append = " options uio_pdrv_genirq of_id=\"generic-uio\""
+
 do_compile_kernelmodules:append () {
     if (grep -q -i -e '^CONFIG_MODULES=y$' ${B}/.config); then
         # 5.10+ kernels have module.lds that we need to copy for external module builds
