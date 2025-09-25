@@ -9,57 +9,69 @@ on:
 jobs:
   Build:
     name: Build
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Maximize build space
-        uses: easimon/maximize-build-space@v7
-        with:
-          root-reserve-mb: 4096
-          swap-size-mb: 1024
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
-          remove-codeql: 'true'
-          remove-docker-images: 'true'
+    # For Github hosted runner
+    #runs-on: ubuntu-22.04
+    #steps:
+    #  - name: Maximize build space
+    #    uses: easimon/maximize-build-space@v7
+    #    with:
+    #      root-reserve-mb: 4096
+    #      swap-size-mb: 1024
+    #      remove-dotnet: 'true'
+    #      remove-android: 'true'
+    #      remove-haskell: 'true'
+    #      remove-codeql: 'true'
+    #      remove-docker-images: 'true'
+    #  - name: Setup package
+    #    run: |
+    #      sudo apt update
+    #      sudo apt install -y \
+    #      gawk wget git-core diffstat unzip texinfo gcc-multilib \
+    #      build-essential chrpath socat cpio python3 python3-pip python3-pexpect \
+    #      xz-utils debianutils iputils-ping python3-git python3-jinja2 libegl1-mesa libsdl1.2-dev \
+    #      xterm locales curl vim sudo rsync bc \
+    #      \
+    #      openjdk-8-jdk git-core gnupg flex bison \
+    #      gperf build-essential zip curl zlib1g-dev gcc-multilib ccache \
+    #      g++-multilib libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev \
+    #      libx11-dev lib32z-dev libgl1-mesa-dev libxml2-utils liblz4-tool \
+    #      xsltproc unzip python3-networkx python3-wand liblz4-tool bc \
+    #      apt-transport-https ca-certificates ninja-build \
+    #      ninja-build dosfstools libncurses-dev flex bison \
+    #      screen libncurses-dev ninja-build dosfstools \
+    #      python3-pygit2 python3-venv python3-pyelftools protobuf-compiler gperf pigz \
+    #      zstd simg2img libncurses5 python3-pycryptodome libssl-dev lzop \
+    #      lld libelf-dev dwarves openjdk-11-jdk pigz cmake file device-tree-compiler \
 
-      - uses: actions/checkout@v3
+    #      # Clean up apt
+    #      sudo apt autoremove -y
+    #      sudo apt clean -y
+    #      sudo apt autoclean -y
+    #      pip3 install websockets
+    #  - name: Setup github config
+    #    run: |
+    #      git config --global user.name "ations-user"
+    #      git config --global user.email "action@github.com"
+
+    # For self hosted runner
+    runs-on:
+      - codebuild-rcar-community-runner-${{ github.run_id }}-${{ github.run_attempt }}
+      - buildspec-override:true
+    steps:
       - name: Setup package
         run: |
-          sudo apt update
-          sudo apt install -y \
-          gawk wget git-core diffstat unzip texinfo gcc-multilib \
-          build-essential chrpath socat cpio python3 python3-pip python3-pexpect \
-          xz-utils debianutils iputils-ping python3-git python3-jinja2 libegl1-mesa libsdl1.2-dev \
-          xterm locales curl vim sudo rsync bc \
-          \
-          openjdk-8-jdk git-core gnupg flex bison \
-          gperf build-essential zip curl zlib1g-dev gcc-multilib ccache \
-          g++-multilib libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev \
-          libx11-dev lib32z-dev libgl1-mesa-dev libxml2-utils liblz4-tool \
-          xsltproc unzip python3-networkx python3-wand liblz4-tool bc \
-          apt-transport-https ca-certificates ninja-build \
-          ninja-build dosfstools libncurses-dev flex bison \
-          screen libncurses-dev ninja-build dosfstools \
-          python3-pygit2 python3-venv python3-pyelftools protobuf-compiler gperf pigz \
-          zstd simg2img libncurses5 python3-pycryptodome libssl-dev lzop \
-          lld libelf-dev dwarves openjdk-11-jdk pigz cmake file device-tree-compiler \
+          sudo dnf install -y bzip2 chrpath cpio cpp diffstat diffutils file findutils gawk gcc gcc-c++  \
+          git glibc-devel glibc-langpack-en gzip hostname libacl lz4 make patch perl perl-Data-Dumper \
+          perl-File-Compare perl-File-Copy perl-FindBin perl-Text-ParseWords perl-Thread-Queue perl-bignum \
+          perl-locale python python3 python3-jinja2 python3-pexpect python3-pip rpcgen socat tar texinfo unzip \
+          wget which xz zstd dtc
 
-          # Clean up apt
-          sudo apt autoremove -y
-          sudo apt clean -y
-          sudo apt autoclean -y
-          pip3 install websockets
-
+      - uses: actions/checkout@v3
       - name: Check disk and memory
         run: |
           ls -lh
           df -h
           free -h
-
-      - name: Setup github config
-        run: |
-          git config --global user.name "ations-user"
-          git config --global user.email "action@github.com"
 
       - name: Run build
         run: |
