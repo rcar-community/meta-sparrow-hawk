@@ -177,11 +177,14 @@ jobs:
           cat << 'EOS' >> ${OUTPUT}
 
           ### How to use PCIe/USB.
-          Please copy correct firmware into /usr/lib/firmware/, then reboot.
+          This image doesn't contain PCIe firmware so that it doesn't work.
+          If you want to use PCIe(M.2 and USB), please follows following step.
+          1. Please copy correct PCIe firmware(rcar_gen4_pcie.bin) into /usr/lib/firmware/
+          2. After that please reboot the board.
 
           **Note:**
-          There is no support/help to get the firmware.
-          Please do it at your own risk.
+          For more details about pcie firmware, please see also following link.
+            https://elinux.org/R-Car/Boards/WhiteHawk#PCIe_firmware
           EOS
 
       - name: Prepare release tag
