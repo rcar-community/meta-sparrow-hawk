@@ -11,6 +11,7 @@ on:
 jobs:
   Build:
     name: Build
+    if: github.repository_owner == 'rcar-community'
     runs-on: ubuntu-22.04
     steps:
       - name: Aggressive cleanup
