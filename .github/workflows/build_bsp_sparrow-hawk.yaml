@@ -12,7 +12,7 @@ jobs:
   Build:
     name: Build
     if: github.repository_owner == 'rcar-community'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-22.04-arm
     steps:
       - name: Aggressive cleanup
         # Based on https://github.com/NobuoTsukamoto/my_actions_test/blob/8f1ad38e225730322f196da7d958d0cfd49eca01/.github/workflows/test_contains.yml
