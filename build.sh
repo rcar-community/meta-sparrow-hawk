@@ -140,3 +140,8 @@ if [[ "${IS_BUILD_SDK}" == "yes" ]]; then
     bitbake ${TARGET_IMAGE} -c populate_sdk
 fi
 
+# Cleanup symbolic link
+if [[ "${IS_BUILD_INSIDE_REPO}" == "yes" ]]; then
+    rm -f ${WORK}/meta-sparrow-hawk
+fi
+
