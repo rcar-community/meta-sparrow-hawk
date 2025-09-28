@@ -178,6 +178,12 @@ jobs:
             COMMIT=$(git -C build/${layer}/ log -n1 --pretty="format:%H")
             echo "| ${layer} | ${URL} | ${COMMIT} |"  >> ${OUTPUT}
           done
+          # meta-sparrow-hawk
+          layer="meta-sparrow-hawk"
+          URL=$(git -C ./ remote -v | head -1 | awk '{print $2}')
+          COMMIT=$(git -C ./ log -n1 --pretty="format:%H")
+          echo "| ${layer} | ${URL} | ${COMMIT} |"  >> ${OUTPUT}
+
           cat << 'EOS' >> ${OUTPUT}
 
           ### How to use PCIe/USB.
