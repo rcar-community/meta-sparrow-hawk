@@ -13,6 +13,10 @@ IMAGE_INSTALL:append = " \
     yavta \
     libcamera \
     libcamera-pycamera \
+    libcamera-gst \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
     nvme-cli \
     can-utils \
     expand-rootfs \
