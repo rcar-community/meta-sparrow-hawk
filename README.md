@@ -27,7 +27,7 @@ This layer depends on:
 
 ```bash
     URI: git://git.openembedded.org/meta-openembedded
-    layers: meta-oe, meta-python, meta-networking
+    layers: meta-oe, meta-python, meta-networking, meta-multimedia
     branch: scarthgap
 ```
 
