@@ -219,6 +219,7 @@ jobs:
           if git ls-remote --tags origin | grep "refs/tags/${{ env.TAG_NAME }}$" >/dev/null; then
             echo "Deleting old tag: ${{ env.TAG_NAME }}"
             git push origin ":refs/tags/${{ env.TAG_NAME }}"
+            git tag -d "${{ env.TAG_NAME }}"
           fi
 
       - name: Setup release configuration
