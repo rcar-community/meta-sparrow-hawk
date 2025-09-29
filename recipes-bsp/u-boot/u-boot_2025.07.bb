@@ -47,6 +47,7 @@ SRC_URI:append = "\
 
 SRC_URI:append = "\
     file://nfs_cmd.cfg \
+    file://mmc_boot.cfg \
 "
 
 do_deploy:append() {
