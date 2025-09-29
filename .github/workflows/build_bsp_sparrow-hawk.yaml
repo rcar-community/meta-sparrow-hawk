@@ -184,6 +184,23 @@ jobs:
           COMMIT=$(git -C ./ log -n1 --pretty="format:%H")
           echo "| ${layer} | ${URL} | ${COMMIT} |"  >> ${OUTPUT}
 
+          # software version list
+          YOCTO_VER=$(grep ^DISTRO_VERSION ./build/poky/meta-poky/conf/distro/poky.conf | cut -d'"' -f2)
+          UBOOT_VER=$(ls ./recipes-bsp/u-boot/u-boot_*.bb | grep -oP 'u-boot_\K[0-9]+\.[0-9]+')
+          KERNEL_VER=$(grep ^LINUX_VERSION recipes-kernel/linux/kernel_*.inc | cut -d'"' -f2)
+          GCC_VER=$(ls -d build/build-sparrow-hawk/tmp/work-shared/gcc-* | grep -oP 'gcc-\K[0-9]+\.[0-9]+\.[0-9]+')
+          cat << EOS >> ${OUTPUT}
+
+          | Software                    | Version       |
+          | --------------------------- | ------------- |
+          | Yocto Project               | ${YOCTO_VER}  |
+          | Aarch64-poky-linux-gcc(GCC) | ${GCC_VER}    |
+          | Linux kernel                | ${KERNEL_VER} |
+          | Userland 64/32bit           | 64            |
+          | U-Boot                      | ${UBOOT_VER}  |
+
+          EOS
+
           cat << 'EOS' >> ${OUTPUT}
 
           ### How to use PCIe/USB.
