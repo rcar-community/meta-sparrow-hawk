@@ -24,10 +24,6 @@ PLATFORM:rcar-gen4 = "rcar_gen4"
 ATFW_OPT ?= ""
 ATFW_CONF ?= ""
 
-# IPL build options for H3/E3/M3/M3N/D3
-ATFW_OPT_LOSSY = "${@oe.utils.conditional("USE_MULTIMEDIA", "1", "RCAR_LOSSY_ENABLE=1", "", d)}"
-ATFW_OPT_BOOTMODE = "${@oe.utils.conditional("USE_EMMC_BOOTMODE", "1", "RCAR_SA6_TYPE=1", "", d)}"
-
 sparrow_hawk_r8a779g3[default]     = "LSI=V4H CTX_INCLUDE_AARCH32_REGS=0 MBEDTLS_COMMON_MK=1 PTP_NONSECURE_ACCESS=1 LOG_LEVEL=20 DEBUG=0 ENABLE_ASSERTIONS=0 E=0"
 
 # requires CROSS_COMPILE set by hand as there is no configure script
