@@ -44,8 +44,8 @@ do_install[noexec] = "1"
 
 do_ipl_compile () {
     oe_runmake distclean
-    oe_runmake ${CLEAN_OPT} PLAT=${PLATFORM} SPD=opteed MBEDTLS_COMMON_MK=1 ${ATFW_OPT}
-    oe_runmake ${BUILD_OPT} PLAT=${PLATFORM} SPD=opteed MBEDTLS_COMMON_MK=1 ${ATFW_OPT}
+    oe_runmake ${CLEAN_OPT} PLAT=${PLATFORM} SPD=none MBEDTLS_COMMON_MK=1 ${ATFW_OPT}
+    oe_runmake ${BUILD_OPT} PLAT=${PLATFORM} SPD=none MBEDTLS_COMMON_MK=1 ${ATFW_OPT}
 
     # Create ${S}/release folder to store output for compile tasks
     install -d ${S}/release
