@@ -30,6 +30,12 @@ SRC_URI:append = "\
     file://0014-FIXME-arm64-dts-renesas-r8a779g3-Set-VDDQ18_25_AVB-v.patch \
 "
 
+# Fix PCIe
+SRC_URI:append = " \
+    file://0001-pci-pcie-rcar-gen4-Shut-down-controller-on-link-down.patch \
+    file://0002-arm64-renesas-r8a779g3-Reset-PCIe-before-next-stage-.patch \
+"
+
 SRC_URI:append = "\
     file://nfs_cmd.cfg \
     file://mmc_boot.cfg \
