@@ -285,6 +285,9 @@ VIRTUAL-RUNTIME_init_manager = "systemd"
 # Remove ptest to reduce the build time
 DISTRO_FEATURES:remove = "ptest"
 
+# Mask graphic Pkgs
+BBMASK = "kernel-module-gles|gles-user-module|wayland-wsegl|wayland-kms|libgbm"
+
 # Allow non-commercial to be built
 LICENSE_FLAGS_ACCEPTED = "non-commercial"
 
