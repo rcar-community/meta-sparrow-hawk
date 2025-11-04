@@ -15,8 +15,7 @@ SRC_URI = "git://github.com/raspberrypi/libpisp.git;branch=${BRANCH};protocol=ht
 SRCREV = "981977ff21f32c8a97d2a0ecbdff3e39d42ccce3"
 UPSTREAM_CHECK_COMMITS = "1"
 
-# do_configure() nothing
-#do_configure[noexec] = "1"
+EXTRA_OEMESON += "-Dlogging=disabled"
 S = "${WORKDIR}/git"
 
 inherit meson pkgconfig
