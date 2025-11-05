@@ -9,10 +9,9 @@ COMPATIBLE_MACHINE = "sparrow-hawk"
 
 inherit deploy
 
-DEPENDS += "u-boot-mkimage-native dtc-native"
 DEPENDS += " \
-    linux-renesas \
-    arm-trusted-firmware \
+    u-boot-mkimage-native dtc-native \
+    virtual/kernel arm-trusted-firmware \
 "
 
 SRC_URI = " \
@@ -22,9 +21,10 @@ SRC_URI = " \
 FILES:${PN} += " \
     /boot/fitImage \
 "
+ALLOW_EMPTY:${PN} = "1"
 
 do_configure[noexec] = "1"
-do_compile[depends] += "linux-renesas:do_deploy"
+do_compile[depends] += "virtual/kernel:do_deploy"
 do_compile[depends] += "arm-trusted-firmware:do_deploy"
 
 do_compile() {
@@ -40,3 +40,8 @@ do_install() {
     install -m 644 ./fitImage ${D}/boot
 }
 
+python __anonymous () {
+    if d.getVar("PREFERRED_PROVIDER_virtual/kernel") != "linux-renesas":
+        d.setVarFlag("do_compile", "noexec", "1")
+        d.setVarFlag("do_install", "noexec", "1")
+}
