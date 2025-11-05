@@ -11,7 +11,7 @@ inherit deploy
 
 DEPENDS += "u-boot-mkimage-native dtc-native"
 DEPENDS += " \
-    linux-renesas \
+    virtual/kernel \
     arm-trusted-firmware \
 "
 
@@ -24,7 +24,7 @@ FILES:${PN} += " \
 "
 
 do_configure[noexec] = "1"
-do_compile[depends] += "linux-renesas:do_deploy"
+do_compile[depends] += "virtual/kernel:do_deploy"
 do_compile[depends] += "arm-trusted-firmware:do_deploy"
 
 do_compile() {
