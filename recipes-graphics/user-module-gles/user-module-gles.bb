@@ -4,8 +4,6 @@ LICENSE = "CLOSED"
 COMPATIBLE_MACHINE = "(rcar-gen4)"
 PACKAGE_ARCH = "${MACHINE_ARCH}"
 
-DEPENDS = "kernel-module-gles"
-
 PN = "user-module-gles"
 PR = "r0"
 
