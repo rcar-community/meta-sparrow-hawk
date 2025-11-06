@@ -27,6 +27,11 @@ SRC_URI:append:sparrow-hawk = " \
     file://sparrow-hawk-enable-i2c3-i2c4.dtsi;subdir=git/arch/arm64/boot/dts/renesas/ \
     file://0001-HACK-arm64-dts-renesas-r8a779g3-sparrow-hawk-Remove-.patch \
     file://0002-arm64-dts-renesas-r8a779g0-Add-new-gsx-node-and-clock-ZG.patch \
+    file://0001-drm-panel-Add-panel-driver-for-Waveshare-DSI-touchsc.patch \
+    file://0002-drm-panel-Added-waveshare-13.3inch-panel.patch \
+    file://0003-drm-panel-Added-waveshare-7.0inch-h-dsi-screen-suppo.patch \
+    file://0004-input-Add-support-for-no-irq-to-ili210x-driver.patch \
+    file://0005-arm64-dts-renesas-r8a779g3-Add-waveshare-13.3-DSI-FH.patch \
     file://sparrow-hawk-enable-j1-imx219.dtso;subdir=git/arch/arm64/boot/dts/renesas/ \
     file://sparrow-hawk-enable-j2-imx219.dtso;subdir=git/arch/arm64/boot/dts/renesas/ \
     file://sparrow-hawk-enable-j1-imx462.dtso;subdir=git/arch/arm64/boot/dts/renesas/ \
@@ -36,6 +41,7 @@ KBUILD_DEFCONFIG:sparrow-hawk = "renesas_defconfig"
 KERNEL_DEVICETREE:append:sparrow-hawk = " \
     renesas/r8a779g3-sparrow-hawk-fan-pwm.dtbo \
     renesas/r8a779g3-sparrow-hawk-rpi-display-2.dtbo \
+    renesas/r8a779g3-sparrow-hawk-dsi-waveshare-panel.dtbo \
     renesas/sparrow-hawk-enable-j1-imx219.dtbo \
     renesas/sparrow-hawk-enable-j2-imx219.dtbo \
     renesas/sparrow-hawk-enable-j1-imx462.dtbo \
