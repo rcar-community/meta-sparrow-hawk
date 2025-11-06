@@ -1,0 +1,93 @@
+From dd6c435acb6090792dc3c8eed6339727fc003ea8 Mon Sep 17 00:00:00 2001
+From: Naoto Yamaguchi <naoto.yamaguchi@aisin.co.jp>
+Date: Sat, 1 Nov 2025 22:26:04 +0900
+Subject: [PATCH 5/6] arm64: dts: renesas: r8a779g3: Add waveshare 13.3 DSI FHD
+ panel support dtso to Renesas R-Car V4H Sparrow Hawk
+
+This patch enables waveshare 13.3 DSI FHD panel support in
+Renesas R-Car V4H Sparrow Hawk board by dtbo.
+
+Upstream-Status: Pending
+
+[Yuya: Fix Makefile for latest kernel v6.12.58]
+Signed-off-by: Naoto Yamaguchi <naoto.yamaguchi@aisin.co.jp>
+Signed-off-by: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+---
+ arch/arm64/boot/dts/renesas/Makefile          |  2 +
+ ...79g3-sparrow-hawk-dsi-waveshare-panel.dtso | 51 +++++++++++++++++++
+ 2 files changed, 53 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/renesas/r8a779g3-sparrow-hawk-dsi-waveshare-panel.dtso
+
+diff --git a/arch/arm64/boot/dts/renesas/Makefile b/arch/arm64/boot/dts/renesas/Makefile
+index 867c6fa0966a..203250e403a1 100644
+--- a/arch/arm64/boot/dts/renesas/Makefile
++++ b/arch/arm64/boot/dts/renesas/Makefile
+@@ -126,6 +126,8 @@ dtb-$(CONFIG_ARCH_R8A779G0) += r8a779g3-sparrow-hawk-rpi-display-2-5in.dtb
+ dtb-$(CONFIG_ARCH_R8A779G0) += r8a779g3-sparrow-hawk-rpi-display-2-7in.dtbo
+ r8a779g3-sparrow-hawk-rpi-display-2-7in-dtbs := r8a779g3-sparrow-hawk.dtb r8a779g3-sparrow-hawk-rpi-display-2-7in.dtbo
+ dtb-$(CONFIG_ARCH_R8A779G0) += r8a779g3-sparrow-hawk-rpi-display-2-7in.dtb
++r8a779g3-sparrow-hawk-dsi-waveshare-panel-dtbs := r8a779g3-sparrow-hawk.dtb r8a779g3-sparrow-hawk-dsi-waveshare-panel.dtbo
++dtb-$(CONFIG_ARCH_R8A779G0) += r8a779g3-sparrow-hawk-dsi-waveshare-panel.dtb
+ 
+ dtb-$(CONFIG_ARCH_R8A779G0) += r8a779g3-white-hawk-single.dtb
+ r8a779g3-white-hawk-single-ard-audio-da7212-dtbs := r8a779g3-white-hawk-single.dtb white-hawk-ard-audio-da7212.dtbo
+diff --git a/arch/arm64/boot/dts/renesas/r8a779g3-sparrow-hawk-dsi-waveshare-panel.dtso b/arch/arm64/boot/dts/renesas/r8a779g3-sparrow-hawk-dsi-waveshare-panel.dtso
+new file mode 100644
+index 000000000000..273175afedc1
+--- /dev/null
++++ b/arch/arm64/boot/dts/renesas/r8a779g3-sparrow-hawk-dsi-waveshare-panel.dtso
+@@ -0,0 +1,51 @@
++// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++/*
++ * Device Tree Overlay for Waveshare DSI Touchscreens connected to J4:DSI
++ * on R-Car V4H ES3.0 Sparrow Hawk board
++ *
++ * Copyright (C) 2025 Naoto Yamaguchi <naoto.yamaguchi@aisin.co.jp>
++ *
++ */
++
++/dts-v1/;
++/plugin/;
++
++&i2c0_mux3 {
++	#address-cells = <1>;
++	#size-cells = <0>;
++
++	touch2: ilitek@41 {
++		compatible = "ilitek,ili251x";
++		reg = <0x41>;
++		status = "okay";
++	};
++
++	panel: panel_disp1@45 {
++		reg = <0x45>;
++		compatible = "waveshare,13.3inch-4lane-panel";
++		status = "okay";
++
++		port {
++			panel_in: endpoint {
++				remote-endpoint = <&dsi0_out>;
++			};
++		};
++	};
++};
++
++&dsi0 {
++	#address-cells = <1>;
++	#size-cells = <0>;
++	status = "okay";
++
++	ports {
++		port@1 {
++			reg = <1>;
++
++			dsi0_out: endpoint {
++				remote-endpoint = <&panel_in>;
++				data-lanes = <1 2 3 4>;
++			};
++		};
++	};
++};
+-- 
+2.34.1
+
