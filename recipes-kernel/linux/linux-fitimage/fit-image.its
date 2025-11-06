@@ -116,6 +116,9 @@
 		fan-pwm {
 			fdt = "fdt-fan-pwm";
 		};
+		waveshare-panel {
+			fdt = "fdt-waveshare-panel";
+		};
 		rpi-display-2 {
 			fdt = "fdt-rpi-display-2";
 		};

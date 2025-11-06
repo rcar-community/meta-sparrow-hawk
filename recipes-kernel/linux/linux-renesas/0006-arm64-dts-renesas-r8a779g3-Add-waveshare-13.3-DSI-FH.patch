@@ -1,0 +1,69 @@
+From cde71adfc915a6b31ae282b066b8c4d5c40cc5d1 Mon Sep 17 00:00:00 2001
+From: Naoto Yamaguchi <naoto.yamaguchi@aisin.co.jp>
+Date: Thu, 6 Nov 2025 23:11:23 +0900
+Subject: [PATCH 6/6] arm64: dts: renesas: r8a779g3: Add waveshare 13.3 DSI FHD
+ panel support to Renesas R-Car V4H Sparrow Hawk
+
+This patch enables waveshare 13.3 DSI FHD panel support in
+Renesas R-Car V4H Sparrow Hawk board on default.
+
+Upstream-Status: Pending
+
+Signed-off-by: Naoto Yamaguchi <naoto.yamaguchi@aisin.co.jp>
+---
+ .../dts/renesas/r8a779g3-sparrow-hawk.dts     | 32 +++++++++++++++++++
+ 1 file changed, 32 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a779g3-sparrow-hawk.dts b/arch/arm64/boot/dts/renesas/r8a779g3-sparrow-hawk.dts
+index 60851f647391..900d31e93a96 100644
+--- a/arch/arm64/boot/dts/renesas/r8a779g3-sparrow-hawk.dts
++++ b/arch/arm64/boot/dts/renesas/r8a779g3-sparrow-hawk.dts
+@@ -269,6 +269,20 @@ channel4 {
+ 	};
+ };
+ 
++&dsi0 {
++	status = "okay";
++
++	ports {
++		port@1 {
++			reg = <1>;
++			dsi0_out: endpoint {
++				remote-endpoint = <&panel_in>;
++				data-lanes = <1 2 3 4>;
++			};
++		};
++	};
++};
++
+ /* Page 27 / DSI to Display */
+ &dsi1 {
+ 	status = "okay";
+@@ -453,6 +467,24 @@ i2c0_mux3: i2c@3 {
+ 			reg = <3>;
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
++
++			touch2: ilitek@41 {
++				compatible = "ilitek,ili251x";
++				reg = <0x41>;
++				status = "okay";
++			};
++
++			panel: panel_disp1@45 {
++				reg = <0x45>;
++				compatible = "waveshare,13.3inch-4lane-panel";
++				status = "okay";
++
++				port {
++					panel_in: endpoint {
++						remote-endpoint = <&dsi0_out>;
++					};
++				};
++			};
+ 		};
+ 	};
+ };
+-- 
+2.43.0
+
