@@ -141,6 +141,16 @@
 				algo = "crc32";
 			};
 		};
+		fdt-waveshare-panel {
+			description = "Flattened Device Tree Overlay";
+			data = /incbin/("./r8a779g3-sparrow-hawk-dsi-waveshare-panel.dtbo");
+			type = "flat_dt";
+			arch = "arm64";
+			compression = "none";
+			hash-1 {
+				algo = "crc32";
+			};
+		};
 	};
 
 	configurations {
@@ -187,6 +197,9 @@
 		};
 		rpi-display-2-5in {
 			fdt = "fdt-rpi-display-2-5in";
+		};
+		waveshare-panel {
+			fdt = "fdt-waveshare-panel";
 		};
 	};
 };
