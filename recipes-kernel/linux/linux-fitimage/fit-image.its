@@ -40,26 +40,7 @@
 				algo = "crc32";
 			};
 		};
-		fdt-fan-pwm {
-			description = "Flattened Device Tree Overlay";
-			data = /incbin/("./r8a779g3-sparrow-hawk-fan-pwm.dtbo");
-			type = "flat_dt";
-			arch = "arm64";
-			compression = "none";
-			hash-1 {
-				algo = "crc32";
-			};
-		};
-		fdt-rpi-display-2 {
-			description = "Flattened Device Tree Overlay";
-			data = /incbin/("./r8a779g3-sparrow-hawk-rpi-display-2.dtbo");
-			type = "flat_dt";
-			arch = "arm64";
-			compression = "none";
-			hash-1 {
-				algo = "crc32";
-			};
-		};
+
 		fdt-j1-imx219 {
 			description = "Flattened Device Tree Overlay";
 			data = /incbin/("./r8a779g3-sparrow-hawk-camera-j1-imx219.dtbo");
@@ -100,6 +81,66 @@
 				algo = "crc32";
 			};
 		};
+		fdt-j1-imx708 {
+			description = "Flattened Device Tree Overlay";
+			data = /incbin/("./r8a779g3-sparrow-hawk-camera-j1-imx708.dtbo");
+			type = "flat_dt";
+			arch = "arm64";
+			compression = "none";
+			hash-1 {
+				algo = "crc32";
+			};
+		};
+		fdt-j2-imx708 {
+			description = "Flattened Device Tree Overlay";
+			data = /incbin/("./r8a779g3-sparrow-hawk-camera-j2-imx708.dtbo");
+			type = "flat_dt";
+			arch = "arm64";
+			compression = "none";
+			hash-1 {
+				algo = "crc32";
+			};
+		};
+		fdt-fan-argon40 {
+			description = "Flattened Device Tree Overlay";
+			data = /incbin/("./r8a779g3-sparrow-hawk-fan-argon40.dtbo");
+			type = "flat_dt";
+			arch = "arm64";
+			compression = "none";
+			hash-1 {
+				algo = "crc32";
+			};
+		};
+		fdt-fan-pwm {
+			description = "Flattened Device Tree Overlay";
+			data = /incbin/("./r8a779g3-sparrow-hawk-fan-pwm.dtbo");
+			type = "flat_dt";
+			arch = "arm64";
+			compression = "none";
+			hash-1 {
+				algo = "crc32";
+			};
+		};
+		fdt-rpi-display-2-5in {
+			description = "Flattened Device Tree Overlay";
+			data = /incbin/("./r8a779g3-sparrow-hawk-rpi-display-2-5in.dtbo");
+			type = "flat_dt";
+			arch = "arm64";
+			compression = "none";
+			hash-1 {
+				algo = "crc32";
+			};
+		};
+		fdt-rpi-display-2-7in {
+			description = "Flattened Device Tree Overlay";
+			data = /incbin/("./r8a779g3-sparrow-hawk-rpi-display-2-7in.dtbo");
+			type = "flat_dt";
+			arch = "arm64";
+			compression = "none";
+			hash-1 {
+				algo = "crc32";
+			};
+		};
 	};
 
 	configurations {
@@ -113,12 +154,7 @@
 				algo = "crc32";
 			};
 		};
-		fan-pwm {
-			fdt = "fdt-fan-pwm";
-		};
-		rpi-display-2 {
-			fdt = "fdt-rpi-display-2";
-		};
+
 		j1-imx219 {
 			fdt = "fdt-j1-imx219";
 		};
@@ -130,6 +166,27 @@
 		};
 		j2-imx462 {
 			fdt = "fdt-j2-imx462";
+		};
+		j1-imx708 {
+			fdt = "fdt-j1-imx708";
+		};
+		j2-imx708 {
+			fdt = "fdt-j2-imx708";
+		};
+		fan-argon40 {
+			fdt = "fdt-fan-argon40";
+		};
+		fan-pwm {
+			fdt = "fdt-fan-pwm";
+		};
+		rpi-display-2 { // For backward compatibility
+			fdt = "fdt-rpi-display-2-7in";
+		};
+		rpi-display-2-7in {
+			fdt = "fdt-rpi-display-2-7in";
+		};
+		rpi-display-2-5in {
+			fdt = "fdt-rpi-display-2-5in";
 		};
 	};
 };
