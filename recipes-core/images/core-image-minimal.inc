@@ -4,34 +4,11 @@ OVERRIDES .= ":${TARGET_SYS}"
 # Basic packages
 IMAGE_INSTALL:append = " \
     bash \
-    v4l-utils \
-    i2c-tools \
-    coreutils \
-    kernel-devicetree \
-    alsa-utils \
-    v4l-utils \
-    yavta \
-    libcamera \
-    libcamera-pycamera \
-    libcamera-gst \
-    gstreamer1.0-plugins-base \
-    gstreamer1.0-plugins-good \
-    gstreamer1.0-plugins-bad \
-    nvme-cli \
-    can-utils \
-    expand-rootfs \
-    pciutils \
-    usbutils \
-    kernel-modules \
-    u-boot \
-    libgpiod \
-    python3-pip \
-    python3-gpiod \
+    packagegroup-renesas-bsp-tools \
+    packagegroup-renesas-bsp-demo \
 "
 # Sparrow-hawk specific packages
 IMAGE_INSTALL:append:sparrow-hawk = " \
-    linux-fitimage \
-    sparrow-hawk-fw \
     example-apps \
 "
 
