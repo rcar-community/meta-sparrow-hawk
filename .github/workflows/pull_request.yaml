@@ -1,0 +1,21 @@
+name: PR build test Yocto BSP for Sparrow-hawk
+run-name: PR build test Yocto BSP for Sparrow-hawk
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  Release:
+    name: Release
+    if: github.repository_owner == 'rcar-community'
+    runs-on: ubuntu-22.04-arm
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Build BSP
+        uses: ./.github/workflows/build_bsp
+
