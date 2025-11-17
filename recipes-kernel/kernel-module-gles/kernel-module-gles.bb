@@ -5,6 +5,8 @@ LIC_FILES_CHKSUM = " \
     file://MIT-COPYING;md5=8c2810fa6bfdc5ae5c15a0c1ade34054 \
 "
 
+require include/rcar-gfx-common.inc
+
 COMPATIBLE_MACHINE = "(rcar-gen4)"
 PACKAGE_ARCH = "${MACHINE_ARCH}"
 
@@ -15,7 +17,7 @@ inherit module
 PN = "kernel-module-gles"
 PR = "r0"
 
-SRC_URI:r8a779g3 = "file://GSX_KM_V4H_SparrowHawk.tar.bz2"
+SRC_URI:r8a779g3 = "${GFX_DRIVER_URL};sha256sum=${GFX_DRIVER_SHA256}"
 
 SRC_URI:append = " file://blacklist.conf"
 

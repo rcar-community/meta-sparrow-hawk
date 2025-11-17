@@ -1,13 +1,15 @@
 DESCRIPTION = "PowerVR GPU user module"
 LICENSE = "CLOSED"
 
+require include/rcar-gfx-common.inc
+
 COMPATIBLE_MACHINE = "(rcar-gen4)"
 PACKAGE_ARCH = "${MACHINE_ARCH}"
 
 PN = "gles-user-module"
 PR = "r0"
 
-SRC_URI:r8a779g3 = "file://r8a779g3_linux_gsx_binaries_gles.tar.bz2"
+SRC_URI:r8a779g3 = "${GFX_LIBRARY_URL};sha256sum=${GFX_LIBRARY_SHA256}"
 
 SRC_URI:append:rcar-gen4 = " \
     file://rc.pvr.service \
