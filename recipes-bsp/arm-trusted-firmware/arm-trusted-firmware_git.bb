@@ -8,12 +8,10 @@ PACKAGE_ARCH = "${MACHINE_ARCH}"
 
 inherit deploy
 
-PV:rcar-gen4:sparrow-hawk = "v2.7+renesas+git${SRCPV}"
-BRANCH:rcar-gen4:sparrow-hawk = "rcar_gen4_v2.7_v4x"
-SRC_URI = "git://github.com/renesas-rcar/arm-trusted-firmware.git;branch=${BRANCH};protocol=https"
-SRCREV:rcar-gen4:sparrow-hawk = "b88b3f5a81b57669e6b0444fd7eaf19f4a039762"
-
-SRC_URI += " file://0000-Makefile-Disable-linker-warning.patch"
+PV:rcar-gen4:sparrow-hawk = "v2.14.0+upstream+git${SRCPV}"
+BRANCH:rcar-gen4:sparrow-hawk = "master"
+SRC_URI = "git://github.com/ARM-software/arm-trusted-firmware.git;branch=${BRANCH};protocol=https"
+SRCREV:rcar-gen4:sparrow-hawk = "1d5aa939bc8d3d892e2ed9945fa50e36a1a924cc"
 
 S = "${WORKDIR}/git"
 
