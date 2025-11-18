@@ -45,12 +45,17 @@ This layer depends on:
    $ git config --global user.name "Your Name"
 ```
 
-## Build with build script
+## Build using build script
 
 ```bash
 git clone https://github.com/rcar-community/meta-sparrow-hawk -b scarthgap
 cd meta-sparrow-hawk
 ./build.sh
+```
+
+build option can be confirmed by -h option:
+```bash
+./build.sh -h
 ```
 
 ### Integrate PCIe firmware into rootfs
