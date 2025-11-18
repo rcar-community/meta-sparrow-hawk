@@ -124,7 +124,8 @@ runs:
     - name: Run build
       shell: bash
       run: |
-        ./build.sh --sbom --rm-work
+        ./build.sh --console --sbom --rm-work
+        ./build.sh --weston --sbom --rm-work
 
     - name: Check disk
       shell: bash
