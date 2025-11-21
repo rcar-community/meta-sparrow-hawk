@@ -1,0 +1,28 @@
+From 3b693b70da22e95e407edb95608d2785f2ac22c8 Mon Sep 17 00:00:00 2001
+From: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+Date: Wed, 15 Oct 2025 17:55:26 +0200
+Subject: [PATCH 3/8] ipa: meson.build: Remove duplicated variable
+
+The 'ipa_names' variable is declared twice. Remove it.
+
+Signed-off-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+---
+ src/ipa/meson.build | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/src/ipa/meson.build b/src/ipa/meson.build
+index 68f64b9a..eb7846e4 100644
+--- a/src/ipa/meson.build
++++ b/src/ipa/meson.build
+@@ -24,8 +24,6 @@ subdir('libipa')
+ 
+ ipa_sign = files('ipa-sign.sh')
+ 
+-ipa_names = []
+-
+ ipa_modules = get_option('ipas')
+ 
+ # Tests require the vimc IPA, similar to vimc pipline-handler for their
+-- 
+2.25.1
+

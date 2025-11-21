@@ -1,8 +1,8 @@
-From 0537e6d09e9d1a19de47f89b9ae211760a5159a3 Mon Sep 17 00:00:00 2001
+From 6deae6d9b6f0ed1bfd4fcce3b492bc08b1a794b2 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Niklas=20S=C3=B6derlund?=
  <niklas.soderlund+renesas@ragnatech.se>
 Date: Wed, 27 Aug 2025 16:44:24 +0200
-Subject: [PATCH 4/4] ipa: rkisp1: Add basic CCM calibration for imx219
+Subject: [PATCH 7/8] ipa: rkisp1: Add basic CCM calibration for imx219
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit

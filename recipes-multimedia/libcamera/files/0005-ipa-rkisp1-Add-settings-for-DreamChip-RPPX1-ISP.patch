@@ -1,8 +1,8 @@
-From f2a35454a6bd1d80f92897ad13bba4644e1d8946 Mon Sep 17 00:00:00 2001
+From 619c4cab69fbe672ddd0bd0b35296c6845d87945 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Niklas=20S=C3=B6derlund?=
  <niklas.soderlund+renesas@ragnatech.se>
 Date: Tue, 17 Jun 2025 12:38:08 +0200
-Subject: [PATCH 2/4] ipa: rkisp1: Add settings for DreamChip RPPX1 ISP
+Subject: [PATCH 5/8] ipa: rkisp1: Add settings for DreamChip RPPX1 ISP
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -24,11 +24,11 @@ RPPX1 device so it can reuse the existing IPA.
 Signed-off-by: Niklas Söderlund <niklas.soderlund+renesas@ragnatech.se>
 ---
  include/libcamera/ipa/rkisp1.mojom |  8 ++++++++
- src/ipa/rkisp1/rkisp1.cpp          | 11 +++++++++++
- 2 files changed, 19 insertions(+)
+ src/ipa/rkisp1/rkisp1.cpp          | 12 ++++++++++++
+ 2 files changed, 20 insertions(+)
 
 diff --git a/include/libcamera/ipa/rkisp1.mojom b/include/libcamera/ipa/rkisp1.mojom
-index 043ad27e..608ba82a 100644
+index 068e8988..cfeedd80 100644
 --- a/include/libcamera/ipa/rkisp1.mojom
 +++ b/include/libcamera/ipa/rkisp1.mojom
 @@ -8,6 +8,14 @@ module ipa.rkisp1;
@@ -47,10 +47,10 @@ index 043ad27e..608ba82a 100644
  	libcamera.IPACameraSensorInfo sensorInfo;
  	libcamera.ControlInfoMap sensorControls;
 diff --git a/src/ipa/rkisp1/rkisp1.cpp b/src/ipa/rkisp1/rkisp1.cpp
-index cf66d555..14600251 100644
+index a8e46094..45df0475 100644
 --- a/src/ipa/rkisp1/rkisp1.cpp
 +++ b/src/ipa/rkisp1/rkisp1.cpp
-@@ -113,6 +113,14 @@ const IPAHwSettings ipaHwSettingsV12{
+@@ -117,6 +117,15 @@ const IPAHwSettings ipaHwSettingsV12{
  	false,
  };
  
@@ -59,18 +59,19 @@ index cf66d555..14600251 100644
 +	RKISP1_CIF_ISP_HIST_BIN_N_MAX_V12,
 +	RKISP1_CIF_ISP_HISTOGRAM_WEIGHT_GRIDS_SIZE_V10,
 +	RKISP1_CIF_ISP_GAMMA_OUT_MAX_SAMPLES_V10,
++	0,
 +	false,
 +};
 +
  /* List of controls handled by the RkISP1 IPA */
  const ControlInfoMap::Map rkisp1Controls{
  	{ &controls::DebugMetadataEnable, ControlInfo(false, true, false) },
-@@ -147,6 +155,9 @@ int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision,
+@@ -152,6 +161,9 @@ int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision,
  	case RKISP1_V12:
- 		context_.hw = &ipaHwSettingsV12;
+ 		context_.hw = ipaHwSettingsV12;
  		break;
 +	case HwRevisionExternalRppX1:
-+		context_.hw = &ipaHwSettingsRPPX1;
++		context_.hw = ipaHwSettingsRPPX1;
 +		break;
  	default:
  		LOG(IPARkISP1, Error)

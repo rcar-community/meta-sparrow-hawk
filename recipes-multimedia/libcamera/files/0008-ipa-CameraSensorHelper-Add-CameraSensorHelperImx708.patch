@@ -1,0 +1,36 @@
+From 1c81bb0cbd928fad883430cb2d544f60aeadaae8 Mon Sep 17 00:00:00 2001
+From: Daniel Scally <dan.scally@ideasonboard.com>
+Date: Tue, 4 Mar 2025 15:00:26 +0000
+Subject: [PATCH 8/8] ipa: CameraSensorHelper: Add CameraSensorHelperImx708
+
+Add a CameraSensorHelper for the Imx708.
+
+Signed-off-by: Daniel Scally <dan.scally@ideasonboard.com>
+---
+ src/ipa/libipa/camera_sensor_helper.cpp | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/src/ipa/libipa/camera_sensor_helper.cpp b/src/ipa/libipa/camera_sensor_helper.cpp
+index ef3bd0d6..1f2a95e5 100644
+--- a/src/ipa/libipa/camera_sensor_helper.cpp
++++ b/src/ipa/libipa/camera_sensor_helper.cpp
+@@ -642,6 +642,16 @@ public:
+ };
+ REGISTER_CAMERA_SENSOR_HELPER("imx477", CameraSensorHelperImx477)
+ 
++class CameraSensorHelperImx708 : public CameraSensorHelper
++{
++public:
++	CameraSensorHelperImx708()
++	{
++		gain_ = AnalogueGainLinear{ 0, 1024, -1, 1024 };
++	}
++};
++REGISTER_CAMERA_SENSOR_HELPER("imx708", CameraSensorHelperImx708)
++
+ class CameraSensorHelperOv2685 : public CameraSensorHelper
+ {
+ public:
+-- 
+2.25.1
+

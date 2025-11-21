@@ -1,0 +1,185 @@
+From 473eea5dc72a332612647446b4fc42852dabf308 Mon Sep 17 00:00:00 2001
+From: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+Date: Wed, 15 Oct 2025 17:55:25 +0200
+Subject: [PATCH 2/8] ipa: ipa_module: Remove pipelineName
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+All the IPA modules declare a pipelineName that is identical
+to their name. As we now support creating IPAs by name
+(either explicitly provided by the pipeline handlers or by using the
+pipeline name), the duplicated information in IPAModuleInfo is
+redundant.
+
+Remove it.
+
+Signed-off-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+Reviewed-by: Barnabás Pőcze <barnabas.pocze@ideasonboard.com>
+Reviewed-by: Kieran Bingham <kieran.bingham@ideasonboard.com>
+---
+ include/libcamera/ipa/ipa_module_info.h |  1 -
+ src/ipa/ipu3/ipu3.cpp                   |  1 -
+ src/ipa/mali-c55/mali-c55.cpp           |  1 -
+ src/ipa/rkisp1/rkisp1.cpp               |  1 -
+ src/ipa/rpi/pisp/pisp.cpp               |  1 -
+ src/ipa/rpi/vc4/vc4.cpp                 |  1 -
+ src/ipa/simple/soft_simple.cpp          |  1 -
+ src/ipa/vimc/vimc.cpp                   |  1 -
+ src/libcamera/ipa_module.cpp            | 15 ++++++---------
+ test/ipa/ipa_module_test.cpp            |  3 ---
+ 10 files changed, 6 insertions(+), 20 deletions(-)
+
+diff --git a/include/libcamera/ipa/ipa_module_info.h b/include/libcamera/ipa/ipa_module_info.h
+index 3507a6d7..436ec82d 100644
+--- a/include/libcamera/ipa/ipa_module_info.h
++++ b/include/libcamera/ipa/ipa_module_info.h
+@@ -16,7 +16,6 @@ namespace libcamera {
+ struct IPAModuleInfo {
+ 	int moduleAPIVersion;
+ 	uint32_t pipelineVersion;
+-	char pipelineName[256];
+ 	char name[256];
+ } __attribute__((packed));
+ 
+diff --git a/src/ipa/ipu3/ipu3.cpp b/src/ipa/ipu3/ipu3.cpp
+index 1cae08bf..a7140241 100644
+--- a/src/ipa/ipu3/ipu3.cpp
++++ b/src/ipa/ipu3/ipu3.cpp
+@@ -672,7 +672,6 @@ const struct IPAModuleInfo ipaModuleInfo = {
+ 	IPA_MODULE_API_VERSION,
+ 	1,
+ 	"ipu3",
+-	"ipu3",
+ };
+ 
+ /**
+diff --git a/src/ipa/mali-c55/mali-c55.cpp b/src/ipa/mali-c55/mali-c55.cpp
+index 7d45e731..e52e89be 100644
+--- a/src/ipa/mali-c55/mali-c55.cpp
++++ b/src/ipa/mali-c55/mali-c55.cpp
+@@ -387,7 +387,6 @@ const struct IPAModuleInfo ipaModuleInfo = {
+ 	IPA_MODULE_API_VERSION,
+ 	1,
+ 	"mali-c55",
+-	"mali-c55",
+ };
+ 
+ IPAInterface *ipaCreate()
+diff --git a/src/ipa/rkisp1/rkisp1.cpp b/src/ipa/rkisp1/rkisp1.cpp
+index fa22bfc3..a8e46094 100644
+--- a/src/ipa/rkisp1/rkisp1.cpp
++++ b/src/ipa/rkisp1/rkisp1.cpp
+@@ -480,7 +480,6 @@ const struct IPAModuleInfo ipaModuleInfo = {
+ 	IPA_MODULE_API_VERSION,
+ 	1,
+ 	"rkisp1",
+-	"rkisp1",
+ };
+ 
+ IPAInterface *ipaCreate()
+diff --git a/src/ipa/rpi/pisp/pisp.cpp b/src/ipa/rpi/pisp/pisp.cpp
+index 01baebcd..a1c7e186 100644
+--- a/src/ipa/rpi/pisp/pisp.cpp
++++ b/src/ipa/rpi/pisp/pisp.cpp
+@@ -1145,7 +1145,6 @@ const IPAModuleInfo ipaModuleInfo = {
+ 	IPA_MODULE_API_VERSION,
+ 	1,
+ 	"rpi/pisp",
+-	"rpi/pisp",
+ };
+ 
+ IPAInterface *ipaCreate()
+diff --git a/src/ipa/rpi/vc4/vc4.cpp b/src/ipa/rpi/vc4/vc4.cpp
+index b2fec934..dc345564 100644
+--- a/src/ipa/rpi/vc4/vc4.cpp
++++ b/src/ipa/rpi/vc4/vc4.cpp
+@@ -606,7 +606,6 @@ const struct IPAModuleInfo ipaModuleInfo = {
+ 	IPA_MODULE_API_VERSION,
+ 	1,
+ 	"rpi/vc4",
+-	"rpi/vc4",
+ };
+ 
+ IPAInterface *ipaCreate()
+diff --git a/src/ipa/simple/soft_simple.cpp b/src/ipa/simple/soft_simple.cpp
+index b147aca2..9122f1c0 100644
+--- a/src/ipa/simple/soft_simple.cpp
++++ b/src/ipa/simple/soft_simple.cpp
+@@ -350,7 +350,6 @@ const struct IPAModuleInfo ipaModuleInfo = {
+ 	IPA_MODULE_API_VERSION,
+ 	0,
+ 	"simple",
+-	"simple",
+ };
+ 
+ IPAInterface *ipaCreate()
+diff --git a/src/ipa/vimc/vimc.cpp b/src/ipa/vimc/vimc.cpp
+index a1351a0f..822e00af 100644
+--- a/src/ipa/vimc/vimc.cpp
++++ b/src/ipa/vimc/vimc.cpp
+@@ -202,7 +202,6 @@ const struct IPAModuleInfo ipaModuleInfo = {
+ 	IPA_MODULE_API_VERSION,
+ 	0,
+ 	"vimc",
+-	"vimc",
+ };
+ 
+ IPAInterface *ipaCreate()
+diff --git a/src/libcamera/ipa_module.cpp b/src/libcamera/ipa_module.cpp
+index 0bd6f146..53cea6b1 100644
+--- a/src/libcamera/ipa_module.cpp
++++ b/src/libcamera/ipa_module.cpp
+@@ -215,18 +215,15 @@ Span<const uint8_t> elfLoadSymbol(Span<const uint8_t> elf, const char *symbol)
+  * \var IPAModuleInfo::pipelineVersion
+  * \brief The pipeline handler version that the IPA module is for
+  *
+- * \var IPAModuleInfo::pipelineName
+- * \brief The name of the pipeline handler that the IPA module is for
+- *
+- * This name is used to match a pipeline handler with the module.
+- *
+  * \var IPAModuleInfo::name
+  * \brief The name of the IPA module
+  *
+- * The name may be used to build file system paths to IPA-specific resources.
+- * It shall only contain printable characters, and may not contain '*', '?' or
+- * '\'. For IPA modules included in libcamera, it shall match the directory of
+- * the IPA module in the source tree.
++ * This name is used to match a the IPA module.
++ *
++ * The name may also be used to build file system paths to IPA-specific
++ * resources. It shall only contain printable characters, and may not contain
++ * '*', '?' or '\'. For IPA modules included in libcamera, it shall match the
++ * directory of the IPA module in the source tree.
+  *
+  * \todo Allow user to choose to isolate open source IPAs
+  */
+diff --git a/test/ipa/ipa_module_test.cpp b/test/ipa/ipa_module_test.cpp
+index 1c97da32..af71c328 100644
+--- a/test/ipa/ipa_module_test.cpp
++++ b/test/ipa/ipa_module_test.cpp
+@@ -37,12 +37,10 @@ protected:
+ 			cerr << "IPA module information mismatch: expected:" << endl
+ 			     << "moduleAPIVersion = "     << testInfo.moduleAPIVersion << endl
+ 			     << "pipelineVersion = "      << testInfo.pipelineVersion << endl
+-			     << "pipelineName = "         << testInfo.pipelineName << endl
+ 			     << "name = "                 << testInfo.name
+ 			     << "got: " << endl
+ 			     << "moduleAPIVersion = "     << info.moduleAPIVersion << endl
+ 			     << "pipelineVersion = "      << info.pipelineVersion << endl
+-			     << "pipelineName = "         << info.pipelineName << endl
+ 			     << "name = "                 << info.name << endl;
+ 		}
+ 
+@@ -58,7 +56,6 @@ protected:
+ 			IPA_MODULE_API_VERSION,
+ 			0,
+ 			"vimc",
+-			"vimc",
+ 		};
+ 
+ 		count += runTest("src/ipa/vimc/ipa_vimc.so", testInfo);
+-- 
+2.25.1
+
