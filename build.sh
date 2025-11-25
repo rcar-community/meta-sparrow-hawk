@@ -9,6 +9,7 @@ cd ${SCRIPT_DIR}/build
 export WORK=`pwd`
 TARGET_IMAGE=core-image-minimal
 USE_SSTATE_MIRROR=no
+USE_NEXT_KERNEL=no
 BUILD_SBOM=no
 REMOVE_WORKDIR=no
 IS_BUILD_INSIDE_REPO=yes
@@ -46,6 +47,8 @@ for arg in $@; do
         REMOVE_WORKDIR=yes
     elif [[ "$arg" == "--sstate-mirror" ]]; then
         USE_SSTATE_MIRROR=yes
+    elif [[ "$arg" == "--next-kernel" ]]; then
+        USE_NEXT_KERNEL=yes
     fi
 done
 
@@ -108,6 +111,16 @@ cat << EOS >> conf/local.conf
 # Disable create-spdx
 INHERIT:remove = "create-spdx"
 EOS
+fi
+
+if [[ "${USE_NEXT_KERNEL}" == "yes" ]]; then
+cat << EOS >> conf/local.conf
+# Upstream Kernel Builds
+PREFERRED_VERSION_linux-renesas = "6.18%"
+LINUXLIBCVERSION = "6.18%"
+EOS
+bitbake kernel-module-gles -c clean
+bitbake linux-renesas -c clean
 fi
 
 if [[ "${REMOVE_WORKDIR}" == "yes" ]]; then
