@@ -128,7 +128,7 @@ jobs:
             echo "RELEASE_TITLE=Next release candidate" >> $GITHUB_ENV
           else
             echo "PRERELEASE=false" >> $GITHUB_ENV
-            echo "RELEASE_TITLE='Release ${{ env.TAG_NAME }}" >> $GITHUB_ENV
+            echo "RELEASE_TITLE=Release ${{ env.TAG_NAME }}" >> $GITHUB_ENV
           fi
 
       - name: Create/update release
