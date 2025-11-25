@@ -105,6 +105,11 @@ jobs:
             echo "TAG_NAME=next-release" >> $GITHUB_ENV
           fi
 
+      - name: Delete release tag if it exists
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
           # Delete old release/tags if exists
           if gh release view "${{ env.TAG_NAME }}" --repo ${{ github.repository }} >/dev/null 2>&1; then
             echo "Deleting old release: ${{ env.TAG_NAME }}"
