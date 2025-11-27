@@ -1,6 +1,6 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}/:"
 
-BSP_VERSION ??= "v2025.11.xx-dev"
+BSP_VERSION ??= "v2025-11-28"
 
 SRC_URI:append = " \
     file://motd \
