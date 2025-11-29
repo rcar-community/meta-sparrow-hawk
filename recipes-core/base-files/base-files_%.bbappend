@@ -10,7 +10,9 @@ do_install:append () {
     printf "BSP version: ${BSP_VERSION}\n\n" >> ${D}${sysconfdir}/motd
 }
 
-inherit module-base
+KERNEL_VERSION = "${@bb.utils.contains("PREFERRED_PROVIDER_virtual/kernel", "linux-dummy", \
+    "Built by linux-dummy", \
+    "${@oe.utils.read_file('${STAGING_KERNEL_BUILDDIR}/kernel-abiversion')}", d)}"
 
 do_install_basefilesissue:append () {
     # Yocto version and codename
