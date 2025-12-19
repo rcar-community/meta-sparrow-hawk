@@ -1,0 +1,45 @@
+From 6a3d02d077568b7a71ab519fe4d4d9ab106e5e8a Mon Sep 17 00:00:00 2001
+From: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+Date: Thu, 20 Nov 2025 16:05:22 +0100
+Subject: [PATCH 08/15] ipa: rkisp1: Add tuning file for imx708
+
+Add a tuning file for the RaspberryPi camera module v3.
+
+Only enable the basic AGC, AWB and BLS algorithms.
+
+Signed-off-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+---
+ src/ipa/rkisp1/data/imx708.yaml | 8 ++++++++
+ src/ipa/rkisp1/data/meson.build | 1 +
+ 2 files changed, 9 insertions(+)
+ create mode 100644 src/ipa/rkisp1/data/imx708.yaml
+
+diff --git a/src/ipa/rkisp1/data/imx708.yaml b/src/ipa/rkisp1/data/imx708.yaml
+new file mode 100644
+index 00000000..9a11c91a
+--- /dev/null
++++ b/src/ipa/rkisp1/data/imx708.yaml
+@@ -0,0 +1,8 @@
++# SPDX-License-Identifier: CC0-1.0
++%YAML 1.1
++---
++version: 1
++algorithms:
++  - Agc:
++  - Awb:
++  - BlackLevelCorrection:
+diff --git a/src/ipa/rkisp1/data/meson.build b/src/ipa/rkisp1/data/meson.build
+index 1e3522b2..85082ad1 100644
+--- a/src/ipa/rkisp1/data/meson.build
++++ b/src/ipa/rkisp1/data/meson.build
+@@ -3,6 +3,7 @@
+ conf_files = files([
+     'imx219.yaml',
+     'imx258.yaml',
++    'imx708.yaml',
+     'ov2685.yaml',
+     'ov4689.yaml',
+     'ov5640.yaml',
+-- 
+2.25.1
+

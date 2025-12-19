@@ -1,0 +1,60 @@
+From ef0a712366413c3665057b1499fb4634eda58155 Mon Sep 17 00:00:00 2001
+From: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+Date: Thu, 27 Nov 2025 18:57:00 +0100
+Subject: [PATCH 10/15] ipa: rkisp1: imx708: Add CCM tuning
+
+Add CCM values for a fixed set of colour temperatures.
+
+The values are identical from the ones available in the RaspberryPi
+tuning file for imx708.
+
+Signed-off-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+---
+ src/ipa/rkisp1/data/imx708.yaml | 32 ++++++++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
+
+diff --git a/src/ipa/rkisp1/data/imx708.yaml b/src/ipa/rkisp1/data/imx708.yaml
+index df817c7e..c6db8b14 100644
+--- a/src/ipa/rkisp1/data/imx708.yaml
++++ b/src/ipa/rkisp1/data/imx708.yaml
+@@ -6,5 +6,37 @@ algorithms:
+   - Agc:
+   - Awb:
+   - BlackLevelCorrection:
++  - Ccm:
++      ccms:
++        - ct: 2964
++          ccm: [
++                 1.72129, -0.45961, -0.26169,
++                 -0.30042, 1.56924, -0.26882,
++                 0.15133, -1.13293, 1.98161
++               ]
++        - ct: 3610
++          ccm: [
++                 1.54474, -0.35082, -0.19391,
++                 -0.36989, 1.67926, -0.30936,
++                 -0.00524, -0.55197, 1.55722
++               ]
++        - ct: 4640
++          ccm: [
++                 1.52972, -0.35168, -0.17804,
++                 -0.28309, 1.67098, -0.38788,
++                 0.01695, -0.57209, 1.55515
++               ]
++        - ct: 5910
++          ccm: [
++                 1.56879, -0.42159, -0.14719,
++                 -0.27275, 1.59354, -0.32079,
++                 -0.02862, -0.40662, 1.43525
++               ]
++        - ct: 7590
++          ccm: [
++                 1.41424, -0.21092, -0.20332,
++                 -0.17646, 1.71734, -0.54087,
++                 0.01297, -0.63111, 1.61814
++               ]
+   - GammaOutCorrection:
+       gamma: 2.2
+-- 
+2.25.1
+

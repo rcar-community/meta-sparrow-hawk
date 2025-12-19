@@ -1,8 +1,8 @@
-From 28c5ad0f4762187266bc00e2da90433bb8dd5859 Mon Sep 17 00:00:00 2001
+From 4d1d37f9debc99705bc47585cbb55bd50f128118 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Niklas=20S=C3=B6derlund?=
  <niklas.soderlund+renesas@ragnatech.se>
 Date: Tue, 17 Jun 2025 12:38:14 +0200
-Subject: [PATCH 6/8] libcamera: pipeline: Add R-Car Gen4 ISP pipeline
+Subject: [PATCH 05/15] libcamera: pipeline: Add R-Car Gen4 ISP pipeline
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -62,7 +62,7 @@ index 3ee3ada3..48eb19b2 100644
      'rpi/vc4': 'raspberrypi.mojom',
      'simple': 'soft.mojom',
 diff --git a/meson.build b/meson.build
-index fd508fd7..054e209e 100644
+index fa6487f6..a0503596 100644
 --- a/meson.build
 +++ b/meson.build
 @@ -218,6 +218,7 @@ pipelines_support = {

@@ -1,0 +1,162 @@
+From 49c1d6f5c54624274208da57b07c0260b4167671 Mon Sep 17 00:00:00 2001
+From: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+Date: Thu, 27 Nov 2025 19:09:59 +0100
+Subject: [PATCH 13/15] utils: rkisp1: Add a script to port LSC tables
+
+Add a script to port LSC tables from RPi's VC4 format to a format
+compatible with the RkISP1 IPA.
+
+Signed-off-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+---
+ utils/rkisp1/rkisp1_lsc_rpi_to_libcamera.py | 139 ++++++++++++++++++++
+ 1 file changed, 139 insertions(+)
+ create mode 100755 utils/rkisp1/rkisp1_lsc_rpi_to_libcamera.py
+
+diff --git a/utils/rkisp1/rkisp1_lsc_rpi_to_libcamera.py b/utils/rkisp1/rkisp1_lsc_rpi_to_libcamera.py
+new file mode 100755
+index 00000000..e86a88ad
+--- /dev/null
++++ b/utils/rkisp1/rkisp1_lsc_rpi_to_libcamera.py
+@@ -0,0 +1,139 @@
++#!/usr/bin/env python3
++
++import argparse
++import json
++import numpy as np
++import scipy.ndimage
++import sys
++import yaml
++
++
++def update_yaml_config(config, reds, green, blues):
++    with open(config, 'r') as config:
++        data = yaml.safe_load(config)
++
++        xy_sizes = [0.0625, 0.0625, 0.0625,
++                    0.0625, 0.0625, 0.0625, 0.0625, 0.0625]
++
++        lsc_config = {}
++        lsc_config['x-size'] = []
++        lsc_config['y-size'] = []
++        for size in xy_sizes:
++            lsc_config['x-size'].append(size)
++            lsc_config['y-size'].append(size)
++        lsc_config['sets'] = []
++
++        for temperature in reds.keys():
++            red_table = reds[temperature].flatten()
++            blue_table = blues[temperature].flatten()
++
++            ct_set = {}
++            ct_set['ct'] = temperature
++            ct_set['r'] = []
++            ct_set['gr'] = []
++            ct_set['gb'] = []
++            ct_set['b'] = []
++
++            for f in red_table:
++                i = round(f * 1024)
++                ct_set['r'].append(i)
++
++            for f in green:
++                i = round(f * 1024)
++
++                ct_set['gr'].append(i)
++                ct_set['gb'].append(i)
++
++            for f in blue_table:
++                i = round(f * 1024)
++
++                ct_set['b'].append(i)
++
++            lsc_config['sets'].append(ct_set)
++
++        lsc = {'LensShadingCorrection': lsc_config}
++
++        # Remove any existing LensShadingCorrection section
++        algos = data['algorithms']
++        for algo in algos:
++            for k in algo.keys():
++                if k == 'LensShadingCorrection':
++                    algos.remove(algo)
++                    break
++
++        algos.append(lsc)
++        print(data)
++        return data
++
++
++def sort_by_temperature(calibrations):
++    data = {}
++    for entry in calibrations:
++        temp = entry['ct']
++        table = np.array(entry['table']).reshape(12, 16)
++
++        data[temp] = table
++
++    return data
++
++
++def parse_lsc_data(filename):
++    with open(filename, 'r') as tuning_file:
++        for algo in json.load(tuning_file)['algorithms']:
++            for (k, v) in algo.items():
++                if k == 'rpi.alsc':
++                    return v
++
++    raise Exception("Cannot find LSC tuning data in file " + filename)
++
++
++def main():
++    parser = argparse.ArgumentParser()
++    parser.add_argument('-f', '--file', required=True,
++                        help='Tuning file to parse')
++    parser.add_argument('-t', '--temperature', help='Color temperature')
++    # todo: Do not make this mandatory and default to stdio
++    parser.add_argument('-a', '--append', required=True,
++                        help='RkISP configuration file to append LSC tables to')
++
++    args = parser.parse_args()
++
++    lsc_data = parse_lsc_data(args.file)
++
++    luminance_strength = lsc_data['luminance_strength']
++    luma = np.array(lsc_data['luminance_lut']).reshape(12, 16)
++    green = (luma - 1) * luminance_strength + 1
++
++    cr_data = sort_by_temperature(lsc_data['calibrations_Cr'])
++    cb_data = sort_by_temperature(lsc_data['calibrations_Cb'])
++
++    reds = {}
++    blues = {}
++
++    for temperature in cr_data.keys():
++        cr = cr_data[temperature]
++        cb = cb_data[temperature]
++
++        red = cr * green
++        red = scipy.ndimage.zoom(red, (17 / 12, 17 / 16))
++        red /= red.min()
++
++        blue = cb * green
++        blue = scipy.ndimage.zoom(blue, (17 / 12, 17 / 16))
++        blue /= blue.min()
++
++        reds[temperature] = red
++        blues[temperature] = blue
++
++    green = scipy.ndimage.zoom(green, (17 / 12, 17 / 16))
++    green /= green.min()
++
++    new_config = update_yaml_config(args.append, reds, green.flatten(), blues)
++    with open(args.append, 'w') as config:
++        yaml.safe_dump(new_config, config)
++
++    return 0
++
++
++if __name__ == '__main__':
++    sys.exit(main())
+-- 
+2.25.1
+

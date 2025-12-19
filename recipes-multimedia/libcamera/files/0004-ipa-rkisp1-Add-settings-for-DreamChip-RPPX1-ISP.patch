@@ -1,8 +1,8 @@
-From 619c4cab69fbe672ddd0bd0b35296c6845d87945 Mon Sep 17 00:00:00 2001
+From 58dc47964b927c97153360cc4ad615bb2ca20a55 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Niklas=20S=C3=B6derlund?=
  <niklas.soderlund+renesas@ragnatech.se>
 Date: Tue, 17 Jun 2025 12:38:08 +0200
-Subject: [PATCH 5/8] ipa: rkisp1: Add settings for DreamChip RPPX1 ISP
+Subject: [PATCH 04/15] ipa: rkisp1: Add settings for DreamChip RPPX1 ISP
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -47,7 +47,7 @@ index 068e8988..cfeedd80 100644
  	libcamera.IPACameraSensorInfo sensorInfo;
  	libcamera.ControlInfoMap sensorControls;
 diff --git a/src/ipa/rkisp1/rkisp1.cpp b/src/ipa/rkisp1/rkisp1.cpp
-index a8e46094..45df0475 100644
+index 47d856d6..ef89d118 100644
 --- a/src/ipa/rkisp1/rkisp1.cpp
 +++ b/src/ipa/rkisp1/rkisp1.cpp
 @@ -117,6 +117,15 @@ const IPAHwSettings ipaHwSettingsV12{

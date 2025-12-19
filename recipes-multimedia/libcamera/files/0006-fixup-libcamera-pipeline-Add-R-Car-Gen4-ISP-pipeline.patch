@@ -1,0 +1,35 @@
+From 37045ae6e8c8bea72d9c859fb8bc237623d4be08 Mon Sep 17 00:00:00 2001
+From: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+Date: Fri, 5 Dec 2025 11:50:29 +0100
+Subject: [PATCH 06/15] fixup! libcamera: pipeline: Add R-Car Gen4 ISP pipeline
+
+re-base on most recent master
+---
+ src/libcamera/pipeline/rcar-gen4/rcar-gen4.cpp | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/libcamera/pipeline/rcar-gen4/rcar-gen4.cpp b/src/libcamera/pipeline/rcar-gen4/rcar-gen4.cpp
+index 74423dbc..45ab86c6 100644
+--- a/src/libcamera/pipeline/rcar-gen4/rcar-gen4.cpp
++++ b/src/libcamera/pipeline/rcar-gen4/rcar-gen4.cpp
+@@ -788,7 +788,7 @@ bool PipelineHandlerRCar4::match(DeviceEnumerator *enumerator)
+ {
+ 	DeviceMatch dm("rcar_vin");
+ 
+-	MediaDevice *media = acquireMediaDevice(enumerator, dm);
++	auto media = acquireMediaDevice(enumerator, dm);
+ 	if (!media)
+ 		return false;
+ 
+@@ -802,7 +802,7 @@ bool PipelineHandlerRCar4::match(DeviceEnumerator *enumerator)
+ 			 * 'rcar_isp fed00000.isp'.
+ 			 */
+ 			std::string pipeId = entity->name().substr(0, 21);
+-			if (!createCamera(media, pipeId))
++			if (!createCamera(media.get(), pipeId))
+ 				registered = true;
+ 		}
+ 	}
+-- 
+2.25.1
+

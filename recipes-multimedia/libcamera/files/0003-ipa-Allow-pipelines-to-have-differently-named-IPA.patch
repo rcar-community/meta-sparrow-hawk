@@ -1,7 +1,7 @@
-From 52260c5421dea5bb7158303b657469179f770017 Mon Sep 17 00:00:00 2001
+From 60ed6c063f9154dab7b3506b128a37435fb71949 Mon Sep 17 00:00:00 2001
 From: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
 Date: Wed, 15 Oct 2025 17:55:27 +0200
-Subject: [PATCH 4/8] ipa: Allow pipelines to have differently named IPA
+Subject: [PATCH 03/15] ipa: Allow pipelines to have differently named IPA
 
 Right now the build system assumes a 1-to-1 matching between a pipeline
 handler name and an IPA module.

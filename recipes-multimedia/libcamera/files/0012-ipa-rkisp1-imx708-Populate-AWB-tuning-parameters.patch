@@ -1,0 +1,74 @@
+From 1b3ddc60d33d34c27442a4c38a70c87c296c1da4 Mon Sep 17 00:00:00 2001
+From: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+Date: Thu, 27 Nov 2025 19:05:28 +0100
+Subject: [PATCH 12/15] ipa: rkisp1: imx708: Populate AWB tuning parameters
+
+Populate the AWB tuning paramters to use the "Bayesian" AWB algorithm
+version which offers better performances compared to the standard
+"Grey World" one.
+
+Define a set of standard AwbMode and populate the colourGains using the
+RaspberryPi tuning file.
+
+Compared to the RPi tuning file format the gains are expressed as the
+inverse of the whitepoint values.
+
+Signed-off-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+---
+ src/ipa/rkisp1/data/imx708.yaml | 40 +++++++++++++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
+
+diff --git a/src/ipa/rkisp1/data/imx708.yaml b/src/ipa/rkisp1/data/imx708.yaml
+index eb97e1ce..eae2a192 100644
+--- a/src/ipa/rkisp1/data/imx708.yaml
++++ b/src/ipa/rkisp1/data/imx708.yaml
+@@ -32,6 +32,46 @@ algorithms:
+             yTarget: [0, 0.8, 1000, 0.5]
+       relativeLuminanceTarget: 0.5
+   - Awb:
++      algorithm: "bayes"
++      AwbMode:
++        AwbAuto:
++          lo: 2500
++          hi: 8000
++        AwbIncandescent:
++          lo: 2500
++          hi: 3000
++        AwbTungsten:
++          lo: 3000
++          hi: 3500
++        AwbFluorescent:
++          lo: 4000
++          hi: 4700
++        AwbIndoor:
++          lo: 3000
++          hi: 5000
++        AwbDaylight:
++          lo: 5500
++          hi: 6500
++        AwbCloudy:
++          lo: 6500
++          hi: 8000
++      priors:
++        - lux: 0
++          ct: [ 2000, 13000 ]
++          probability: [ 1.0, 1.0 ]
++      colourGains:
++        - ct: 2964
++          gains: [1.342101731, 3.112356054]
++        - ct: 3610
++          gains: [1.634253963, 2.250731488]
++        - ct: 4640
++          gains: [1.93498452, 1.845358922]
++        - ct: 5910
++          gains: [2.254283138, 1.605394124]
++        - ct: 7590
++          gains: [2.599428126, 1.444877908]
++      transversePos: 0.1
++      transverseNeg: 0.1
+   - BlackLevelCorrection:
+   - Ccm:
+       ccms:
+-- 
+2.25.1
+

@@ -1,7 +1,7 @@
-From b9e540296cdf8df0b5b3fe1fa88f2963c867a7bd Mon Sep 17 00:00:00 2001
+From 139ee9a8484da6c548d4f95ede532be3f1e6d866 Mon Sep 17 00:00:00 2001
 From: Hans de Goede <hansg@kernel.org>
 Date: Wed, 15 Oct 2025 17:55:24 +0200
-Subject: [PATCH 1/8] libcamera: ipa_manager: Create IPA by name
+Subject: [PATCH 01/15] libcamera: ipa_manager: Create IPA by name
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit

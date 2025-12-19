@@ -1,0 +1,57 @@
+From 2e77f32a92fd86281488ed238ab595e55b22d2bd Mon Sep 17 00:00:00 2001
+From: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+Date: Thu, 27 Nov 2025 19:03:37 +0100
+Subject: [PATCH 11/15] ipa: rkisp1: imx708: Populate AGC tuning
+
+Populate the AGC algorithm tuning paramters.
+
+Define a set of standard Metering and Constraint modes.
+
+Use the default 0.5 luminance target.
+
+Signed-off-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+---
+ src/ipa/rkisp1/data/imx708.yaml | 27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+
+diff --git a/src/ipa/rkisp1/data/imx708.yaml b/src/ipa/rkisp1/data/imx708.yaml
+index c6db8b14..eb97e1ce 100644
+--- a/src/ipa/rkisp1/data/imx708.yaml
++++ b/src/ipa/rkisp1/data/imx708.yaml
+@@ -4,6 +4,33 @@
+ version: 1
+ algorithms:
+   - Agc:
++      AeMeteringMode:
++        MeteringCentreWeighted: [0, 0, 0, 0, 0, 0, 6, 8, 6, 0, 0, 8, 16, 8, 0, 0, 6, 8, 6, 0, 0, 0, 0, 0, 0]
++        MeteringSpot: [0, 0, 0, 0, 0, 0, 2, 4, 2, 0, 0, 4, 16, 4, 0, 0, 2, 4, 2, 0, 0, 0, 0, 0, 0]
++        MeteringMatrix: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
++      AeExposureMode:
++        ExposureNormal:
++          exposureTime: [ 100, 10000, 30000, 60000, 120000 ]
++          gain: [ 1.0, 2.0, 4.0, 6.0, 6.0 ]
++        ExposureShort:
++          exposureTime: [ 100, 5000, 10000, 20000, 120000 ]
++          gain: [ 1.0, 2.0, 4.0, 6.0, 6.0 ]
++      AeConstraintMode:
++        ConstraintNormal:
++          lower:
++            qLo: 0.98
++            qHi: 1.0
++            yTarget: [0, 0.5, 1000, 0.5]
++        ConstraintHighlight:
++          lower:
++            qLo: 0.98
++            qHi: 1.0
++            yTarget: [0, 0.5, 1000, 0.5]
++          upper:
++            qLo: 0.98
++            qHi: 1.0
++            yTarget: [0, 0.8, 1000, 0.5]
++      relativeLuminanceTarget: 0.5
+   - Awb:
+   - BlackLevelCorrection:
+   - Ccm:
+-- 
+2.25.1
+

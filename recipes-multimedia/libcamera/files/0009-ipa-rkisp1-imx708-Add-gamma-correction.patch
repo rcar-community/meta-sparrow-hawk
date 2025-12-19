@@ -1,0 +1,27 @@
+From 8fe3a19e4c8f5e14d4c2589d05c33e03b474df6a Mon Sep 17 00:00:00 2001
+From: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+Date: Thu, 27 Nov 2025 18:51:08 +0100
+Subject: [PATCH 09/15] ipa: rkisp1: imx708: Add gamma correction
+
+Add gamma correction to the imx708 tuning file.
+
+Use a 2.2 gamma value which corresponds to the sRGB color profile.
+
+Signed-off-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+---
+ src/ipa/rkisp1/data/imx708.yaml | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/src/ipa/rkisp1/data/imx708.yaml b/src/ipa/rkisp1/data/imx708.yaml
+index 9a11c91a..df817c7e 100644
+--- a/src/ipa/rkisp1/data/imx708.yaml
++++ b/src/ipa/rkisp1/data/imx708.yaml
+@@ -6,3 +6,5 @@ algorithms:
+   - Agc:
+   - Awb:
+   - BlackLevelCorrection:
++  - GammaOutCorrection:
++      gamma: 2.2
+-- 
+2.25.1
+
