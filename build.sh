@@ -76,18 +76,6 @@ rm -rf build-$MACHINE/conf
 TEMPLATECONF=${WORK}/meta-sparrow-hawk/conf/templates/$MACHINE${TEMPLATE_POSTFIX} \
     . poky/oe-init-build-env build-$MACHINE
 
-if [[ "${MACHINE}" == "sparrow-hawk" ]]; then
-    FIRMWARE_LIST=("rcar_gen4_pcie.bin")
-    for item in ${FIRMWARE_LIST[@]}; do
-        if [[ ! -e ${WORK}/meta-sparrow-hawk/firmware/${item} ]]; then
-            echo "${WORK}/meta-sparrow-hawk/firmware/${item} is not found !!"
-            echo "Dummy file is created: ${WORK}/meta-sparrow-hawk/firmware/${item}"
-            mkdir -p ${WORK}/meta-sparrow-hawk/firmware/
-            touch ${WORK}/meta-sparrow-hawk/firmware/${item}
-        fi
-    done
-fi
-
 if [[ "${USE_SSTATE_MIRROR}" == "yes" ]]; then
 cat << EOS >> conf/local.conf
 BB_HASHSERVE_UPSTREAM = "wss://hashserv.yoctoproject.org/ws"
