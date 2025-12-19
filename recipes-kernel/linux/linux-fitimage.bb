@@ -11,7 +11,7 @@ inherit deploy
 
 DEPENDS += " \
     u-boot-mkimage-native dtc-native \
-    virtual/kernel arm-trusted-firmware \
+    virtual/kernel arm-trusted-firmware initramfs-image \
 "
 
 SRC_URI = " \
@@ -26,6 +26,7 @@ ALLOW_EMPTY:${PN} = "1"
 do_configure[noexec] = "1"
 do_compile[depends] += "virtual/kernel:do_deploy"
 do_compile[depends] += "arm-trusted-firmware:do_deploy"
+do_compile[depends] += "initramfs-image:do_image_complete"
 
 do_compile() {
     cd ${DEPLOY_DIR}/images/${MACHINE}

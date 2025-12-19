@@ -40,6 +40,17 @@
 				algo = "crc32";
 			};
 		};
+		ramdisk-1 {
+			description = "Initramfs for driver loading";
+			data = /incbin/("./uInitramfs.cpio.gz");
+			type = "ramdisk";
+			arch = "arm64";
+			os = "linux";
+			compression = "none";
+			hash-1 {
+				algo = "crc32";
+			};
+		};
 
 		fdt-j1-imx219 {
 			description = "Flattened Device Tree Overlay";
@@ -160,6 +171,16 @@
 			kernel = "kernel-1";
 			fdt = "fdt-1";
 			loadables = "atf-1";
+			hash-1 {
+				algo = "crc32";
+			};
+		};
+		initramfs {
+			description = "Boot Linux kernel with FDT blob/Initramfs";
+			kernel = "kernel-1";
+			fdt = "fdt-1";
+			loadables = "atf-1";
+			ramdisk = "ramdisk-1";
 			hash-1 {
 				algo = "crc32";
 			};

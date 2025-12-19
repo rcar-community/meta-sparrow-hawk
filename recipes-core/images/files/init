@@ -1,0 +1,28 @@
+#!/bin/sh
+echo "initrmfs: Init script for loading PCIe module at early timing"
+mount -t proc none /proc
+mount -t sysfs none /sys
+mount -t devtmpfs devtmpfs /dev
+mkdir -p /dev/pts
+mount -t devpts devpts /dev/pts
+
+echo "Loading PCIe module..."
+modprobe pcie-rcar-gen4
+
+echo "Mounting real rootfs..."
+rootdev=$(cat /proc/cmdline | sed -n 's/.*root=\([^ ]*\).*/\1/p')
+
+echo "Waiting for $rootdev to appear..."
+for i in $(seq 1 30); do
+    if [ -b $rootdev ]; then
+        echo "$rootdev is ready"
+        break
+    fi
+    sleep 1
+done
+
+mount -o ro ${rootdev} /mnt
+exec switch_root /mnt /sbin/init
+udevadm control --reload
+udevadm trigger --action=add
+
