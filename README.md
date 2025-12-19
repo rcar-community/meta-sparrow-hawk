@@ -58,12 +58,6 @@ build option can be confirmed by -h option:
 ./build.sh -h
 ```
 
-### Integrate PCIe firmware into rootfs
-
-If you have pcie firmware binary and want to integrate it into rootfs,
-Please copy `rcar_gen4_pcie.bin` into "meta-sparrow-hawk/firmware/".
-Please see also https://elinux.org/R-Car/Boards/WhiteHawk#PCIe_firmware
-
 ## Build Instructions for SDK
 
 ```bash
