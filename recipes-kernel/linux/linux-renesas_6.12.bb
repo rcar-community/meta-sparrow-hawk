@@ -21,7 +21,13 @@ S = "${WORKDIR}/git"
 KCONFIG_MODE = "--alldefconfig"
 KBUILD_DEFCONFIG = "defconfig"
 
-FILESEXTRAPATHS:prepend:sparrow-hawk = "${TOPDIR}/../../firmware:"
+# For pciex firmware
+SRC_URI:append:sparrow-hawk = " \
+    git://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git;protocol=https;branch=main;name=firmware;destsuffix=git/firmware \
+    file://builtin_fw.cfg \
+"
+SRCREV_firmware:sparrow-hawk = "56bb432a65bce10ff415231c3cdbf50cc81c03a6"
+
 SRC_URI:append:sparrow-hawk = " \
     file://sparrow_hawk.cfg \
     file://sparrow-hawk-enable-i2c3-i2c4.dtsi;subdir=git/arch/arm64/boot/dts/renesas/ \
