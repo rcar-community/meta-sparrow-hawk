@@ -4,7 +4,7 @@ OVERRIDES .= ":${TARGET_SYS}"
 # Basic packages
 IMAGE_INSTALL:append = " \
     ${CORE_IMAGE_BASE_INSTALL} \
-    bash \
+    bash bsp-info \
     packagegroup-renesas-bsp-tools \
     packagegroup-renesas-bsp-demo \
 "
