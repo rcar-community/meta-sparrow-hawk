@@ -302,3 +302,5 @@ LINUXLIBCVERSION = "6.12%"
 # nativesdk-linux-libc-headers is depended on Yocto version
 PREFERRED_VERSION_nativesdk-linux-libc-headers = "6.6"
 
+# Enable NVME boot support
+MACHINE_FEATURES:append = " nvme"

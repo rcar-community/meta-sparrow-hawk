@@ -281,8 +281,8 @@ VIRTUAL-RUNTIME_init_manager = "systemd"
 # add the static lib to SDK toolchain
 SDKIMAGE_FEATURES:append = " staticdev-pkgs"
 
-# Enable Gfx Pkgs
-MACHINE_FEATURES:append = " gsx"
+# Enable Gfx Pkgs and NVME boot support
+MACHINE_FEATURES:append = " gsx nvme"
 
 # Enable Wayland/Weston
 DISTRO_FEATURES_NATIVESDK:append = " wayland"

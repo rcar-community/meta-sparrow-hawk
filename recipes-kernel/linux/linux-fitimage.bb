@@ -9,13 +9,16 @@ COMPATIBLE_MACHINE = "sparrow-hawk"
 
 inherit deploy
 
+require ${@bb.utils.contains('MACHINE_FEATURES', 'nvme', 'linux-fitimage-nvme.inc', '', d)}
+
 DEPENDS += " \
     u-boot-mkimage-native dtc-native \
-    virtual/kernel arm-trusted-firmware initramfs-image \
+    virtual/kernel arm-trusted-firmware \
 "
+FIT_ITS_FILE ??= "fit-image.its.sd"
 
 SRC_URI = " \
-    file://fit-image.its \
+    file://${FIT_ITS_FILE} \
 "
 
 FILES:${PN} += " \
@@ -26,11 +29,10 @@ ALLOW_EMPTY:${PN} = "1"
 do_configure[noexec] = "1"
 do_compile[depends] += "virtual/kernel:do_deploy"
 do_compile[depends] += "arm-trusted-firmware:do_deploy"
-do_compile[depends] += "initramfs-image:do_image_complete"
 
 do_compile() {
     cd ${DEPLOY_DIR}/images/${MACHINE}
-    install -m 644 ${WORKDIR}/fit-image.its ./
+    install -m 644 ${WORKDIR}/${FIT_ITS_FILE} ./fit-image.its
     sed -i "s/bl31.bin/bl31-${MACHINE}.bin/" ./fit-image.its
     mkimage -f ./fit-image.its ./fitImage
 
