@@ -1,3 +1,8 @@
+Upstream-Status: Inappropriate [no upstream]
+
+Signed-off-by: Anh Nguyen <anh.nguyen.pv@renesas.com>
+
+---
 diff --git a/drivers/gpu/drm/drm_file.c b/drivers/gpu/drm/drm_file.c
 index e2cf118ff01d..2e975c0e691b 100644
 --- a/drivers/gpu/drm/drm_file.c
