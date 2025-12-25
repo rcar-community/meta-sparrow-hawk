@@ -11,6 +11,7 @@ TARGET_IMAGE=core-image-minimal
 USE_SSTATE_MIRROR=no
 USE_NEXT_KERNEL=no
 BUILD_SBOM=no
+BUILD_ROOTFS_ONLY=no
 REMOVE_WORKDIR=no
 IS_BUILD_INSIDE_REPO=yes
 IS_BUILD_SDK=no
@@ -49,6 +50,8 @@ for arg in $@; do
         USE_SSTATE_MIRROR=yes
     elif [[ "$arg" == "--next-kernel" ]]; then
         USE_NEXT_KERNEL=yes
+    elif [[ "$arg" == "--build-rootfs-only" ]]; then
+        BUILD_ROOTFS_ONLY=yes
     fi
 done
 
@@ -121,6 +124,13 @@ LINUXLIBCVERSION = "6.18%"
 EOS
 bitbake kernel-module-gles -c clean
 bitbake linux-renesas -c clean
+fi
+
+if [[ "${BUILD_ROOTFS_ONLY}" == "yes" ]]; then
+cat << EOS >> conf/local.conf
+# Disable kernel building
+PREFERRED_PROVIDER_virtual/kernel = "linux-dummy"
+EOS
 fi
 
 if [[ "${REMOVE_WORKDIR}" == "yes" ]]; then

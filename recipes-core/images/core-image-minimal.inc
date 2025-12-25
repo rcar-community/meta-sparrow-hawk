@@ -20,10 +20,11 @@ QOS_USER_PKGS:aarch64-poky-linux = " \
     qosif-tp-user-module \
 "
 
+OVERRIDES .= ":kernel-${PREFERRED_PROVIDER_virtual/kernel}"
 # Installation for QoS packages
-IMAGE_INSTALL:append = " \
-    kernel-module-qos \
+IMAGE_INSTALL:append:kernel-linux-renesas = " \
     ${QOS_USER_PKGS} \
+    kernel-module-qos \
 "
 
 #Installation for ethtool
