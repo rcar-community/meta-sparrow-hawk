@@ -1,0 +1,54 @@
+From 35b64e1679127231ecd638a783c1c3eeb21a083b Mon Sep 17 00:00:00 2001
+From: Marek Vasut <marek.vasut+renesas@mailbox.org>
+Date: Thu, 8 Jan 2026 20:09:21 +0100
+Subject: [PATCH] arm64: dts: renesas: r8a779g3: Reinstate basic PCIe clock
+ description for Sparrow Hawk
+
+The 9FGV0441 PCIe clock generator can operate in autonomous mode, which
+is the default mode. U-Boot currently does not have a driver for this
+PCIe clock generator, but Linux 6.17 DT does describe the clock generator
+in Sparrow Hawk board DT and this DT is included in U-Boot since commit
+eea470fd7f6a ("Subtree merge tag 'v6.17-dts' of dts repo [1] into dts/upstream").
+
+Reinstate basic PCIe clock description which matches the behavior of
+Linux DT before Linux 6.17.y release in in U-Boot DT extras to allow
+PCIe to be used on Sparrow Hawk board in U-Boot until the 9FGV0441
+driver gets implemented or ported from Linux.
+
+Signed-off-by: Marek Vasut <marek.vasut+renesas@mailbox.org>
+---
+ arch/arm/dts/r8a779g3-sparrow-hawk-u-boot.dtsi | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/arch/arm/dts/r8a779g3-sparrow-hawk-u-boot.dtsi b/arch/arm/dts/r8a779g3-sparrow-hawk-u-boot.dtsi
+index dff0355150d..968cf6684c5 100644
+--- a/arch/arm/dts/r8a779g3-sparrow-hawk-u-boot.dtsi
++++ b/arch/arm/dts/r8a779g3-sparrow-hawk-u-boot.dtsi
+@@ -49,6 +49,24 @@
+ 	status = "okay";
+ };
+ 
++&pcie0_clkref {
++	clock-frequency = <100000000>;
++	status = "okay";
++};
++
++&pciec0 {
++	clocks = <&cpg CPG_MOD 624>, <&pcie0_clkref>;
++};
++
++&pcie1_clkref {
++	clock-frequency = <100000000>;
++	status = "okay";
++};
++
++&pciec1 {
++	clocks = <&cpg CPG_MOD 625>, <&pcie1_clkref>;
++};
++
+ &rpc {
+ 	flash@0 {
+ 		/*
+-- 
+2.34.1
+

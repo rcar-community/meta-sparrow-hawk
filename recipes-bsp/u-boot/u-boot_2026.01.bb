@@ -10,31 +10,21 @@ DEPENDS += "bc-native dtc-native python3-pyelftools-native gnutls-native"
 
 UBOOT_URL = "git://source.denx.de/u-boot/u-boot.git"
 BRANCH = "master"
-SRCREV = "e50b1e8715011def8aff1588081a2649a2c6cd47"
+SRCREV = "127a42c7257a6ffbbd1575ed1cbaa8f5408a44b3"
 LICENSE = "GPL-2.0-or-later"
 LIC_FILES_CHKSUM = "file://Licenses/README;md5=2ca5f2c35c8cc335f0a19756634782f1"
 
 SRC_URI = "${UBOOT_URL};branch=${BRANCH};protocol=https"
 
-PV = "v2025.10+git${SRCPV}"
+PV = "v2026.01+git${SRCPV}"
 
 UBOOT_SREC_SUFFIX = "srec"
 UBOOT_SREC ?= "u-boot-elf.${UBOOT_SREC_SUFFIX}"
 UBOOT_SREC_IMAGE ?= "u-boot-elf-${MACHINE}-${PV}-${PR}.${UBOOT_SREC_SUFFIX}"
 UBOOT_SREC_SYMLINK ?= "u-boot-elf-${MACHINE}.${UBOOT_SREC_SUFFIX}"
 
-# EVT-B1 Fixes
-SRC_URI:append = "\
-    file://0008-arm64-dts-renesas-r8a779g3-Describe-generic-SPI-NOR-.patch \
-    file://0010-arm64-dts-renesas-r8a779g3-Invert-microSD-voltage-se.patch \
-    file://0014-FIXME-arm64-dts-renesas-r8a779g3-Set-VDDQ18_25_AVB-v.patch \
-"
-
-# Fix PCIe
-SRC_URI:append = " \
-    file://0001-pci-pcie-rcar-gen4-Shut-down-controller-on-link-down.patch \
-    file://0002-arm64-renesas-r8a779g3-Reset-PCIe-before-next-stage-.patch \
-"
+# Backport to enable PCIe feature
+SRC_URI:append = " file://0001-arm64-dts-renesas-r8a779g3-Reinstate-basic-PCIe-cloc.patch"
 
 SRC_URI:append = "\
     file://nfs_cmd.cfg \
