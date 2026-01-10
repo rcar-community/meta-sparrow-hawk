@@ -15,6 +15,7 @@ DEPENDS += " \
 "
 
 SRC_URI = " \
+    file://boot.cmd \
     file://fit-image.its \
 "
 
@@ -29,6 +30,7 @@ do_compile[depends] += "arm-trusted-firmware:do_deploy"
 
 do_compile() {
     cd ${DEPLOY_DIR}/images/${MACHINE}
+    install -m 644 ${WORKDIR}/boot.cmd ./
     install -m 644 ${WORKDIR}/fit-image.its ./
     sed -i "s/bl31.bin/bl31-${MACHINE}.bin/" ./fit-image.its
     mkimage -f ./fit-image.its ./fitImage

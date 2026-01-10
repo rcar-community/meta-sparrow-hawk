@@ -51,6 +51,17 @@
 				algo = "crc32";
 			};
 		};
+		script {
+			description = "Boot script for automatic applying dt-overlay ";
+			data = /incbin/("./boot.cmd");
+			type = "script";
+			arch = "arm64";
+			os = "u-boot";
+			compression = "none";
+			hash-1 {
+				algo = "crc32";
+			};
+		};
 
 		fdt-j1-imx219 {
 			description = "Flattened Device Tree Overlay";
