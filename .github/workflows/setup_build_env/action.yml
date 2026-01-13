@@ -87,6 +87,14 @@ runs:
         pip3 install websockets
         df -h
 
+    - name: Mount addtional disk
+      shell: bash
+      run: |
+        sudo parted /dev/nvme0n1 --script mklabel gpt mkpart primary ext4 0% 100%
+        sudo mkfs.ext4 /dev/nvme0n1p1
+        sudo mkdir -p /mnt
+        sudo mount /dev/nvme0n1p1 /mnt
+
     - name: Maximize build space
       uses: easimon/maximize-build-space@master
       with:
