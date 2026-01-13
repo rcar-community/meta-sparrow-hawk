@@ -69,18 +69,6 @@ runs:
         rustup self uninstall -y
         ls -al /usr/local/share
         df -h
-    - name: Remove more packages
-      # Based on https://github.com/easimon/maximize-build-space/issues/30
-      shell: bash
-      run: |
-        removePackages=`apt list --manual-installed | awk '{print $1}' | sed 's|\(.*\)/.*|\1|' | grep -E -v 'base*|bash|binutils|bsdutils|bzip2|ca-certificates|coreutils|curl|dbus|diffutils|dpkg*|file|findutils|git*|grep|gzip|hostname|init|iproute2|iputils-ping|keyutils|lib*|linux-headers*|linux-image*|lld*|locales|login|lsb-release|make|net-tools|openssh-*|openssl|patchelf|rpm|rsync|session-manager-plugin|shellcheck|ssh|sudo|sysvinit-utils|tar|tcl*|time|tk|tzdata|ubuntu-*|unzip|upx-ucl|walinuxagent|wget|xz-utils|zip*|zsync|apt|dash|ncurses-bin|shim-signed|grub-efi-*|mokutil|sbsigntool|secureboot-db|docker-*|containerd.io' | tr '\n' ' '`
-        echo "Removing following userinstalled packages: $removePackages"
-        sudo apt-get update
-        sudo apt-get purge -y $removePackages
-        sudo dpkg -r packages-microsoft-prod > /dev/null 2>&1 || true
-        sudo apt-get autoremove -y > /dev/null 2>&1 || true
-        sudo apt-get autoclean -y > /dev/null 2>&1 || true
-        df -h
     - name: Setup package
       shell: bash
       run: |
@@ -100,16 +88,16 @@ runs:
         df -h
 
     - name: Maximize build space
-      shell: bash
-      run: |
-        # Swap reduces to 256MB
-        sudo swapoff -a
-        sudo rm -f /swapfile
-        sudo dd if=/dev/zero of=/swapfile bs=1M count=256
-        sudo chmod 600 /swapfile
-        sudo mkswap /swapfile
-        sudo swapon /swapfile
+      uses: easimon/maximize-build-space@master
+      with:
+        root-reserve-mb: 512
+        swap-size-mb: 512
 
+        remove-dotnet: 'true'
+        remove-android: 'true'
+        remove-haskell: 'true'
+        remove-codeql: 'true'
+        remove-docker-images: 'true'
 
     - name: Checkout repository
       uses: actions/checkout@v3
