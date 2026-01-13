@@ -1,5 +1,5 @@
-name: Build Yocto BSP for Sparrow-hawk
-description: Run Build Yocto BSP for Sparrow-hawk
+name: Setup build environment
+description: Setup build environment for Sparrow Hawk BSP
 runs:
   using: "composite"
   steps:
@@ -121,14 +121,4 @@ runs:
         df -h
         free -h
 
-    - name: Run build
-      shell: bash
-      run: |
-        ./build.sh --console --sbom --rm-work
-        ./build.sh --weston --sbom --rm-work
-
-    - name: Check disk
-      shell: bash
-      run: |
-        df -h
 

@@ -19,3 +19,9 @@ jobs:
       - name: Build BSP
         uses: ./.github/workflows/build_bsp
 
+      - name: Run build
+        shell: bash
+        run: |
+          ./build.sh --console --rm-work
+          ./build.sh --weston  --rm-work
+
