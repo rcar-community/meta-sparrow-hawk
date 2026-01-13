@@ -122,8 +122,12 @@ cat << EOS >> conf/local.conf
 PREFERRED_VERSION_linux-renesas = "6.18%"
 LINUXLIBCVERSION = "6.18%"
 EOS
-bitbake kernel-module-gles -c clean
-bitbake linux-renesas -c clean
+if [[ "${TARGET_IMAGE}" == "core-image-weston" ]];then
+    echo "GPU is not supported in next version kernel so far"
+    # Cleanup symbolic link
+    rm -f ${WORK}/meta-sparrow-hawk
+    exit
+fi
 fi
 
 if [[ "${BUILD_ROOTFS_ONLY}" == "yes" ]]; then
