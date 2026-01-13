@@ -154,7 +154,7 @@ jobs:
             ./build/build-sparrow-hawk/tmp/deploy/deploy_spdx_split.z*
             ./build/build-sparrow-hawk/tmp/deploy/kernel_deb_package.zip
             ./build/build-sparrow-hawk/tmp/deploy/ipl-burning.zip
-            ./build/build-sparrow-hawk/tmp/deploy/images/*/core-image-*-sparrow-hawk.rootfs.wic.gz
+            ./build/build-sparrow-hawk/tmp/deploy/images/*/core-image-*-sparrow-hawk.rootfs.wic.*
           body_path: ${{ github.workspace }}-release_msg.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
