@@ -1,0 +1,160 @@
+name: Relase Yocto BSP for Sparrow-hawk using next version kernel
+run-name: Release Yocto BSP for Sparrow-hawk using next version kernel
+on:
+  push:
+    branches:
+      - '*-dev'
+      - '*-next'
+  workflow_dispatch:
+
+jobs:
+  Release:
+    name: Release
+    if: github.repository_owner == 'rcar-community'
+    runs-on: ubuntu-22.04-arm
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup build envrionment
+        uses: ./.github/workflows/setup_build_env
+
+      - name: Run build
+        shell: bash
+        run: |
+          ./build.sh --console --sbom --rm-work --next-kernel
+          ./build.sh --weston  --sbom --rm-work --next-kernel
+
+      - name: Generate zip archive to release
+        shell: bash
+        run: |
+          cd ${GITHUB_WORKSPACE}/build/build-sparrow-hawk/tmp/deploy/images/
+          zip -ry deploy_sparrow-hawk.zip sparrow-hawk
+          cd ${GITHUB_WORKSPACE}/build/build-sparrow-hawk/tmp/deploy/images/sparrow-hawk
+          zip -r ${GITHUB_WORKSPACE}/build/build-sparrow-hawk/tmp/deploy/ipl-burning.zip ./ipl-burning
+          cd ${GITHUB_WORKSPACE}/build/build-sparrow-hawk/tmp/deploy
+          zip -ry -s 1900m deploy_spdx_split.zip spdx/
+          # Prepara kernel deb packages for debian based distribution
+          mkdir -p kernel_deb_package
+          PKG_LIST="recipe-linux-renesas recipe-linux-fitimage \
+                    recipe-arm-trusted-firmware recipe-kernel-module"
+          for pkg in ${PKG_LIST}; do
+            find ./spdx/ | grep $pkg | xargs -i cp -f {} -t kernel_deb_package/
+          done
+          find ./deb/ | grep -e /kernel- -e /linux-fitimage | xargs -i cp -f {} -t kernel_deb_package/
+          zip -r kernel_deb_package.zip kernel_deb_package
+
+          cd $GITHUB_WORKSPACE
+
+      - name: Prepare release message
+        shell: bash
+        run: |
+          OUTPUT="${{ github.workspace }}-release_msg.txt"
+          BRANCH="${{ github.ref_name }}"
+
+          # Set Header message
+          if [[ "$BRANCH" == *-dev ]]; then
+            echo '## Note: This is the latest development build.' > ${OUTPUT}
+          else
+            echo '## Yocto layer information' > ${OUTPUT}
+          fi
+
+          # Body
+          cat << 'EOS' >> ${OUTPUT}
+
+          | Layer | Repository | Commit |
+          | --- | --- | --- |
+          EOS
+          for layer in $(ls build/ | grep -v build-); do 
+            URL=$(git -C build/${layer}/ remote -v | head -1 | awk '{print $2}')
+            COMMIT=$(git -C build/${layer}/ log -n1 --pretty="format:%H")
+            echo "| ${layer} | ${URL} | ${COMMIT} |"  >> ${OUTPUT}
+          done
+          # meta-sparrow-hawk
+          layer="meta-sparrow-hawk"
+          URL=$(git -C ./ remote -v | head -1 | awk '{print $2}')
+          COMMIT=$(git -C ./ log -n1 --pretty="format:%H")
+          echo "| ${layer} | ${URL} | ${COMMIT} |"  >> ${OUTPUT}
+
+          # software version list
+          YOCTO_VER=$(grep ^DISTRO_VERSION ./build/poky/meta-poky/conf/distro/poky.conf | cut -d'"' -f2)
+          UBOOT_VER=$(ls ./recipes-bsp/u-boot/u-boot_*.bb | grep -oP 'u-boot_\K[0-9]+\.[0-9]+')
+          KERNEL_VER=$(grep ^LINUX_VERSION recipes-kernel/linux/kernel_*.inc | cut -d'"' -f2 | tail -1)
+          GCC_VER=$(ls -d build/build-sparrow-hawk/tmp/work-shared/gcc-* | grep -oP 'gcc-\K[0-9]+\.[0-9]+\.[0-9]+')
+          ATF_VER=$(grep ^PV ./recipes-bsp/arm-trusted-firmware/arm-trusted-firmware_git.bb | cut -d'"' -f2 | cut -d'+' -f1)
+          cat << EOS >> ${OUTPUT}
+
+          | Software                    | Version       |
+          | --------------------------- | ------------- |
+          | Yocto Project               | ${YOCTO_VER}  |
+          | Aarch64-poky-linux-gcc(GCC) | ${GCC_VER}    |
+          | Linux kernel                | ${KERNEL_VER} |
+          | Userland 64/32bit           | 64            |
+          | U-Boot                      | ${UBOOT_VER}  |
+          | Trusted Firmware-A          | ${ATF_VER}    |
+
+          EOS
+
+      - name: Prepare release tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          BRANCH="${{ github.ref_name }}"
+          if [[ "$BRANCH" == "scarthgap" ]]; then
+            # ex.) vYYYY-MM-DD
+            echo "TAG_NAME=v$(date +'%Y-%m-%d')-next-kernel" >> $GITHUB_ENV
+          elif [[ "$BRANCH" == *-dev ]]; then
+            echo "TAG_NAME=dev-latest-next-kernel" >> $GITHUB_ENV
+          elif [[ "$BRANCH" == *-next ]]; then
+            echo "TAG_NAME=next-release-next-kernel" >> $GITHUB_ENV
+          fi
+
+      - name: Delete release tag if it exists
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          # Delete old release/tags if exists
+          if gh release view "${{ env.TAG_NAME }}" --repo ${{ github.repository }} >/dev/null 2>&1; then
+            echo "Deleting old release: ${{ env.TAG_NAME }}"
+            gh release delete "${{ env.TAG_NAME }}" --repo ${{ github.repository }} --yes
+          fi
+          if git ls-remote --tags origin | grep "refs/tags/${{ env.TAG_NAME }}$" >/dev/null; then
+            echo "Deleting old tag: ${{ env.TAG_NAME }}"
+            git push origin ":refs/tags/${{ env.TAG_NAME }}"
+          fi
+
+      - name: Setup release configuration
+        id: prerelease
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF_NAME}" == *-dev ]]; then
+            echo "PRERELEASE=true" >> $GITHUB_ENV
+            echo "RELEASE_TITLE=Development Latest(Using next version kernel)" >> $GITHUB_ENV
+          elif [[ "${GITHUB_REF_NAME}" == *-next ]]; then
+            echo "PRERELEASE=true" >> $GITHUB_ENV
+            echo "RELEASE_TITLE=Next release candidate(Using next version kernel)" >> $GITHUB_ENV
+          else
+            echo "PRERELEASE=false" >> $GITHUB_ENV
+            echo "RELEASE_TITLE=Release ${{ env.TAG_NAME }}" >> $GITHUB_ENV
+          fi
+
+      - name: Create/update release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG_NAME }}
+          target_commitish: ${{ github.ref_name }}
+          name: ${{ env.RELEASE_TITLE }}
+          draft: false
+          prerelease: ${{ env.PRERELEASE }}
+          files: |
+            ./build/build-sparrow-hawk/tmp/deploy/images/deploy_sparrow-hawk.zip
+            ./build/build-sparrow-hawk/tmp/deploy/deploy_spdx_split.z*
+            ./build/build-sparrow-hawk/tmp/deploy/kernel_deb_package.zip
+            ./build/build-sparrow-hawk/tmp/deploy/ipl-burning.zip
+            ./build/build-sparrow-hawk/tmp/deploy/images/*/core-image-*-sparrow-hawk.rootfs.wic.*
+          body_path: ${{ github.workspace }}-release_msg.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
