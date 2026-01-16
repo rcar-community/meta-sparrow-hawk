@@ -10,7 +10,7 @@ if [[ ! -e ${RESIZE_CHECK_FILE} ]]; then
 
     ROOT_DEV=$(mount |head -1|cut -d' ' -f1)
     DEV=$(echo ${ROOT_DEV} | sed -e 's/p//' -e 's/[0-9]$//')
-    PARTITON_NUM=$(dmesg | grep root= | sed -e "s|.*/dev/.*[0-9]p||" -e "s| .*||")
+    PARTITON_NUM=$(dmesg | grep root= | sed -e "s|.*/dev/||" -e "s| .*||" -e "s|sd.||" -e "s|.*p||")
 
     parted ${DEV} resizepart ${PARTITON_NUM} 100%
     resize2fs ${ROOT_DEV}
