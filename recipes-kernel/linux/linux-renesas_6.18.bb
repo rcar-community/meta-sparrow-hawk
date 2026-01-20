@@ -27,6 +27,32 @@ SRC_URI:append:sparrow-hawk = " \
     file://0003-arm64-dts-renesas-r8a779g0-Add-qos-node.patch \
     file://0004-arm64-dts-renesas-sparrow-hawk-Add-pcie-ep-dtbo.patch \
 "
+# Patchset for power management
+SRC_URI:append:sparrow-hawk = " \
+    file://0001-drivers-clk-r8a779g0-cpg-mssr-backport-from-BSP-.patch \
+    file://0001-driver-pmdomain-r8a779g0-Backport-update.patch \
+"
+# UIO driver patchset
+SRC_URI:append:sparrow-hawk = " \
+    file://uio/0001-uio-Add-new-ioctl-for-power-management.patch \
+    file://uio/0002-uio-Add-PMA-IOCTL-to-compat-list.patch \
+    file://uio/0003-uio-uio_pdrv_genirq-renesas-Add-clock-divisor-ioctl-.patch \
+    file://uio/0004-uio-Fix-the-logic-of-setting-reset-to-UIO-devices.patch \
+    file://uio/0005-uio-Initialize-reset-struct-of-each-UIO-device.patch \
+    file://uio/0006-uio-Inform-UIO-no-reset-line-to-users.patch \
+    file://uio/0007-uio-Use-EOPNOTSUPP-not-ENOTSUPP.patch \
+    file://uio/0008-uio-Switch-to-clk_hw_get_flags.patch \
+    file://uio/0009-uio-Support-error-notification-to-upper-layer.patch \
+    file://uio/0010-uio-uio_pdrv_genirq-Add-parameter-to-check-device-no.patch \
+    file://uio/0011-uio-uio_pdrv_genirq-Add-parameter-error-in-case-not-.patch \
+    file://uio/0012-uio-uio_pdrv_genirq-Hotfix-clock-and-power-control-f.patch \
+    file://uio/0013-Revert-uio-uio_pdrv_genirq-Add-parameter-error-in-ca.patch \
+    file://uio/0014-uio-uio_pdrv_genirq-Add-parameter-error-in-case-not-.patch \
+    file://uio/0015-Fix-build-error-on-kernel-6.12.patch \
+    file://uio/0016-include-uapi-linux-renesas_uioctl.h-Fix-SPDX-part.patch \
+    file://uio/0017-arm64-dts-renesas-sparrow-hawk-Add-overlay-for-UIO-C.patch \
+"
+
 KERNEL_DEVICETREE:append:sparrow-hawk = " \
     renesas/r8a779g3-sparrow-hawk-camera-j1-imx219.dtbo \
     renesas/r8a779g3-sparrow-hawk-camera-j2-imx219.dtbo \
@@ -41,7 +67,14 @@ KERNEL_DEVICETREE:append:sparrow-hawk = " \
     renesas/r8a779g3-sparrow-hawk-rpi-display-2-7in.dtbo \
     renesas/r8a779g3-sparrow-hawk-ws-display-13in.dtbo \
     renesas/r8a779g3-sparrow-hawk-olimex-dsi-hdmi.dtbo \
+    renesas/r8a779g3-sparrow-hawk-uio.dtbo \
 "
+# uio_pdrv_genirq configuration
+KERNEL_MODULE_AUTOLOAD:append = " uio_pdrv_genirq"
+KERNEL_MODULE_PROBECONF:append = " uio_pdrv_genirq"
+# nooelint: oelint.vars.mispell.unknown - This is general format for module_conf
+module_conf_uio_pdrv_genirq:append = " options uio_pdrv_genirq of_id=\"generic-uio\""
+KERNEL_DTC_FLAGS += "-@"
 
 BBCLASSEXTEND = ""
 
