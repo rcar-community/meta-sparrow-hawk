@@ -32,6 +32,8 @@ RDEPENDS:packagegroup-renesas-bsp-tools = " \
     pciutils \
     usbutils \
     libgpiod \
+    lshw \
+    util-linux \
 "
 
 RDEPENDS:packagegroup-renesas-bsp-demo = " \
