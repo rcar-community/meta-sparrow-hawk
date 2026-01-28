@@ -20,6 +20,7 @@ PR = "r0"
 SRC_URI:r8a779g3 = "${GFX_DRIVER_URL};sha256sum=${GFX_DRIVER_SHA256}"
 
 SRC_URI:append = " file://blacklist.conf"
+SRC_URI:append = " file://0001-WIP-Support-Kernel-v6.18.patch"
 
 S = "${WORKDIR}/rogue_km"
 B = "${KBUILD_DIR}"

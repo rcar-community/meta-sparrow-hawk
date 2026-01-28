@@ -1,0 +1,392 @@
+From fab769164d4e0da631038f3c9380f628713f9d88 Mon Sep 17 00:00:00 2001
+From: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+Date: Wed, 28 Jan 2026 11:14:48 +0900
+Subject: [PATCH] WIP: Support Kernel v6.18
+
+Signed-off-by: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+---
+ build/linux/kbuild/kbuild.mk                  | 17 +++++++--
+ services/server/env/linux/osfunc.c            |  6 ++++
+ services/server/env/linux/pmr_os.c            | 36 ++++++++++++++++++-
+ .../server/env/linux/pvr_counting_timeline.c  |  2 ++
+ services/server/env/linux/pvr_drm.c           |  2 ++
+ services/server/env/linux/pvr_export_fence.c  |  4 +++
+ services/server/env/linux/pvr_fence.c         | 15 +++++++-
+ services/server/env/linux/pvr_platform_drv.c  |  4 +++
+ services/server/env/linux/pvr_sw_fence.c      |  4 +++
+ services/server/env/linux/pvr_sync_file.c     |  3 +-
+ 10 files changed, 88 insertions(+), 5 deletions(-)
+
+diff --git a/build/linux/kbuild/kbuild.mk b/build/linux/kbuild/kbuild.mk
+index 9cf4941..5acae4b 100644
+--- a/build/linux/kbuild/kbuild.mk
++++ b/build/linux/kbuild/kbuild.mk
+@@ -84,7 +84,7 @@ kbuild_check:
+ # works.
+ kbuild: kbuild_check $(TARGET_PRIMARY_OUT)/kbuild/Makefile bridges
+ 	$(if $(V),,@)$(MAKE) -Rr --no-print-directory -C $(KERNELDIR) \
+-		M=$(abspath $(TARGET_PRIMARY_OUT)/kbuild) \
++		M=$(abspath $(TARGET_PRIMARY_OUT)/kbuild) MO=${TOP} \
+ 		INTERNAL_KBUILD_MAKEFILES="$(INTERNAL_KBUILD_MAKEFILES)" \
+ 		INTERNAL_KBUILD_OBJECTS="$(INTERNAL_KBUILD_OBJECTS)" \
+ 		INTERNAL_EXTRA_KBUILD_OBJECTS="$(INTERNAL_EXTRA_KBUILD_OBJECTS)" \
+@@ -108,8 +108,21 @@ kbuild: kbuild_check $(TARGET_PRIMARY_OUT)/kbuild/Makefile bridges
+ 		$(if $(KBUILD_LLD_VERSION),$(shell echo CONFIG_LLD_VERSION=$(KBUILD_LLD_VERSION)),) \
+ 		V=$(V) W=$(W) TOP=$(TOP)
+ 	@for kernel_module in $(addprefix $(TARGET_PRIMARY_OUT)/kbuild/,$(INTERNAL_KBUILD_OBJECTS:.o=.ko)); do \
+-		cp $$kernel_module $(TARGET_PRIMARY_OUT); \
++		if [ -e $$kernel_module ] ;then \
++			cp $$kernel_module $(TARGET_PRIMARY_OUT); \
++		fi; \
+ 	done
++	@for kernel_module in ${TOP}/$(INTERNAL_KBUILD_OBJECTS:.o=.ko); do \
++		if [ -e $$kernel_module ] ;then \
++			cp $$kernel_module $(TARGET_PRIMARY_OUT); \
++		fi; \
++	done
++	@for module_symvers in ${TOP}/Module.symvers; do \
++		if [ -e $$module_symvers ] ;then \
++			cp $$module_symvers $(TARGET_PRIMARY_OUT)/kbuild/; \
++		fi; \
++	done
++
+ ifeq ($(KERNEL_DEBUGLINK),1)
+ 	@for kernel_module in $(addprefix $(TARGET_PRIMARY_OUT)/,$(INTERNAL_KBUILD_OBJECTS:.o=.ko)); do \
+ 		$(CROSS_COMPILE)objcopy --only-keep-debug $$kernel_module $(basename $$kernel_module).dbg; \
+diff --git a/services/server/env/linux/osfunc.c b/services/server/env/linux/osfunc.c
+index 6239083..cddef38 100644
+--- a/services/server/env/linux/osfunc.c
++++ b/services/server/env/linux/osfunc.c
+@@ -69,7 +69,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ #include <linux/utsname.h>
+ #include <linux/scatterlist.h>
+ #include <linux/interrupt.h>
++#if (LINUX_VERSION_CODE <= KERNEL_VERSION(6, 13, 0))
+ #include <linux/pfn_t.h>
++#else
++#define from_timer timer_container_of
++#define del_timer_sync timer_delete_sync
++#include <linux/timer.h>
++#endif /* (LINUX_VERSION_CODE <= KERNEL_VERSION(6, 13, 0)) */
+ #include <linux/pfn.h>
+ #include <linux/pid.h>
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0))
+diff --git a/services/server/env/linux/pmr_os.c b/services/server/env/linux/pmr_os.c
+index 3cc41bb..6e694b0 100644
+--- a/services/server/env/linux/pmr_os.c
++++ b/services/server/env/linux/pmr_os.c
+@@ -45,7 +45,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ #include <linux/mm.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/version.h>
++#if (LINUX_VERSION_CODE <= KERNEL_VERSION(6, 13, 0))
+ #include <linux/pfn_t.h>
++#endif /* (LINUX_VERSION_CODE <= KERNEL_VERSION(6, 13, 0)) */
+ #include <linux/pfn.h>
+ 
+ #include "img_defs.h"
+@@ -315,9 +317,17 @@ static INLINE int _OSMMapPMR(PVRSRV_DEVICE_NODE *psDevNode,
+ 							IMG_BOOL bUseMixedMap)
+ {
+ 	IMG_INT32 iStatus;
++#if (LINUX_VERSION_CODE <= KERNEL_VERSION(6, 13, 0))
+ 	pfn_t sPFN;
++#else
++	unsigned long sPFN;
++#endif
+ 
++#if (LINUX_VERSION_CODE <= KERNEL_VERSION(6, 13, 0))
+ 	sPFN = phys_to_pfn_t(psCpuPAddr->uiAddr, 0);
++#else
++	sPFN = PHYS_PFN(psCpuPAddr->uiAddr);
++#endif
+ 
+ 	/*
+ 	 * vm_insert_page() allows insertion of individual pages into user
+@@ -356,7 +366,11 @@ static INLINE int _OSMMapPMR(PVRSRV_DEVICE_NODE *psDevNode,
+ 			/* Since kernel 3.7 this sets VM_MIXEDMAP internally */
+ 			iStatus = vm_insert_page(ps_vma,
+ 									 ps_vma->vm_start + uiOffset,
++#if (LINUX_VERSION_CODE <= KERNEL_VERSION(6, 13, 0))
+ 									 pfn_t_to_page(sPFN));
++#else
++									 pfn_to_page(sPFN));
++#endif
+ 		}
+ 	}
+ 	else
+@@ -401,7 +415,11 @@ static INLINE int _OSMMapPMR(PVRSRV_DEVICE_NODE *psDevNode,
+ 
+ 		iStatus = remap_pfn_range(ps_vma,
+ 								  ps_vma->vm_start + uiOffset,
+-								  pfn_t_to_pfn(sPFN),
++#if (LINUX_VERSION_CODE <= KERNEL_VERSION(6, 13, 0))
++									 pfn_t_to_pfn(sPFN),
++#else
++									 sPFN,
++#endif
+ 								  uiNumContiguousBytes,
+ 								  ps_vma->vm_page_prot);
+ 	}
+@@ -450,7 +468,11 @@ static vm_fault_t MMapPMRFault(struct vm_fault *ps_vmf)
+ 	PVR_LOG_GOTO_IF_ERROR(eError, "PMR_CpuPhysAddr", ErrSigFaultReturn);
+ 	PVR_LOG_GOTO_IF_FALSE(bValid, "Attempted remap with invalid PMR offset", ErrSigFaultReturn);
+ 
++#if (LINUX_VERSION_CODE <= KERNEL_VERSION(6, 13, 0))
+ 	ulPFN = pfn_t_to_pfn(phys_to_pfn_t(sCpuPAddr.uiAddr, 0));
++#else
++	ulPFN = PHYS_PFN(sCpuPAddr.uiAddr);
++#endif
+ 
+ 	iFault = vmf_insert_pfn_prot(ps_vmf->vma,
+ 	                             ps_vmf->address,
+@@ -652,15 +674,27 @@ OSMMapPMRGeneric(PMR *psPMR, PMR_MMAP_DATA pOSMMapData)
+ 	 */
+ 	if (bUseVMInsertPage)
+ 	{
++#if (LINUX_VERSION_CODE <= KERNEL_VERSION(6, 13, 0))
+ 		pfn_t sPFN;
++#else
++		unsigned long sPFN;
++#endif
+ 
+ 		for (uiOffsetIdx = 0; uiOffsetIdx < uiNumOfPFNs; ++uiOffsetIdx)
+ 		{
+ 			if (pbValid[uiOffsetIdx])
+ 			{
++#if (LINUX_VERSION_CODE <= KERNEL_VERSION(6, 13, 0))
+ 				sPFN = phys_to_pfn_t(psCpuPAddr[uiOffsetIdx].uiAddr, 0);
++#else
++				sPFN = PHYS_PFN(psCpuPAddr[uiOffsetIdx].uiAddr);
++#endif
+ 
++#if (LINUX_VERSION_CODE <= KERNEL_VERSION(6, 13, 0))
+ 				if (!pfn_t_valid(sPFN) || page_count(pfn_t_to_page(sPFN)) == 0)
++#else
++				if (!pfn_valid(sPFN) || page_count(pfn_to_page(sPFN)) == 0)
++#endif
+ 				{
+ 					bUseMixedMap = IMG_TRUE;
+ 					break;
+diff --git a/services/server/env/linux/pvr_counting_timeline.c b/services/server/env/linux/pvr_counting_timeline.c
+index 240872e..da1e261 100644
+--- a/services/server/env/linux/pvr_counting_timeline.c
++++ b/services/server/env/linux/pvr_counting_timeline.c
+@@ -121,8 +121,10 @@ pvr_counting_fence_timeline_debug_request(void *data, u32 verbosity,
+ 				  value, timeline->current_value);
+ 		list_for_each_entry(obj, &timeline->active_fences,
+ 				    active_list_entry) {
++#if (LINUX_VERSION_CODE <= KERNEL_VERSION(6, 13, 0))
+ 			obj->fence->ops->fence_value_str(obj->fence,
+ 							 value, sizeof(value));
++#endif
+ 			PVR_DUMPDEBUG_LOG(pfnDumpDebugPrintf, pvDumpDebugFile,
+ 					  " @%s: val=%llu", value, obj->value);
+ 		}
+diff --git a/services/server/env/linux/pvr_drm.c b/services/server/env/linux/pvr_drm.c
+index 145f40c..7994f0f 100644
+--- a/services/server/env/linux/pvr_drm.c
++++ b/services/server/env/linux/pvr_drm.c
+@@ -544,7 +544,9 @@ const struct drm_driver pvr_drm_generic_driver = {
+ 
+ 	.name			= PVR_DRM_DRIVER_NAME,
+ 	.desc			= PVR_DRM_DRIVER_DESC,
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(6, 13, 0))
+ 	.date			= PVR_DRM_DRIVER_DATE,
++#endif
+ 	.major			= PVRVERSION_MAJ,
+ 	.minor			= PVRVERSION_MIN,
+ 	.patchlevel		= PVRVERSION_BUILD,
+diff --git a/services/server/env/linux/pvr_export_fence.c b/services/server/env/linux/pvr_export_fence.c
+index d2c98e6..a2f9dc3 100644
+--- a/services/server/env/linux/pvr_export_fence.c
++++ b/services/server/env/linux/pvr_export_fence.c
+@@ -235,6 +235,7 @@ static const char *pvr_exp_fence_get_timeline_name(struct dma_fence *fence)
+ 		return "***NO_TIMELINE***";
+ }
+ 
++#if (LINUX_VERSION_CODE <= KERNEL_VERSION(6, 13, 0))
+ static void pvr_exp_fence_value_str(struct dma_fence *fence, char *str, int size)
+ {
+ 	snprintf(str, size, "%llu", (u64) fence->seqno);
+@@ -248,6 +249,7 @@ static void pvr_exp_fence_timeline_value_str(struct dma_fence *fence,
+ 	if (pvr_exp_fence && pvr_exp_fence->fence_context)
+ 		pvr_exp_fence_context_value_str(pvr_exp_fence->fence_context, str, size);
+ }
++#endif
+ 
+ static bool pvr_exp_fence_enable_signaling(struct dma_fence *fence)
+ {
+@@ -326,8 +328,10 @@ static void pvr_exp_fence_release(struct dma_fence *fence)
+ static const struct dma_fence_ops pvr_exp_fence_ops = {
+ 	.get_driver_name = pvr_exp_fence_get_driver_name,
+ 	.get_timeline_name = pvr_exp_fence_get_timeline_name,
++#if (LINUX_VERSION_CODE <= KERNEL_VERSION(6, 13, 0))
+ 	.fence_value_str = pvr_exp_fence_value_str,
+ 	.timeline_value_str = pvr_exp_fence_timeline_value_str,
++#endif
+ 	.enable_signaling = pvr_exp_fence_enable_signaling,
+ 	.wait = dma_fence_default_wait,
+ 	.release = pvr_exp_fence_release,
+diff --git a/services/server/env/linux/pvr_fence.c b/services/server/env/linux/pvr_fence.c
+index de1576e..f41c8a0 100644
+--- a/services/server/env/linux/pvr_fence.c
++++ b/services/server/env/linux/pvr_fence.c
+@@ -131,19 +131,23 @@ pvr_fence_context_fences_dump(struct pvr_fence_context *fctx,
+ 		const char *timeline_value_str = "unknown timeline value";
+ 		const char *fence_value_str = "unknown fence value";
+ 
++#if (LINUX_VERSION_CODE <= KERNEL_VERSION(6, 13, 0))
+ 		pvr_fence->base.ops->fence_value_str(&pvr_fence->base, value,
+ 						     sizeof(value));
++#endif
+ 		PVR_DUMPDEBUG_LOG(pfnDumpDebugPrintf, pvDumpDebugFile,
+ 				  " @%s", value);
+ 
+ 		if (is_pvr_fence(fence))
+ 			continue;
+ 
++#if (LINUX_VERSION_CODE <= KERNEL_VERSION(6, 13, 0))
+ 		if (fence->ops->timeline_value_str) {
+ 			fence->ops->timeline_value_str(fence, value,
+ 						       sizeof(value));
+ 			timeline_value_str = value;
+ 		}
++#endif
+ 
+ 		PVR_DUMPDEBUG_LOG(pfnDumpDebugPrintf, pvDumpDebugFile,
+ 				  " | %s: %s (driver: %s)",
+@@ -151,12 +155,13 @@ pvr_fence_context_fences_dump(struct pvr_fence_context *fctx,
+ 				  timeline_value_str,
+ 				  fence->ops->get_driver_name(fence));
+ 
++#if (LINUX_VERSION_CODE <= KERNEL_VERSION(6, 13, 0))
+ 		if (fence->ops->fence_value_str) {
+ 			fence->ops->fence_value_str(fence, value,
+ 						    sizeof(value));
+ 			fence_value_str = value;
+ 		}
+-
++#endif
+ 		PVR_DUMPDEBUG_LOG(pfnDumpDebugPrintf, pvDumpDebugFile,
+ 				  " |  @%s (foreign)", fence_value_str);
+ 	}
+@@ -547,6 +552,7 @@ pvr_fence_get_timeline_name(struct dma_fence *fence)
+ 	return NULL;
+ }
+ 
++#if (LINUX_VERSION_CODE <= KERNEL_VERSION(6, 13, 0))
+ static
+ void pvr_fence_fence_value_str(struct dma_fence *fence, char *str, int size)
+ {
+@@ -580,6 +586,7 @@ void pvr_fence_timeline_value_str(struct dma_fence *fence, char *str, int size)
+ 	if (pvr_fence)
+ 		pvr_context_value_str(pvr_fence->fctx, str, size);
+ }
++#endif
+ 
+ static bool
+ pvr_fence_enable_signaling(struct dma_fence *fence)
+@@ -644,8 +651,10 @@ pvr_fence_release(struct dma_fence *fence)
+ const struct dma_fence_ops pvr_fence_ops = {
+ 	.get_driver_name = pvr_fence_get_driver_name,
+ 	.get_timeline_name = pvr_fence_get_timeline_name,
++#if (LINUX_VERSION_CODE <= KERNEL_VERSION(6, 13, 0))
+ 	.fence_value_str = pvr_fence_fence_value_str,
+ 	.timeline_value_str = pvr_fence_timeline_value_str,
++#endif
+ 	.enable_signaling = pvr_fence_enable_signaling,
+ 	.signaled = pvr_fence_is_signaled,
+ 	.wait = dma_fence_default_wait,
+@@ -738,6 +747,7 @@ pvr_fence_foreign_get_timeline_name(struct dma_fence *fence)
+ 	return "foreign";
+ }
+ 
++#if (LINUX_VERSION_CODE <= KERNEL_VERSION(6, 13, 0))
+ static
+ void pvr_fence_foreign_fence_value_str(struct dma_fence *fence, char *str,
+ 				       int size)
+@@ -779,6 +789,7 @@ void pvr_fence_foreign_timeline_value_str(struct dma_fence *fence, char *str,
+ 	if (pvr_fence)
+ 		pvr_context_value_str(pvr_fence->fctx, str, size);
+ }
++#endif
+ 
+ static bool
+ pvr_fence_foreign_enable_signaling(struct dma_fence *fence)
+@@ -825,8 +836,10 @@ pvr_fence_foreign_release(struct dma_fence *fence)
+ const struct dma_fence_ops pvr_fence_foreign_ops = {
+ 	.get_driver_name = pvr_fence_foreign_get_driver_name,
+ 	.get_timeline_name = pvr_fence_foreign_get_timeline_name,
++#if (LINUX_VERSION_CODE <= KERNEL_VERSION(6, 13, 0))
+ 	.fence_value_str = pvr_fence_foreign_fence_value_str,
+ 	.timeline_value_str = pvr_fence_foreign_timeline_value_str,
++#endif
+ 	.enable_signaling = pvr_fence_foreign_enable_signaling,
+ 	.wait = pvr_fence_foreign_wait,
+ 	.release = pvr_fence_foreign_release,
+diff --git a/services/server/env/linux/pvr_platform_drv.c b/services/server/env/linux/pvr_platform_drv.c
+index 57114e7..a7e9cc5 100644
+--- a/services/server/env/linux/pvr_platform_drv.c
++++ b/services/server/env/linux/pvr_platform_drv.c
+@@ -66,7 +66,11 @@
+ /* This header must always be included last */
+ #include "kernel_compatibility.h"
+ 
++#if (LINUX_VERSION_CODE <= KERNEL_VERSION(6, 13, 0))
+ MODULE_IMPORT_NS(DMA_BUF);
++#else
++MODULE_IMPORT_NS("DMA_BUF");
++#endif
+ 
+ static struct drm_driver pvr_drm_platform_driver;
+ 
+diff --git a/services/server/env/linux/pvr_sw_fence.c b/services/server/env/linux/pvr_sw_fence.c
+index cccc4a6..c6c8952 100644
+--- a/services/server/env/linux/pvr_sw_fence.c
++++ b/services/server/env/linux/pvr_sw_fence.c
+@@ -98,6 +98,7 @@ static const char *pvr_sw_fence_get_timeline_name(struct dma_fence *fence)
+ 	return pvr_sw_fence_context_name(pvr_sw_fence->fence_context);
+ }
+ 
++#if (LINUX_VERSION_CODE <= KERNEL_VERSION(6, 13, 0))
+ static void pvr_sw_fence_value_str(struct dma_fence *fence, char *str, int size)
+ {
+ 	snprintf(str, size, "%llu", (u64) fence->seqno);
+@@ -110,6 +111,7 @@ static void pvr_sw_fence_timeline_value_str(struct dma_fence *fence,
+ 
+ 	pvr_sw_fence_context_value_str(pvr_sw_fence->fence_context, str, size);
+ }
++#endif
+ 
+ static bool pvr_sw_fence_enable_signaling(struct dma_fence *fence)
+ {
+@@ -143,8 +145,10 @@ static void pvr_sw_fence_release(struct dma_fence *fence)
+ static const struct dma_fence_ops pvr_sw_fence_ops = {
+ 	.get_driver_name = pvr_sw_fence_get_driver_name,
+ 	.get_timeline_name = pvr_sw_fence_get_timeline_name,
++#if (LINUX_VERSION_CODE <= KERNEL_VERSION(6, 13, 0))
+ 	.fence_value_str = pvr_sw_fence_value_str,
+ 	.timeline_value_str = pvr_sw_fence_timeline_value_str,
++#endif
+ 	.enable_signaling = pvr_sw_fence_enable_signaling,
+ 	.wait = dma_fence_default_wait,
+ 	.release = pvr_sw_fence_release,
+diff --git a/services/server/env/linux/pvr_sync_file.c b/services/server/env/linux/pvr_sync_file.c
+index d99f37f..19a0d33 100644
+--- a/services/server/env/linux/pvr_sync_file.c
++++ b/services/server/env/linux/pvr_sync_file.c
+@@ -1281,8 +1281,9 @@ static void _dump_sync_point(struct dma_fence *fence,
+ 	bool signaled = dma_fence_is_signaled(fence);
+ 	char time[16] = { '\0' };
+ 
++#if (LINUX_VERSION_CODE <= KERNEL_VERSION(6, 13, 0))
+ 	fence_ops->timeline_value_str(fence, time, sizeof(time));
+-
++#endif
+ 	PVR_DUMPDEBUG_LOG(dump_debug_printf,
+ 					  dump_debug_file,
+ 					  "<"IMG_KM_PTR_FMTSPEC"> Seq#=%llu TS=%s State=%s TLN=%s",
+-- 
+2.34.1
+
