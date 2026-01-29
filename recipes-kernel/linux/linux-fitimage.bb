@@ -47,5 +47,5 @@ python __anonymous () {
         d.setVarFlag("do_compile", "noexec", "1")
         d.setVarFlag("do_install", "noexec", "1")
     else:
-        d.setVarFlag("do_compile", "depends", "initramfs-image:do_image_complete")
+        d.appendVarFlag("do_compile", "depends", " initramfs-image:do_image_complete")
 }
