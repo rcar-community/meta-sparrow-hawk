@@ -5,11 +5,21 @@ This layer provides support for Sparrow Hawk for use with OpenEmbedded and/or Yo
 ## Original BSP image
 
 * core-image-minimal
-
+* core-image-weston
 
 ## Contribution
 
-- Under consideration
+### Question/Issue report
+
+Please post in github discussion.
+
+https://github.com/orgs/rcar-community/discussions/categories/q-a
+
+### Suggestion with code
+
+Please use Pull request feature.
+
+https://github.com/rcar-community/meta-sparrow-hawk/pulls
 
 ## Layer Dependencies
 
@@ -50,7 +60,10 @@ This layer depends on:
 ```bash
 git clone https://github.com/rcar-community/meta-sparrow-hawk -b scarthgap
 cd meta-sparrow-hawk
+# core-image-minimal case
 ./build.sh
+# core-image-weston case
+./build.sh --weston
 ```
 
 build option can be confirmed by -h option:
@@ -66,20 +79,18 @@ build option can be confirmed by -h option:
 
 The SDK can be found in the output directory `tmp/deploy/sdk`
 
-* `poky-glibc-x86_64-core-image-minimal-aarch64-<machine name>-toolchain-x.x.sh`
+* `poky-glibc-x86_64-core-image-<image type>-aarch64-<machine name>-toolchain-x.x.sh`
 
 
 ### Usage of toolchain SDK
 
-Install the SDK to the default: `/opt/poky/x.x`
-
-* For 64-bit target SDK
+Install the SDK(default path=`opt/poky/x.x`):
 
 ```bash
-    $ sh poky-glibc-x86_64-core-image-minimal-aarch64-<machine name>-toolchain-x.x.sh
+    $ sh poky-glibc-x86_64-core-image-<image type>-aarch64-<machine name>-toolchain-x.x.sh
 ```
 
-* For 64-bit application, using environment script in `/opt/poky/x.x`
+Enable cross compile envrionment(default path case):
 
 ```bash
     $ source /opt/poky/x.x/environment-setup-aarch64-poky-linux
