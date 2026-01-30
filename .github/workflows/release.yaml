@@ -79,7 +79,7 @@ jobs:
 
           # software version list
           YOCTO_VER=$(grep ^DISTRO_VERSION ./build/poky/meta-poky/conf/distro/poky.conf | cut -d'"' -f2)
-          UBOOT_VER=$(ls ./recipes-bsp/u-boot/u-boot_*.bb | grep -oP 'u-boot_\K[0-9]+\.[0-9]+')
+          UBOOT_VER=$(grep ^PV ./recipes-bsp/u-boot/u-boot_git.bb | cut -d'"' -f2 | cut -d'+' -f1)
           KERNEL_VER=$(grep ^LINUX_VERSION recipes-kernel/linux/kernel_*.inc | cut -d'"' -f2 | head -1)
           GCC_VER=$(ls -d build/build-sparrow-hawk/tmp/work-shared/gcc-* | grep -oP 'gcc-\K[0-9]+\.[0-9]+\.[0-9]+')
           ATF_VER=$(grep ^PV ./recipes-bsp/arm-trusted-firmware/arm-trusted-firmware_git.bb | cut -d'"' -f2 | cut -d'+' -f1)
