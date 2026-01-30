@@ -1,6 +1,6 @@
 
-LINUX_VERSION = "6.18.6"
+LINUX_VERSION = "6.18.20"
 REPO = "git://github.com/rcar-community/linux.git"
-BRANCH = "renesas-lts/v6.18.6-2026-01-20-sparrow-hawk"
-SRCREV = "bbc6218dc741e3aae13dbfd488692fed82054a0d"
+BRANCH = "renesas-lts/v6.18.20-2026-04-01-sparrow-hawk"
+SRCREV = "508a788d2443dc59b002f6ec19fd7fbe3431ec3c"
 

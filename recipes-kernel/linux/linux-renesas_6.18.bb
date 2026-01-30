@@ -25,24 +25,6 @@ SRC_URI:append:sparrow-hawk = " \
     file://sparrow-hawk-enable-i2c3-i2c4.dtsi;subdir=git/arch/arm64/boot/dts/renesas/ \
     file://0002-HACK-drivers-gpu-drm-drm_file-Ingnore-flag-checking.patch \
 "
-# Add support Waveshare touchpanel(We need to port for v6.18)
-#SRC_URI:append:sparrow-hawk = " \
-#    file://waveshare_touch.cfg \
-#    file://0001-drm-panel-Add-panel-driver-for-Waveshare-DSI-touchsc.patch \
-#    file://0002-drm-panel-Added-waveshare-13.3inch-panel.patch \
-#    file://0003-drm-panel-Added-waveshare-7.0inch-h-dsi-screen-suppo.patch \
-#    file://0004-input-Add-support-for-no-irq-to-ili210x-driver.patch \
-#    file://0005-arm64-dts-renesas-r8a779g3-Add-waveshare-13.3-DSI-FH.patch \
-#"
-# HACK: Add devicetree only
-SRC_URI:append:sparrow-hawk = " \
-    file://0005-arm64-dts-renesas-r8a779g3-Add-waveshare-13.3-DSI-FH.patch \
-"
-S = "${WORKDIR}/git"
-KERNEL_DEVICETREE:append:sparrow-hawk = " \
-    renesas/r8a779g3-sparrow-hawk-dsi-waveshare-panel.dtbo \
-"
-
 KERNEL_DEVICETREE:append:sparrow-hawk = " \
     renesas/r8a779g3-sparrow-hawk-camera-j1-imx219.dtbo \
     renesas/r8a779g3-sparrow-hawk-camera-j2-imx219.dtbo \
@@ -54,6 +36,8 @@ KERNEL_DEVICETREE:append:sparrow-hawk = " \
     renesas/r8a779g3-sparrow-hawk-fan-argon40.dtbo \
     renesas/r8a779g3-sparrow-hawk-rpi-display-2-5in.dtbo \
     renesas/r8a779g3-sparrow-hawk-rpi-display-2-7in.dtbo \
+    renesas/r8a779g3-sparrow-hawk-ws-display-13in.dtbo \
+    renesas/r8a779g3-sparrow-hawk-olimex-dsi-hdmi.dtbo \
 "
 
 BBCLASSEXTEND = ""

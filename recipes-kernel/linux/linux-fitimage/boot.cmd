@@ -66,8 +66,11 @@ if i2c probe 0x45; then
     # Waveshare panel case
     if i2c probe 0x41; then
         echo Waveshare panel is detected;
-        setenv j4_conf '#waveshare-panel';
+        setenv j4_conf '#ws-display-13in';
     fi
+elif i2c probe 0x48; then
+    echo LT8912B is detected;
+    setenv j4_conf '#olimex-dsi-hdmi';
 fi
 
 # Check FAN
