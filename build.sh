@@ -146,7 +146,7 @@ if [[ "${IS_BUILD_SDK}" == "yes" ]]; then
     if [[ "${TARGET_IMAGE}" == "core-image-weston" ]];then
         TARGET_IMAGE=${TARGET_IMAGE}-sdk
     fi
-    bitbake ${TARGET_IMAGE}-sdk -c populate_sdk
+    bitbake ${TARGET_IMAGE} -c populate_sdk
 fi
 
 # Cleanup symbolic link
