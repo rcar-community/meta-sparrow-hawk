@@ -15,6 +15,7 @@ BUILD_ROOTFS_ONLY=no
 REMOVE_WORKDIR=no
 IS_BUILD_INSIDE_REPO=yes
 IS_BUILD_SDK=no
+IS_QUIET_BUILD=no
 TEMPLATE_POSTFIX=""
 
 Usage () {
@@ -26,6 +27,7 @@ Usage () {
     echo "options:"
     echo "    -h | --help:          Show this help"
     echo "    -s | --sdk:           Build Yocto SDK"
+    echo "    -q | --quiet:         Pass -q option to bitbake command"
     echo "       | --sbom:          Build SBOM files"
     echo "       | --sstate-mirror: Use sstate mirror server. This may decrease build time."
     echo "       | --rm-work:       Remove working directory while building to reduce storage space."
@@ -42,6 +44,8 @@ for arg in $@; do
         Usage; exit
     elif [[ "$arg" == "-s" ]] || [[ "$arg" == "--sdk" ]]; then
         IS_BUILD_SDK=yes
+    elif [[ "$arg" == "-q" ]] || [[ "$arg" == "--quiet" ]]; then
+        IS_QUIET_BUILD=yes
     elif [[ "$arg" == "--sbom" ]]; then
         BUILD_SBOM=yes
     elif [[ "$arg" == "--rm-work" ]]; then
@@ -135,12 +139,17 @@ if [[ "${REMOVE_WORKDIR}" == "yes" ]]; then
     echo 'INHERIT += "rm_work"' >> conf/local.conf
 fi
 
-bitbake ${TARGET_IMAGE}
+QUIET_FLAG=""
+if [[ "${IS_QUIET_BUILD}" == "yes" ]]; then
+    QUIET_FLAG="-q"
+fi
+
+bitbake ${QUIET_FLAG} ${TARGET_IMAGE}
 if [[ "${IS_BUILD_SDK}" == "yes" ]]; then
     if [[ "${TARGET_IMAGE}" == "core-image-weston" ]];then
         TARGET_IMAGE=${TARGET_IMAGE}-sdk
     fi
-    bitbake ${TARGET_IMAGE} -c populate_sdk
+    bitbake ${QUIET_FLAG} ${TARGET_IMAGE} -c populate_sdk
 fi
 
 # Cleanup symbolic link
