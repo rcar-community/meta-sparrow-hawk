@@ -23,6 +23,7 @@ jobs:
       - name: Run build
         shell: bash
         run: |
+          while true; do echo "[keepalive] $(date)"; sleep 60; done &
           ./build.sh --console --sbom --rm-work --build-rootfs-only
           # ./build.sh --weston --sbom --rm-work --build-rootfs-only
 
