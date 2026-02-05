@@ -24,8 +24,8 @@ jobs:
         shell: bash
         run: |
           while true; do echo "[keepalive] $(date)"; sleep 60; done &
-          ./build.sh --console --sbom --rm-work
-          ./build.sh --weston --sbom --rm-work
+          ./build.sh -q --console --sbom --rm-work
+          ./build.sh -q --weston --sbom --rm-work
 
       - name: Generate zip archive to release
         shell: bash
