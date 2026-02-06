@@ -39,6 +39,10 @@ do_install[noexec] = "1"
 # Wait for U-Boot
 do_deploy[depends] += "u-boot:do_deploy"
 
+# Wait for U-Boot licenase generation
+do_deploy[depends] += "u-boot:do_populate_lic"
+MACHINE_LIC = "${@d.getVar('MACHINE').replace('-', '_')}"
+
 do_deploy() {
     # Create deploy folder
     install -d ${DEPLOYDIR}/${PN}
@@ -55,6 +59,7 @@ do_deploy() {
     install -m 0644 ${WORKDIR}/run.bat ${DEPLOYDIR}/${PN}
     install -m 0644 ${WORKDIR}/Flash_writer_sparrow_hawk_CR52.mot ${DEPLOYDIR}/${PN}
     install -m 0644 ${DEPLOY_DIR}/images/${MACHINE}/flash.bin ${DEPLOYDIR}/${PN}
+    cp -r  ${DEPLOY_DIR}/licenses/${MACHINE_LIC}/u-boot ${DEPLOYDIR}/${PN}/u-boot_licenses
     install -m 755 ${WORKDIR}/rcar_gen4_pcie.bin ${DEPLOYDIR}/${PN}
     install -m 755 ${WORKDIR}/LICENCE.r8a779g_pcie_phy ${DEPLOYDIR}/${PN}
 
