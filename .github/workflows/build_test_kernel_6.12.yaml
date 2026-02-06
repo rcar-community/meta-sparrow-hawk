@@ -12,7 +12,7 @@ jobs:
   Release:
     name: Release
     if: github.repository_owner == 'rcar-community'
-    runs-on: ubuntu-22.04-arm
+    runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -23,6 +23,13 @@ jobs:
       - name: Run build
         shell: bash
         run: |
+          # WA for Ubuntu 24.04
+          UBUNTU_VERSION="$(cat /etc/os-release | grep VERSION_ID | cut -d'"' -f2)"
+          if [[ "${UBUNTU_VERSION}" == "24.04" ]]; then
+            sudo sysctl -w kernel.unprivileged_userns_clone=1
+            sudo apparmor_parser -R /etc/apparmor.d/unprivileged_userns
+          fi
+
           ./build.sh --console --sbom --rm-work --kernel-version 6.12
           ./build.sh --weston  --sbom --rm-work --kernel-version 6.12
 
