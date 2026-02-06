@@ -186,13 +186,13 @@ def flash_burn_file_sparrow_hawk(dev, index, ipl_path, soc, ipl_config, img_addr
     file_path = ipl_path + "/" + ipl_config["ipl"][soc][index]["name"]
     total_size = os.path.getsize(file_path)
 
-    if total_size > 0x100000:
+    if total_size > 0x1000:
         progress_flag = True
     else:
         progress_flag = False
 
     chunk_size = 128 * 1024  # 512 KB
-    offset = int(flash_addr)
+    offset = int(flash_addr,0)
     progress_bar = tqdm(total=total_size, unit='B', unit_scale=True, desc=f"Burning {ipl_config['ipl'][soc][index]['name']}")
 
     try:
@@ -345,7 +345,7 @@ def main(argv):
         IPL_SHORTEN_OPTION = ["param", "icumxa", "cert9", "fw", "rtos", "g4mh", "icumh",
                               "smoni", "tee", "uboot"]
     elif SOC == "sparrow-hawk":
-        IPL_SHORTEN_OPTION = ["loader"]
+        IPL_SHORTEN_OPTION = ["loader", "pciefw"]
     else:
         IPL_SHORTEN_OPTION = ["param", "bl2", "cert6", "bl31", "tee", "uboot"]
 

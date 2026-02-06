@@ -9,6 +9,11 @@
                 "name":       "flash.bin",
                 "flash_addr": "0",
                 "write_sel":  "Flash"
+            },
+            {
+                "name":       "rcar_gen4_pcie.bin",
+                "flash_addr": "0x300000",
+                "write_sel":  "Flash"
             }
         ]
     }

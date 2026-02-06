@@ -15,6 +15,9 @@ ALLOW_EMPTY:${PN} = "1"
 ALLOW_EMPTY:${PN}-dev = "1"
 ALLOW_EMPTY:${PN}-staticdev = "1"
 
+PCIE_FIRMWARE = "https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git/plain/rcar_gen4_pcie.bin;md5sum=293bdf19d8e16d3c4d8179e438db921b"
+PCIE_FIRMWARE_LIC = "https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git/plain/LICENCE.r8a779g_pcie_phy;md5sum=0b20e76a9a004b83c4a1c87e2153bbad"
+
 SRC_URI:append = " \
     file://burn.py \
     file://ipl_burning.json \
@@ -22,6 +25,8 @@ SRC_URI:append = " \
     file://run.bat \
     file://run.sh \
     file://Flash_writer_sparrow_hawk_CR52.mot \
+    ${PCIE_FIRMWARE} \
+    ${PCIE_FIRMWARE_LIC} \
 "
 
 # do_configure() nothing
@@ -50,6 +55,8 @@ do_deploy() {
     install -m 0644 ${WORKDIR}/run.bat ${DEPLOYDIR}/${PN}
     install -m 0644 ${WORKDIR}/Flash_writer_sparrow_hawk_CR52.mot ${DEPLOYDIR}/${PN}
     install -m 0644 ${DEPLOY_DIR}/images/${MACHINE}/flash.bin ${DEPLOYDIR}/${PN}
+    install -m 755 ${WORKDIR}/rcar_gen4_pcie.bin ${DEPLOYDIR}/${PN}
+    install -m 755 ${WORKDIR}/LICENCE.r8a779g_pcie_phy ${DEPLOYDIR}/${PN}
 
     # install embedded python binary for Windows environment
     PYTHON_DIR=${DEPLOYDIR}/${PN}/python-embed-amd64
