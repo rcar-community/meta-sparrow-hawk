@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
 #
-# Copyright (c) 2023, Renesas Electronics Corporation. All rights reserved.
+# Copyright (c) 2023-2026, Renesas Electronics Corporation. All rights reserved.
 #
 # SPDX-License-Identifier: MIT
 #
-
 
 ####################################################################################################
 # Import from standard libraries
@@ -104,55 +103,7 @@ class Serial_conn(serial.Serial):
 ####################################################################################################
 # Burn file
 ####################################################################################################
-def flash_burn_file(dev, index, ipl_path, soc, ipl_config, img_addr, flash_addr):
-    dev.sendln()
-    dev.wait(">", 0.2, "xls2")
-    if soc in ["v3u", "spider", "s4sk"]:
-        dev.wait("Select (1-3)>", 0.1, "1")
-    else:
-        dev.wait("Select (1-3)>", 0.1, "3")
-
-    res = 0
-    while res == 0:
-        ex_list = ["Setting OK? (Push Y key)", "H'"]
-        res = dev.waitls(ex_list, 0.1)
-        if res == 0:
-            dev.send("y")
-            time.sleep(0.1)
-
-    dev.sendln(img_addr)
-    dev.wait("Please Input : H", 0.2, flash_addr)
-    time.sleep(0.4)
-    dev.wait("please send ! (Motorola S-record)", 0.2)
-    dev.sendfile(ipl_path + "/" + ipl_config["ipl"][soc][index]["name"])
-
-    ex_list = ["Clear OK?(y/n)", ">"]
-    res = dev.waitls(ex_list, 0.1)
-    if res == 0:
-        dev.send("y")
-        time.sleep(0.2)
-        dev.sendln()
-        dev.sendln()
-
-def eMMC_burn_file(dev, index, ipl_path, soc, ipl_config, img_addr, flash_addr):
-    dev.sendln()
-    dev.wait(">", 0.2, "em_w")
-    dev.wait("Setting OK? (Push Y key)", 0.2)
-    dev.send("y")
-    dev.wait("Select area(0-2)>", 0.1, "1")
-    dev.wait("Please Input Start Address in sector :", 0.2, flash_addr)
-    dev.wait("Please Input Program Start Address :", 0.2, img_addr)
-
-    time.sleep(0.4)
-    dev.wait("please send ! (Motorola S-record)", 0.2)
-    dev.sendfile(ipl_path + "/" + ipl_config["ipl"][soc][index]["name"])
-
-    dev.wait("EM_W Complete!", 0.2)
-    time.sleep(0.2)
-    dev.sendln()
-    dev.sendln()
-
-def flash_burn_file_sparrow_hawk_compat(dev, index, ipl_path, soc, ipl_config, img_addr, flash_addr):
+def flash_burn_file_sparrow_hawk_compat(dev, index, ipl_path, soc, ipl_config, flash_addr):
     dev.debug_flag = True
     dev.sendln()
     dev.wait(">", 0.2, "xls3")
@@ -177,7 +128,7 @@ def flash_burn_file_sparrow_hawk_compat(dev, index, ipl_path, soc, ipl_config, i
         dev.sendln()
     dev.debug_flag = False
 
-def flash_burn_file_sparrow_hawk(dev, index, ipl_path, soc, ipl_config, img_addr, flash_addr):
+def flash_burn_file_sparrow_hawk(dev, index, ipl_path, soc, ipl_config, flash_addr):
     dev.sendln()
     dev.wait(">", 0.2)
 
@@ -240,20 +191,6 @@ def flash_burn_file_sparrow_hawk(dev, index, ipl_path, soc, ipl_config, img_addr
         print("ERROR", f"Exception during file send: {e}")
         return False
 
-def get_imgaddr(file):
-    """Get Image address in file srec.
-    Address stores in the second line from character 5th to 12th.
-    """
-    with open(file, "r") as f:
-        lines = f.readlines()
-
-    # srec with S0 record
-    if lines[0][0:2] == "S0":
-        return lines[1][4: 12]
-    # srec without S0 record
-    else:
-        return lines[0][4: 12]
-
 
 ####################################################################################################
 # Help
@@ -267,22 +204,6 @@ def help(ipl_config):
     print("\t    [PATH_TO_IPL_FILE]")
     print("\t    [OPTION]:")
     print("\t       all               : download all of file ipl")
-    print("\t       <name_of_file>    : download only file ipl <name_of_file>")
-    print("\t       param  : download file bootparam...")
-    print("\t       bl2    : download file bl2...")
-    print("\t       cert   : download file cert_header...")
-    print("\t       cr7    : download file cr7...")
-    print("\t       cert3  : download file cert_header_sa3...")
-    print("\t       cert6  : download file cert_header_sa6...")
-    print("\t       cert17 : download file cert_header_sa17...")
-    print("\t       tee    : download file tee...")
-    print("\t       fw     : download file dummy_fw...")
-    print("\t       rtos   : download file dummy_rtos...")
-    print("\t       icumxa : download file icumxa_loader...")
-    print("\t       bl31   : download file bl31...")
-    print("\t       smoni  : download file smoni...")
-    print("\t       uboot  : download file u-boot...")
-    print("\t       ca55   : download file ca55 loader...")
     exit(1)
 
 
@@ -330,29 +251,14 @@ def main(argv):
         help(ipl_config)
 
     # Define IPL shortened option
-    if SOC == "v3h1":
-        IPL_SHORTEN_OPTION = ["param", "icumxa", "fw", "cert6", "rtos", "bl31", "uboot"]
-    elif SOC == "v3h2":
-        IPL_SHORTEN_OPTION = ["param", "icumxa", "cert6", "fw", "rtos", "smoni", "uboot"]
-    elif SOC == "v3u":
-        IPL_SHORTEN_OPTION = ["param", "icumxa", "cert17", "fw", "rtos", "smoni", "uboot"]
-    elif SOC == "v3m2":
-        IPL_SHORTEN_OPTION = ["param", "cr7", "cert3", "bl2", "cert6", "bl31", "uboot"]
-    elif SOC == "spider":
-        IPL_SHORTEN_OPTION = ["param", "icumxa", "cert9", "fw", "rtos",  "g4mh", "icumh",
-                              "smoni", "tee", "uboot"]
-    elif SOC == "s4sk":
-        IPL_SHORTEN_OPTION = ["param", "icumxa", "cert9", "fw", "rtos", "g4mh", "icumh",
-                              "smoni", "tee", "uboot"]
-    elif SOC == "sparrow-hawk":
+    if SOC == "sparrow-hawk":
         IPL_SHORTEN_OPTION = ["loader", "pciefw"]
     else:
-        IPL_SHORTEN_OPTION = ["param", "bl2", "cert6", "bl31", "tee", "uboot"]
+        print_debug("ERROR", "%s is not supported" % SOC)
 
     OPTION = argv[5:]
     FILE_INFO_INDEX = []
     FILE_IPL_WILL_BURN = []
-    IMGADR_WILL_BURN = []
     FLASHADR_WILL_BURN = []
     WRITESEL_WILL_USE = []
 
@@ -369,10 +275,6 @@ def main(argv):
                 print_debug("ERROR", "%s is not exists" % ipl_config["ipl"][SOC][i]["name"])
                 continue
             FILE_IPL_WILL_BURN.append(ipl_config["ipl"][SOC][i]["name"])
-            if SOC == "sparrow-hawk":
-                IMGADR_WILL_BURN.append("DUMMY")
-            else:
-                IMGADR_WILL_BURN.append(get_imgaddr(IPL_DIR + "/" + ipl_config["ipl"][SOC][i]["name"]))
             FLASHADR_WILL_BURN.append(ipl_config["ipl"][SOC][i]["flash_addr"])
             WRITESEL_WILL_USE.append(ipl_config["ipl"][SOC][i]["write_sel"])
             FILE_INFO_INDEX.append(i)
@@ -382,19 +284,14 @@ def main(argv):
     print_debug("INFO", "Download IPL for %s with serial device %s" % (SOC, DEV_NODE))
     print_debug("INFO", "File .mot at %s:" % MOT_DIR)
     print_debug("INFO", "    %s" % ipl_config["flash_writer"][SOC])
-    print_debug("INFO", "File .srec at %s:" % IPL_DIR)
+    print_debug("INFO", "Binary at %s:" % IPL_DIR)
     print_debug("INFO", "    %s" % FILE_IPL_WILL_BURN)
-    print_debug("INFO", "Image address: \n\t\t%s" % IMGADR_WILL_BURN)
     print_debug("INFO", "flash address: \n\t\t%s" % FLASHADR_WILL_BURN)
     print_debug("INFO", "write select: \n\t\t%s" % WRITESEL_WILL_USE)
 
     # Serial config
-    if SOC == "spider":
-        BAUDRATE = 1843200
-    elif SOC == "s4sk" or SOC == "sparrow-hawk":
+    if SOC == "sparrow-hawk":
         BAUDRATE = 921600
-    else:
-        BAUDRATE = 115200
     test_dev = Serial_conn(
         port=DEV_NODE,
         baudrate=BAUDRATE,
@@ -412,36 +309,12 @@ def main(argv):
     sys.stdout.flush()
     test_dev.wait(">", 0.2, "\r")
 
-    if SOC != "spider" and SOC != "s4sk" and SOC != "sparrow-hawk":
-        test_dev.wait(">", 0.2, "sup")
-        ex_list = [
-            "Please change to 921.6Kbps baud rate setting of the terminal.",
-            "Please change to 460.8Kbps baud rate setting of the terminal.",
-            "Change to 460.8Kbps baud rate setting of the SCIF. OK? (y/n)"
-        ]
-        res = test_dev.waitls(ex_list, 0.2)
-        if res == 0:
-            BAUDRATE = 921600
-        elif res == 1:
-            BAUDRATE = 460800
-        else:
-            test_dev.send("y")
-            time.sleep(0.2)
-            test_dev.sendln()
-            BAUDRATE = 460800
-
-        test_dev.baudrate = BAUDRATE
-
     # Loading srec
     test_dev.send("\n")
 
     for i in range(len(FILE_IPL_WILL_BURN)):
         if SOC == "sparrow-hawk":
-            flash_burn_file_sparrow_hawk(test_dev, FILE_INFO_INDEX[i], IPL_DIR, SOC, ipl_config, IMGADR_WILL_BURN[i], FLASHADR_WILL_BURN[i])
-        elif WRITESEL_WILL_USE[i] in ["eMMC"]:
-            eMMC_burn_file(test_dev, FILE_INFO_INDEX[i], IPL_DIR, SOC, ipl_config, IMGADR_WILL_BURN[i], FLASHADR_WILL_BURN[i])
-        else:
-            flash_burn_file(test_dev, FILE_INFO_INDEX[i], IPL_DIR, SOC, ipl_config, IMGADR_WILL_BURN[i], FLASHADR_WILL_BURN[i])
+            flash_burn_file_sparrow_hawk(test_dev, FILE_INFO_INDEX[i], IPL_DIR, SOC, ipl_config, FLASHADR_WILL_BURN[i])
 
     print_debug("INFO", "Download file .srec done")
     test_dev.close()
