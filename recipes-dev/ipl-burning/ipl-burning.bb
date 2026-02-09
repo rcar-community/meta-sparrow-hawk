@@ -1,7 +1,7 @@
 DESCRIPTION = "IPL burning tool"
 
 LICENSE = "MIT"
-LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/MIT;md5=0835ade698e0bcf8506ecda2f7b4f302"
+LIC_FILES_CHKSUM = "file://${WORKDIR}/LICENSE.MIT;md5=e7d4fc574e1858d0f946f9aa32397c5a"
 
 PACKAGE_ARCH = "${MACHINE_ARCH}"
 
@@ -25,6 +25,9 @@ SRC_URI:append = " \
     file://run.bat \
     file://run.sh \
     file://Flash_writer_sparrow_hawk_CR52.mot \
+    file://LICENSE-index.txt \
+    file://LICENSE.MIT \
+    file://LICENSE.BSD-3-Clause \
     ${PCIE_FIRMWARE} \
     ${PCIE_FIRMWARE_LIC} \
 "
@@ -48,8 +51,10 @@ do_deploy() {
     install -d ${DEPLOYDIR}/${PN}
 
     # Copy license file to distribute
-    install -m 0644 ${COMMON_LICENSE_DIR}/MIT ${DEPLOYDIR}/${PN}/MIT
-    install -m 0644 ${COMMON_LICENSE_DIR}/BSD-3-Clause ${DEPLOYDIR}/${PN}/FlashWriter_LICENSE
+    install -d ${DEPLOYDIR}/${PN}/License
+    install -m 0644 ${WORKDIR}/LICENSE-index.txt ${DEPLOYDIR}/${PN}
+    install -m 0644 ${WORKDIR}/LICENSE.MIT ${DEPLOYDIR}/${PN}/License
+    install -m 0644 ${WORKDIR}/LICENSE.BSD-3-Clause ${DEPLOYDIR}/${PN}/License
 
     # Copy to deploy folder
     install -m 0644 ${WORKDIR}/burn.py ${DEPLOYDIR}/${PN}
@@ -59,9 +64,9 @@ do_deploy() {
     install -m 0644 ${WORKDIR}/run.bat ${DEPLOYDIR}/${PN}
     install -m 0644 ${WORKDIR}/Flash_writer_sparrow_hawk_CR52.mot ${DEPLOYDIR}/${PN}
     install -m 0644 ${DEPLOY_DIR}/images/${MACHINE}/flash.bin ${DEPLOYDIR}/${PN}
-    cp -r  ${DEPLOY_DIR}/licenses/${MACHINE_LIC}/u-boot ${DEPLOYDIR}/${PN}/u-boot_licenses
+    cp -r  ${DEPLOY_DIR}/licenses/${MACHINE_LIC}/u-boot ${DEPLOYDIR}/${PN}/License/u-boot_licenses
     install -m 755 ${WORKDIR}/rcar_gen4_pcie.bin ${DEPLOYDIR}/${PN}
-    install -m 755 ${WORKDIR}/LICENCE.r8a779g_pcie_phy ${DEPLOYDIR}/${PN}
+    install -m 755 ${WORKDIR}/LICENCE.r8a779g_pcie_phy ${DEPLOYDIR}/${PN}/License
 
     # install embedded python binary for Windows environment
     PYTHON_DIR=${DEPLOYDIR}/${PN}/python-embed-amd64
@@ -72,7 +77,6 @@ do_deploy() {
     unzip -qo ${WORKDIR}/python-3.13.4-embed-amd64.zip -d ${PYTHON_DIR}
     sed -i ${PYTHON_DIR}/*._pth -e "s/.*import site/import site/"
     install -m 0644 ${WORKDIR}/get-pip.py ${PYTHON_DIR}
-    echo "./python-embed-amd64/LICENSE.txt" > ${DEPLOYDIR}/${PN}/PYTHON_LICENSE
 }
 
 addtask deploy before do_build after do_compile
