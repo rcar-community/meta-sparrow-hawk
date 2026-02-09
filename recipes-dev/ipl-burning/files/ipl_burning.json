@@ -1,4 +1,8 @@
 {
+    "license": {
+        "copyright": "Copyright (c) 2023-2026, Renesas Electronics Corporation. All rights reserved.",
+        "spdx-license-identifier": "MIT"
+    },
     "flash_writer": {
         "sparrow-hawk":     "Flash_writer_sparrow_hawk_CR52.mot"
     },

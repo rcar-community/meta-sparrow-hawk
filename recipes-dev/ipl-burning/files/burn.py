@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+#
+# Copyright (c) 2025-2026, Renesas Electronics Corporation. All rights reserved.
+# SPDX-License-Identifier: MIT
+#
 
 # import section
 import os
