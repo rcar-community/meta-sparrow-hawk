@@ -1,0 +1,21 @@
+
+- burn.py, ipl-burning.py, ipl-burning.json, run.sh, run.bat
+  License: MIT
+  LicensePath: ./License/LICENSE.MIT
+
+- flash.bin(U-boot)
+  License: GPL-2.0-or-later
+  LicensePath: ./License/u-boot_licenses/*
+
+- Flash_writer_sparrow_hawk_CR52.mot
+  License: BSD-3-Clause
+  LicensePath: ./License/LICENSE.BSD-3-Clause
+
+- rcar_gen4_pcie.bin
+  License: Proprietary
+  LicensePath: ./License/LICENCE.r8a779g_pcie_phy
+
+- python-embed-amd64
+  License: PSF License
+  License Text: ./python-embed-amd64/LICENSE.txt
+
