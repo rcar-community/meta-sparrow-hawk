@@ -1,0 +1,64 @@
+From 09155609b9ab13e715a8febed989fc03f9a406f1 Mon Sep 17 00:00:00 2001
+From: Marek Vasut <marek.vasut+renesas@mailbox.org>
+Date: Wed, 28 Jan 2026 00:48:40 +0100
+Subject: [PATCH 5/5] lmb: Reinstate access to memory above ram_top
+
+Revert commit eb052cbb896f ("lmb: add and reserve memory above ram_top")
+and commit 1a48b0be93d4 ("lmb: prohibit allocations above ram_top even from
+same bank"). These are based on incorrect premise of the first commit, that
+"U-Boot does not use memory above ram_top". While U-Boot itself indeed does
+not and should not use memory above ram_top, user can perfectly well use
+that memory from the U-Boot shell, for example to load content in there.
+
+Currently, attempt to use that memory to load large image using TFTP ends
+with "TFTP error: trying to overwrite reserved memory...". With this change
+in place, the memory can be used again.
+
+Fixes: eb052cbb896f ("lmb: add and reserve memory above ram_top")
+Fixes: 1a48b0be93d4 ("lmb: prohibit allocations above ram_top even from same bank")
+Reported-by: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+Signed-off-by: Marek Vasut <marek.vasut+renesas@mailbox.org>
+---
+ lib/lmb.c | 17 +----------------
+ 1 file changed, 1 insertion(+), 16 deletions(-)
+
+diff --git a/lib/lmb.c b/lib/lmb.c
+index e2d9fe86c14..8f12c6ad8e5 100644
+--- a/lib/lmb.c
++++ b/lib/lmb.c
+@@ -611,7 +611,6 @@ static __maybe_unused void lmb_reserve_common_spl(void)
+ static void lmb_add_memory(void)
+ {
+ 	int i;
+-	phys_addr_t bank_end;
+ 	phys_size_t size;
+ 	u64 ram_top = gd->ram_top;
+ 	struct bd_info *bd = gd->bd;
+@@ -625,23 +624,9 @@ static void lmb_add_memory(void)
+ 
+ 	for (i = 0; i < CONFIG_NR_DRAM_BANKS; i++) {
+ 		size = bd->bi_dram[i].size;
+-		bank_end = bd->bi_dram[i].start + size;
+ 
+-		if (size) {
++		if (size)
+ 			lmb_add(bd->bi_dram[i].start, size);
+-
+-			/*
+-			 * Reserve memory above ram_top as
+-			 * no-overwrite so that it cannot be
+-			 * allocated
+-			 */
+-			if (bd->bi_dram[i].start >= ram_top)
+-				lmb_reserve(bd->bi_dram[i].start, size,
+-					    LMB_NOOVERWRITE);
+-			else if (bank_end > ram_top)
+-				lmb_reserve(ram_top, bank_end - ram_top,
+-					    LMB_NOOVERWRITE);
+-		}
+ 	}
+ }
+ 
+-- 
+2.34.1
+
