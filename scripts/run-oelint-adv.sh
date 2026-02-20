@@ -7,7 +7,7 @@ cd ${SCRIPT_DIR}/../
 install_oelint_adv () {
     python3 -m venv .venv
     . .venv/bin/activate
-    pip3 install git+https://github.com/priv-kweihmann/oelint-adv --quiet
+    pip3 install -U git+https://github.com/priv-kweihmann/oelint-adv --quiet
 }
 install_oelint_adv
 
