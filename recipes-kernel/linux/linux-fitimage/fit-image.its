@@ -173,6 +173,16 @@
 				algo = "crc32";
 			};
 		};
+		fdt-mipi-hdmi {
+			description = "Flattened Device Tree Overlay";
+			data = /incbin/("./r8a779g3-sparrow-hawk-dsi-mipi-hmdi.dtbo");
+			type = "flat_dt";
+			arch = "arm64";
+			compression = "none";
+			hash-1 {
+				algo = "crc32";
+			};
+		};
 	};
 
 	configurations {
@@ -232,6 +242,9 @@
 		};
 		waveshare-panel {
 			fdt = "fdt-waveshare-panel";
+		};
+		mipi-hdmi {
+			fdt = "fdt-mipi-hdmi";
 		};
 	};
 };

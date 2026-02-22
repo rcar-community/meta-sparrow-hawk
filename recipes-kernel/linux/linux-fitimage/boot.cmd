@@ -68,6 +68,9 @@ if i2c probe 0x45; then
         echo Waveshare panel is detected;
         setenv j4_conf '#waveshare-panel';
     fi
+elif i2c probe 0x48; then
+    echo LT8912B is detected;
+    setenv j4_conf '#mipi-hdmi';
 fi
 
 # Check FAN

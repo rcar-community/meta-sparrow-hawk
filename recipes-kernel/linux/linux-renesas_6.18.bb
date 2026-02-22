@@ -34,9 +34,17 @@ SRC_URI:append:sparrow-hawk = " \
     file://0004-input-Add-support-for-no-irq-to-ili210x-driver_618.patch \
     file://0005-arm64-dts-renesas-r8a779g3-Add-waveshare-13.3-DSI-FH.patch \
 "
+# Add support Olimex DSI HDMI converter
+SRC_URI:append:sparrow-hawk = " \
+    file://0001-Add-Olimex-MIPI-HDMI-adapter-support.patch \
+    file://lt8912b.cfg \
+"
 S = "${WORKDIR}/git"
 KERNEL_DEVICETREE:append:sparrow-hawk = " \
     renesas/r8a779g3-sparrow-hawk-dsi-waveshare-panel.dtbo \
+"
+KERNEL_DEVICETREE:append:sparrow-hawk = " \
+    renesas/r8a779g3-sparrow-hawk-dsi-mipi-hmdi.dtbo \
 "
 
 KERNEL_DEVICETREE:append:sparrow-hawk = " \
