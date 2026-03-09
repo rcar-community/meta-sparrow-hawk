@@ -1,13 +1,19 @@
-FILESEXTRAPATHS:prepend:rcar-gen4 := "${THISDIR}/${PN}:"
+FILESEXTRAPATHS:prepend:rcar-gen4:class-target := "${THISDIR}/${PN}:"
 
-SRC_URI:append:rcar-gen4 = " \
+SRC_URI:append:rcar-gen4:class-target = " \
     file://0001-Add-sync_fence_info-and-sync_pt_info.patch \
     file://Add-libkms.patch \
 "
 
-PACKAGES:prepend:rcar-gen4 = "${PN}-kms "
+KMS_ENABLE = ""
+KMS_ENABLE:rcar-gen4:class-target = "-Dlibkms=enabled"
 
-PACKAGECONFIG:append:rcar-gen4 = " libkms"
-PACKAGECONFIG:rcar-gen4[libkms] = "-Dlibkms=enabled,-Dlibkms=disabled"
+KMS_DISABLE = ""
+KMS_DISABLE:rcar-gen4:class-target = "-Dlibkms=disabled"
 
-FILES:${PN}-kms:rcar-gen4 = "${libdir}/libkms*.so.*"
+PACKAGECONFIG[libkms] = "${KMS_ENABLE},${KMS_DISABLE}"
+PACKAGECONFIG:append:rcar-gen4:class-target = " libkms"
+
+PACKAGES:prepend:rcar-gen4:class-target = "${PN}-kms "
+
+FILES:${PN}-kms:rcar-gen4:class-target = "${libdir}/libkms*.so.*"
