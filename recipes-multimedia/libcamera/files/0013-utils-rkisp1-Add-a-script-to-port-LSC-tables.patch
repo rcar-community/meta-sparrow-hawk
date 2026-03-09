@@ -7,6 +7,9 @@ Add a script to port LSC tables from RPi's VC4 format to a format
 compatible with the RkISP1 IPA.
 
 Signed-off-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+
+Upstream-Status: Inappropriate [no upstream]
+
 ---
  utils/rkisp1/rkisp1_lsc_rpi_to_libcamera.py | 139 ++++++++++++++++++++
  1 file changed, 139 insertions(+)

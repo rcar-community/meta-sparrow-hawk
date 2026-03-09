@@ -10,6 +10,9 @@ Define a set of standard Metering and Constraint modes.
 Use the default 0.5 luminance target.
 
 Signed-off-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+
+Upstream-Status: Inappropriate [no upstream]
+
 ---
  src/ipa/rkisp1/data/imx708.yaml | 27 +++++++++++++++++++++++++++
  1 file changed, 27 insertions(+)

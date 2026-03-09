@@ -8,6 +8,9 @@ Add gamma correction to the imx708 tuning file.
 Use a 2.2 gamma value which corresponds to the sRGB color profile.
 
 Signed-off-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+
+Upstream-Status: Inappropriate [no upstream]
+
 ---
  src/ipa/rkisp1/data/imx708.yaml | 2 ++
  1 file changed, 2 insertions(+)
