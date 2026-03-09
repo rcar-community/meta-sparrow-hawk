@@ -13,12 +13,14 @@ SRC_URI:append:sparrow-hawk = " \
     ${PCIE_FIRMWARE_LIC} \
 "
 
+S = "${UNPACKDIR}"
+
 do_compile[noexec] = "1"
 FILES:${PN}:sparrow-hawk += "/usr/lib/firmware/"
 
 do_install:append:sparrow-hawk () {
     install -d ${D}/usr/lib/firmware
-    install -m 755 ${WORKDIR}/rcar_gen4_pcie.bin ${D}/usr/lib/firmware
-    install -m 755 ${WORKDIR}/LICENCE.r8a779g_pcie_phy ${D}/usr/lib/firmware
+    install -m 755 ${UNPACKDIR}/rcar_gen4_pcie.bin ${D}/usr/lib/firmware
+    install -m 755 ${UNPACKDIR}/LICENCE.r8a779g_pcie_phy ${D}/usr/lib/firmware
 }
 

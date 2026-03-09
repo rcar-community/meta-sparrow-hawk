@@ -21,7 +21,7 @@ SRC_URI:r8a779g3 = "${GFX_DRIVER_URL};sha256sum=${GFX_DRIVER_SHA256}"
 
 SRC_URI:append = " file://blacklist.conf"
 
-S = "${WORKDIR}/rogue_km"
+S = "${UNPACKDIR}/rogue_km"
 B = "${KBUILD_DIR}"
 
 KBUILD_DIR:r8a779g3 = "${S}/build/linux/r8a779g_linux"
@@ -48,7 +48,7 @@ module_do_install() {
 
     # Install blacklist config file
     install -d ${D}${sysconfdir}/modprobe.d
-    install -m 644 ${WORKDIR}/blacklist.conf ${D}${sysconfdir}/modprobe.d/blacklist.conf
+    install -m 644 ${UNPACKDIR}/blacklist.conf ${D}${sysconfdir}/modprobe.d/blacklist.conf
 
     # Install prvsrvkm.ko to correct libdir if enable usrmerge features
     if ${@bb.utils.contains('DISTRO_FEATURES', 'usrmerge', 'true', 'false', d)}; then

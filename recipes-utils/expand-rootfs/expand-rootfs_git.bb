@@ -10,7 +10,9 @@ CVE_PRODUCT = ""
 
 SCRIPT_NAME = "${PN}.sh"
 SRC_URI = "file://${SCRIPT_NAME}"
-S = "${WORKDIR}"
+
+S = "${UNPACKDIR}"
+
 PACKAGE_ARCH = "${MACHINE_ARCH}"
 RDEPENDS:${PN} = "bash e2fsprogs e2fsprogs-resize2fs parted"
 BBCLASSEXTEND = ""
@@ -18,6 +20,6 @@ BBCLASSEXTEND = ""
 do_compile[noexec] = "1"
 do_install () {
     install -d ${D}/${USRBINPATH}
-    install -m 0755 ${WORKDIR}/${SCRIPT_NAME} ${D}/${USRBINPATH}
+    install -m 0755 ${UNPACKDIR}/${SCRIPT_NAME} ${D}/${USRBINPATH}
 }
 

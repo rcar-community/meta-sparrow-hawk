@@ -15,7 +15,7 @@ SRC_URI:append:rcar-gen4 = " \
     file://rc.pvr.service \
 "
 
-S = "${WORKDIR}/rogue"
+S = "${UNPACKDIR}/rogue"
 
 inherit update-rc.d systemd
 
@@ -59,7 +59,7 @@ do_install() {
 
     # Install systemd service
     install -d ${D}${systemd_system_unitdir}/
-    install -m 644 ${WORKDIR}/rc.pvr.service ${D}${systemd_system_unitdir}/
+    install -m 644 ${UNPACKDIR}/rc.pvr.service ${D}${systemd_system_unitdir}/
     install -d ${D}${exec_prefix}/bin
     install -m 755 ${S}/etc/init.d/rc.pvr ${D}${exec_prefix}/bin/pvrinit
 }

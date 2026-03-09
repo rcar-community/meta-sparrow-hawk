@@ -6,7 +6,6 @@ DEPENDS = "qosif-user-module"
 PN = "qosif-tp-user-module"
 PR = "r0"
 
-S = "${WORKDIR}/git"
 QOSIF_TP_DIR = "qos_if-tp-user/files/qos_if"
 
 includedir:rcar-gen3 = "${RENESAS_DATADIR}/include"

@@ -33,7 +33,6 @@ SRC_URI:append = " \
     file://0015-ipa-rkisp1-imx219-Regenerate-LSC-tables-from-VC4-tun.patch \
 "
 SRCREV = "f4c3dee21770b9b8817c80265b9f81eda1833731"
-S = "${WORKDIR}/git"
 
 PACKAGECONFIG[pycamera] = "-Dpycamera=enabled,-Dpycamera=disabled,python3 python3-pybind11"
 PACKAGECONFIG[gst] = "-Dgstreamer=enabled,-Dgstreamer=disabled,gstreamer1.0 gstreamer1.0-plugins-base"

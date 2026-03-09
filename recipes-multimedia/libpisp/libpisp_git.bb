@@ -15,7 +15,6 @@ SRC_URI = "git://github.com/raspberrypi/libpisp.git;branch=${BRANCH};protocol=ht
 # v1.3.0
 SRCREV = "9ba67e6680f03f31f2b1741a53e8fd549be82cbe"
 
-S = "${WORKDIR}/git"
 PACKAGE_ARCH = "${MACHINE_ARCH}"
 BBCLASSEXTEND = ""
 

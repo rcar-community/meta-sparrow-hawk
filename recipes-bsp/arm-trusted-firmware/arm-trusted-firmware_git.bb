@@ -13,8 +13,6 @@ BRANCH:rcar-gen4:sparrow-hawk = "master"
 SRC_URI = "git://github.com/ARM-software/arm-trusted-firmware.git;branch=${BRANCH};protocol=https"
 SRCREV:rcar-gen4:sparrow-hawk = "1d5aa939bc8d3d892e2ed9945fa50e36a1a924cc"
 
-S = "${WORKDIR}/git"
-
 CLEAN_OPT:rcar-gen4 = "clean_srecord"
 BUILD_OPT:rcar-gen4 = "bl31 rcar_srecord"
 PLATFORM:rcar-gen4 = "rcar_gen4"
@@ -25,7 +23,7 @@ ATFW_CONF ?= ""
 sparrow_hawk_r8a779g3[default]     = "LSI=V4H CTX_INCLUDE_AARCH32_REGS=0 MBEDTLS_COMMON_MK=1 PTP_NONSECURE_ACCESS=1 LOG_LEVEL=20 DEBUG=0 ENABLE_ASSERTIONS=0 E=0"
 
 # requires CROSS_COMPILE set by hand as there is no configure script
-export CROSS_COMPILE="${TARGET_PREFIX}"
+export CROSS_COMPILE = "${TARGET_PREFIX}"
 
 # Let the Makefile handle setting up the CFLAGS and LDFLAGS as it is a standalone application
 CFLAGS[unexport] = "1"

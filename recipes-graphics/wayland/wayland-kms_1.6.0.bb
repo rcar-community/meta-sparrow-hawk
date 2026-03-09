@@ -13,7 +13,6 @@ SRCREV = "15184e5bd3701938a6b30b8f03b471477fc742e8"
 
 LIC_FILES_CHKSUM = "file://wayland-kms.c;beginline=6;endline=24;md5=5cdaac262c876e98e47771f11c7036b5"
 
-S = "${WORKDIR}/git"
 
 inherit autotools pkgconfig
 

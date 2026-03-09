@@ -19,6 +19,8 @@ SRC_URI = " \
     file://fit-image.its \
 "
 
+S = "${UNPACKDIR}"
+
 FILES:${PN} += " \
     /boot/fitImage \
 "
@@ -30,8 +32,8 @@ do_compile[depends] += "arm-trusted-firmware:do_deploy"
 
 do_compile() {
     cd ${DEPLOY_DIR}/images/${MACHINE}
-    install -m 644 ${WORKDIR}/boot.cmd ./
-    install -m 644 ${WORKDIR}/fit-image.its ./
+    install -m 644 ${UNPACKDIR}/boot.cmd ./
+    install -m 644 ${UNPACKDIR}/fit-image.its ./
     sed -i "s/bl31.bin/bl31-${MACHINE}.bin/" ./fit-image.its
     mkimage -f ./fit-image.its ./fitImage
 
