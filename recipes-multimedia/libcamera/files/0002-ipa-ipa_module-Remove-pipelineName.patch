@@ -17,6 +17,9 @@ Remove it.
 Signed-off-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
 Reviewed-by: Barnabás Pőcze <barnabas.pocze@ideasonboard.com>
 Reviewed-by: Kieran Bingham <kieran.bingham@ideasonboard.com>
+
+Upstream-Status: Inappropriate [no upstream]
+
 ---
  include/libcamera/ipa/ipa_module_info.h |  1 -
  src/ipa/ipu3/ipu3.cpp                   |  1 -
