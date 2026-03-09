@@ -20,6 +20,9 @@ Tested on R-Car V4H Sparrow-Hawk together with IMX219 and IMX462
 sensors.
 
 Signed-off-by: Niklas Söderlund <niklas.soderlund+renesas@ragnatech.se>
+
+Upstream-Status: Inappropriate [no upstream]
+
 ---
 * Changes since v1
 - Fix camera names. Was 'imx462 2-001a', is now '/base/soc/i2c@e6510000/cam@1a'.

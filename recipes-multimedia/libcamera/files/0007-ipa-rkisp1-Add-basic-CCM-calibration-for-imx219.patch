@@ -14,6 +14,9 @@ a RPi Camera module v2. The colors temperatures calibrated are 2500K,
 chart inside a gray box.
 
 Signed-off-by: Niklas Söderlund <niklas.soderlund+renesas@ragnatech.se>
+
+Upstream-Status: Inappropriate [no upstream]
+
 ---
  src/ipa/rkisp1/data/imx219.yaml | 87 +++++++++++++++++++++++++++++++++
  1 file changed, 87 insertions(+)

@@ -40,6 +40,9 @@ This will require every new pipeline to add an entry to the dictionary
 and specify which IPA module they would like to use.
 
 Signed-off-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+
+Upstream-Status: Inappropriate [no upstream]
+
 ---
  src/ipa/meson.build | 40 ++++++++++++++++++++++++++++++----------
  1 file changed, 30 insertions(+), 10 deletions(-)

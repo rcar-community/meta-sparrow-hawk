@@ -8,6 +8,9 @@ Add a tuning file for the RaspberryPi camera module v3.
 Only enable the basic AGC, AWB and BLS algorithms.
 
 Signed-off-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+
+Upstream-Status: Inappropriate [no upstream]
+
 ---
  src/ipa/rkisp1/data/imx708.yaml | 8 ++++++++
  src/ipa/rkisp1/data/meson.build | 1 +

@@ -14,6 +14,9 @@ Compared to the RPi tuning file format the gains are expressed as the
 inverse of the whitepoint values.
 
 Signed-off-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+
+Upstream-Status: Inappropriate [no upstream]
+
 ---
  src/ipa/rkisp1/data/imx708.yaml | 40 +++++++++++++++++++++++++++++++++
  1 file changed, 40 insertions(+)
