@@ -27,6 +27,9 @@ Signed-off-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
 Reviewed-by: Hans de Goede <hansg@kernel.org>
 Reviewed-by: Kieran Bingham <kieran.bingham@ideasonboard.com>
 Tested-by: Niklas Söderlund <niklas.soderlund+renesas@ragnatech.se>
+
+Upstream-Status: Inappropriate [no upstream]
+
 ---
  include/libcamera/internal/ipa_manager.h | 13 +++++++--
  include/libcamera/internal/ipa_module.h  |  4 +--

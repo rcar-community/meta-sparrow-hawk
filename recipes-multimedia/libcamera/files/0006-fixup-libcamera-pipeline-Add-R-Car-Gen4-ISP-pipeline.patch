@@ -4,6 +4,9 @@ Date: Fri, 5 Dec 2025 11:50:29 +0100
 Subject: [PATCH 06/15] fixup! libcamera: pipeline: Add R-Car Gen4 ISP pipeline
 
 re-base on most recent master
+
+Upstream-Status: Inappropriate [no upstream]
+
 ---
  src/libcamera/pipeline/rcar-gen4/rcar-gen4.cpp | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)

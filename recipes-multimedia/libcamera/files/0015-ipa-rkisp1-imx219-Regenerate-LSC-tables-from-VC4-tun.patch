@@ -8,6 +8,9 @@ Replace the current LSC table with the ones from VC4 using the
 utils/rkisp1/rkisp1_lsc_rpi_to_libcamera.py script.
 
 Signed-off-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+
+Upstream-Status: Inappropriate [no upstream]
+
 ---
  src/ipa/rkisp1/data/imx219.yaml | 3604 ++++++++++++++++++++++++++++++-
  1 file changed, 3501 insertions(+), 103 deletions(-)
