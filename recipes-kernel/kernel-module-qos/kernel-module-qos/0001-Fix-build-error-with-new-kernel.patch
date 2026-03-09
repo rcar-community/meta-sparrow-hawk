@@ -4,6 +4,9 @@ Date: Mon, 31 Mar 2025 12:41:27 +0900
 Subject: [PATCH] Fix build error with new kernel
 
 Signed-off-by: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+
+Upstream-Status: Inappropriate [no upstream]
+
 ---
  qos-module/files/qos/drv/qos_drv.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)

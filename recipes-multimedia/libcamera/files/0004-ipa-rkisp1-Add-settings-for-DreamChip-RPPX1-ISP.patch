@@ -22,6 +22,9 @@ to RkISP1 V10 16. Add a dedicated hardware revisions descriptor for the
 RPPX1 device so it can reuse the existing IPA.
 
 Signed-off-by: Niklas Söderlund <niklas.soderlund+renesas@ragnatech.se>
+
+Upstream-Status: Inappropriate [no upstream]
+
 ---
  include/libcamera/ipa/rkisp1.mojom |  8 ++++++++
  src/ipa/rkisp1/rkisp1.cpp          | 12 ++++++++++++

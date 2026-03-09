@@ -18,6 +18,9 @@ Fixes: eb052cbb896f ("lmb: add and reserve memory above ram_top")
 Fixes: 1a48b0be93d4 ("lmb: prohibit allocations above ram_top even from same bank")
 Reported-by: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
 Signed-off-by: Marek Vasut <marek.vasut+renesas@mailbox.org>
+
+Upstream-Status: Inappropriate [no upstream]
+
 ---
  lib/lmb.c | 17 +----------------
  1 file changed, 1 insertion(+), 16 deletions(-)

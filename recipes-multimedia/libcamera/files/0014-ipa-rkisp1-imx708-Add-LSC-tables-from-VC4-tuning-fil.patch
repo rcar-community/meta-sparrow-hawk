@@ -8,6 +8,9 @@ Use the just added script to convert VC4 LSC tables to a format
 compatible with RkISP1 and add them to the imx708 tuning file.
 
 Signed-off-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+
+Upstream-Status: Inappropriate [no upstream]
+
 ---
  src/ipa/rkisp1/data/imx708.yaml | 2342 +++++++++++++++++++++++++++++++
  1 file changed, 2342 insertions(+)
