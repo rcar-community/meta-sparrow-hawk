@@ -4,6 +4,9 @@ Date: Sat, 28 Mar 2026 12:42:18 +0900
 Subject: [PATCH] Fix include path
 
 Signed-off-by: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+
+Upstream-Status: Pending
+
 ---
  src/waylandws_client.c | 2 +-
  src/waylandws_server.c | 2 +-

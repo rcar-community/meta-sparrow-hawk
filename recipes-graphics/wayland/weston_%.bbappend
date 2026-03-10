@@ -2,7 +2,7 @@ FILESEXTRAPATHS:prepend:rcar-gen4 := "${THISDIR}/${PN}:"
 
 SRC_URI:append:rcar-gen4 = " file://drm-backend-remove-gbm-version-check.patch"
 
-DEPENDS:append:rcar-gen4= " libgbm"
+DEPENDS:append:rcar-gen4 = " libgbm"
 
 RDEPENDS:${PN}:append:rcar-gen4 = " libgbm"
 
