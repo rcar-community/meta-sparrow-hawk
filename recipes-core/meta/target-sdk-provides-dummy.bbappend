@@ -1,6 +1,2 @@
-
-DUMMYPROVIDES_PACKAGES:remove = " \
-    bash \
-    coreutils \
-"
+DUMMYPROVIDES:append = " /bin/sed"
 
