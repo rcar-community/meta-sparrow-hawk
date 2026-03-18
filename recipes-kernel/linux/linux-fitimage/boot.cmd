@@ -70,7 +70,7 @@ if i2c probe 0x45; then
     fi
 elif i2c probe 0x48; then
     echo LT8912B is detected;
-    setenv j4_conf '#mipi-hdmi';
+    setenv j4_conf '#olimex-dsi-hdmi';
 fi
 
 # Check FAN

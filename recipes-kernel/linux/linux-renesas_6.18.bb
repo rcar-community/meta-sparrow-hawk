@@ -36,7 +36,7 @@ SRC_URI:append:sparrow-hawk = " \
 "
 # Add support Olimex DSI HDMI converter
 SRC_URI:append:sparrow-hawk = " \
-    file://0001-Add-Olimex-MIPI-HDMI-adapter-support.patch \
+    file://0001-arm64-dts-renesas-sparrow-hawk-Add-overlay-for-Olime.patch \
     file://lt8912b.cfg \
 "
 S = "${WORKDIR}/git"
@@ -44,7 +44,7 @@ KERNEL_DEVICETREE:append:sparrow-hawk = " \
     renesas/r8a779g3-sparrow-hawk-dsi-waveshare-panel.dtbo \
 "
 KERNEL_DEVICETREE:append:sparrow-hawk = " \
-    renesas/r8a779g3-sparrow-hawk-dsi-mipi-hmdi.dtbo \
+    renesas/r8a779g3-sparrow-hawk-olimex-dsi-hdmi.dtbo \
 "
 
 KERNEL_DEVICETREE:append:sparrow-hawk = " \
