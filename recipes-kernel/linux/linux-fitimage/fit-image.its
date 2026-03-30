@@ -163,9 +163,9 @@
 				algo = "crc32";
 			};
 		};
-		fdt-waveshare-panel {
+		fdt-ws-display-13in {
 			description = "Flattened Device Tree Overlay";
-			data = /incbin/("./r8a779g3-sparrow-hawk-dsi-waveshare-panel.dtbo");
+			data = /incbin/("./r8a779g3-sparrow-hawk-ws-display-13in.dtbo");
 			type = "flat_dt";
 			arch = "arm64";
 			compression = "none";
@@ -240,8 +240,11 @@
 		rpi-display-2-5in {
 			fdt = "fdt-rpi-display-2-5in";
 		};
-		waveshare-panel {
-			fdt = "fdt-waveshare-panel";
+		waveshare-panel { // For backward compatibility
+			fdt = "fdt-ws-display-13in";
+		};
+		ws-display-13in {
+			fdt = "fdt-ws-display-13in";
 		};
 		olimex-dsi-hdmi {
 			fdt = "fdt-olimex-dsi-hdmi";
