@@ -29,30 +29,24 @@ do_compile[noexec] = "1"
 do_install() {
     # Install configuration files
     install -d ${D}${sysconfdir}/init.d
-    install -m 644 ${S}/etc/powervr.ini ${D}${sysconfdir}
+    cp -r ${S}/etc/* ${D}${sysconfdir}/
     install -m 755 ${S}/etc/init.d/rc.pvr ${D}${sysconfdir}/init.d/pvrinit
-    install -m 755 ${S}/etc/init.d/rc.pvr ${D}${sysconfdir}/init.d/
-    install -d ${D}${sysconfdir}/udev/rules.d
-    install -m 644 ${S}/etc/udev/rules.d/72-pvr-seat.rules ${D}${sysconfdir}/udev/rules.d/
 
-    # Install header files
-    install -d ${D}${includedir}/EGL
-    install -m 644 ${S}/usr/include/EGL/*.h ${D}${includedir}/EGL/
-    install -d ${D}${includedir}/GLES2
-    install -m 644 ${S}/usr/include/GLES2/*.h ${D}${includedir}/GLES2/
-    install -d ${D}${includedir}/GLES3
-    install -m 644 ${S}/usr/include/GLES3/*.h ${D}${includedir}/GLES3/
-    install -d ${D}${includedir}/KHR
-    install -m 644 ${S}/usr/include/KHR/khrplatform.h ${D}${includedir}/KHR/khrplatform.h
+    # Install header files except OpenCL standard header
+    install -d ${D}${includedir}/
+    cp -r ${S}/usr/include/* ${D}${includedir}/
+    rm -rf ${D}${includedir}/CL
 
     # Install pre-builded binaries
     install -d ${D}${libdir}
     install -m 755 ${S}/usr/lib/*.so ${D}${libdir}/
     install -d ${D}/usr/local/bin
-    #install -m 755 ${S}/usr/local/bin/dlcsrv_REL ${D}/usr/local/bin/dlcsrv_REL
     install -m 755 ${S}/usr/local/bin/* ${D}/usr/local//bin/
     install -d ${D}${nonarch_base_libdir}/firmware
     install -m 644 ${S}/lib/firmware/* ${D}${nonarch_base_libdir}/firmware/
+
+    # Remove conflict binary
+    rm -rf ${D}${libdir}/libOpenCL.so
 
     # Install pkgconfig
     install -d ${D}${libdir}/pkgconfig
@@ -62,10 +56,6 @@ do_install() {
     cd ${D}${libdir}
     ln -s libEGL.so libEGL.so.1
     ln -s libGLESv2.so libGLESv2.so.2
-
-    # Set the "WindowSystem" parameter for wayland
-    #sed -i -e "s/WindowSystem=libpvrDRM_WSEGL.so/WindowSystem=libpvrWAYLAND_WSEGL.so/g" \
-    #    ${D}${sysconfdir}/powervr.ini
 
     # Install systemd service
     install -d ${D}${systemd_system_unitdir}/

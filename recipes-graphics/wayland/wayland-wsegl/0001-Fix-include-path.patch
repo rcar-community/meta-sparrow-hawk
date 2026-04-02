@@ -1,0 +1,40 @@
+From 363c710749791fdb1324772c0687ab21ee0e998d Mon Sep 17 00:00:00 2001
+From: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+Date: Sat, 28 Mar 2026 12:42:18 +0900
+Subject: [PATCH] Fix include path
+
+Signed-off-by: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+---
+ src/waylandws_client.c | 2 +-
+ src/waylandws_server.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/waylandws_client.c b/src/waylandws_client.c
+index 55e050f..4f001d5 100644
+--- a/src/waylandws_client.c
++++ b/src/waylandws_client.c
+@@ -54,7 +54,7 @@
+ #include "waylandws_pvr.h"
+ 
+ #include "EGL/egl.h"
+-#include "EGL/eglext_REL.h"
++#include "drv/EGL/eglext_REL.h"
+ 
+ #define RENDER_NODE_MODULE "rcar-du"
+ 
+diff --git a/src/waylandws_server.c b/src/waylandws_server.c
+index 867f8dc..6489f2b 100644
+--- a/src/waylandws_server.c
++++ b/src/waylandws_server.c
+@@ -44,7 +44,7 @@
+ #include "gbm_kmsint.h"
+ 
+ #include "EGL/egl.h"
+-#include "EGL/eglext_REL.h"
++#include "drv/EGL/eglext_REL.h"
+ 
+ /*
+  * Capabilities of the wayland window system
+-- 
+2.34.1
+
