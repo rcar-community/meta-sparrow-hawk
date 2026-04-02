@@ -36,14 +36,8 @@ do_install() {
     install -m 644 ${S}/etc/udev/rules.d/72-pvr-seat.rules ${D}${sysconfdir}/udev/rules.d/
 
     # Install header files
-    install -d ${D}${includedir}/EGL
-    install -m 644 ${S}/usr/include/EGL/*.h ${D}${includedir}/EGL/
-    install -d ${D}${includedir}/GLES2
-    install -m 644 ${S}/usr/include/GLES2/*.h ${D}${includedir}/GLES2/
-    install -d ${D}${includedir}/GLES3
-    install -m 644 ${S}/usr/include/GLES3/*.h ${D}${includedir}/GLES3/
-    install -d ${D}${includedir}/KHR
-    install -m 644 ${S}/usr/include/KHR/khrplatform.h ${D}${includedir}/KHR/khrplatform.h
+    install -d ${D}${includedir}/
+    cp -r ${S}/usr/include/* ${D}${includedir}/
 
     # Install pre-builded binaries
     install -d ${D}${libdir}
