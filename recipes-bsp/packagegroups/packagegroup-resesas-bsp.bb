@@ -42,4 +42,5 @@ RDEPENDS:packagegroup-renesas-bsp-demo = " \
     sqlite3 \
     python3-numpy \
     python3-sqlite3 \
+    opencv \
 "
