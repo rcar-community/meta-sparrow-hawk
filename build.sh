@@ -9,7 +9,6 @@ cd ${SCRIPT_DIR}/build
 export WORK=`pwd`
 TARGET_IMAGE=core-image-minimal
 USE_SSTATE_MIRROR=no
-USE_NEXT_KERNEL=no
 BUILD_SBOM=no
 BUILD_ROOTFS_ONLY=no
 REMOVE_WORKDIR=no
@@ -54,8 +53,6 @@ while [[ $# -gt 0 ]]; do
             REMOVE_WORKDIR=yes ;;
         --sstate-mirror)
             USE_SSTATE_MIRROR=yes ;;
-        --next-kernel)
-            USE_NEXT_KERNEL=yes ;;
         --build-rootfs-only)
             BUILD_ROOTFS_ONLY=yes ;;
         *) ;; # Ignore unknown option
@@ -121,14 +118,6 @@ else # Disable SBOM build to reduce build time
 cat << EOS >> conf/local.conf
 # Disable create-spdx
 INHERIT:remove = "create-spdx"
-EOS
-fi
-
-if [[ "${USE_NEXT_KERNEL}" == "yes" ]]; then
-cat << EOS >> conf/local.conf
-# Upstream Kernel Builds
-PREFERRED_VERSION_linux-renesas = "6.18%"
-LINUXLIBCVERSION = "6.18%"
 EOS
 fi
 
