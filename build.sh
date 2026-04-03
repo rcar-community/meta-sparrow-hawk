@@ -17,6 +17,7 @@ IS_BUILD_SDK=no
 IS_QUIET_BUILD=no
 TEMPLATE_POSTFIX=""
 KERNEL_VERSION=""
+FETCHALL_OPT=""
 
 Usage () {
     echo "Usage:"
@@ -31,6 +32,7 @@ Usage () {
     echo "       | --sbom:          Build SBOM files"
     echo "       | --sstate-mirror: Use sstate mirror server. This may decrease build time."
     echo "       | --rm-work:       Remove working directory while building to reduce storage space."
+    echo "       | --fetchall:      Download source code only"
     exit
 }
 
@@ -57,6 +59,8 @@ while [[ $# -gt 0 ]]; do
         --kernel-version)
             KERNEL_VERSION=$2
             shift ;;
+        --fetchall)
+            FETCHALL_OPT=" --runall=fetch -k" ;;
         *) ;; # Ignore unknown option
     esac
     shift
@@ -144,9 +148,9 @@ if [[ "${IS_QUIET_BUILD}" == "yes" ]]; then
     QUIET_FLAG="-q"
 fi
 
-bitbake ${QUIET_FLAG} ${TARGET_IMAGE}
+bitbake ${QUIET_FLAG} ${TARGET_IMAGE} ${FETCHALL_OPT}
 if [[ "${IS_BUILD_SDK}" == "yes" ]]; then
-    bitbake ${QUIET_FLAG} ${TARGET_IMAGE}-sdk -c populate_sdk
+    bitbake ${QUIET_FLAG} ${TARGET_IMAGE}-sdk -c populate_sdk ${FETCHALL_OPT}
 fi
 
 # Cleanup symbolic link
