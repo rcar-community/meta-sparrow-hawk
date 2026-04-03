@@ -297,8 +297,8 @@ export SOURCE_DATE_EPOCH = "${@time.strftime('%s', time.localtime())}"
 REPRODUCIBLE_TIMESTAMP_ROOTFS = "${@time.strftime('%s', time.localtime())}"
 
 # Upstream Kernel Builds
-PREFERRED_VERSION_linux-renesas = "6.12%"
-LINUXLIBCVERSION = "6.12%"
+PREFERRED_VERSION_linux-renesas = "6.18%"
+LINUXLIBCVERSION = "6.18%"
 # linux-libc-headers is depended on Yocto version
 PREFERRED_VERSION_linux-libc-headers = "6.6"
 PREFERRED_VERSION_nativesdk-linux-libc-headers = "6.6"
