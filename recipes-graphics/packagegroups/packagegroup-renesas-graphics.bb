@@ -13,12 +13,14 @@ PACKAGES = " \
     packagegroup-graphics-renesas-gles \
     packagegroup-graphics-renesas-wayland \
     packagegroup-graphics-oss-wayland \
+    packagegroup-graphics-oss-opencl \
 "
 
 RDEPENDS:packagegroup-renesas-graphics = " \
     packagegroup-graphics-renesas-gles \
     packagegroup-graphics-renesas-wayland \
     packagegroup-graphics-oss-wayland \
+    packagegroup-graphics-oss-opencl \
 "
 
 # GFX package
@@ -44,4 +46,8 @@ RDEPENDS:packagegroup-graphics-oss-wayland = " \
     alsa-utils \
     alsa-tools \
     libdrm-tests \
+"
+
+RDEPENDS:packagegroup-graphics-oss-opencl = " \
+    clinfo \
 "
