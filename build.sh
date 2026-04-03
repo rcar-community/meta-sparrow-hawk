@@ -33,30 +33,34 @@ Usage () {
     echo "       | --rm-work:       Remove working directory while building to reduce storage space."
     exit
 }
-for arg in $@; do
-    if [[ "$arg" == "--console" ]]; then
-        TEMPLATE_POSTFIX=""
-        TARGET_IMAGE=core-image-minimal
-    elif [[ "$arg" == "--weston" ]]; then
-        TEMPLATE_POSTFIX="-weston"
-        TARGET_IMAGE=core-image-weston
-    elif [[ "$arg" == "-h" ]] || [[ "$arg" == "--help" ]]; then
-        Usage; exit
-    elif [[ "$arg" == "-s" ]] || [[ "$arg" == "--sdk" ]]; then
-        IS_BUILD_SDK=yes
-    elif [[ "$arg" == "-q" ]] || [[ "$arg" == "--quiet" ]]; then
-        IS_QUIET_BUILD=yes
-    elif [[ "$arg" == "--sbom" ]]; then
-        BUILD_SBOM=yes
-    elif [[ "$arg" == "--rm-work" ]]; then
-        REMOVE_WORKDIR=yes
-    elif [[ "$arg" == "--sstate-mirror" ]]; then
-        USE_SSTATE_MIRROR=yes
-    elif [[ "$arg" == "--next-kernel" ]]; then
-        USE_NEXT_KERNEL=yes
-    elif [[ "$arg" == "--build-rootfs-only" ]]; then
-        BUILD_ROOTFS_ONLY=yes
-    fi
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --console)
+            TEMPLATE_POSTFIX=""
+            TARGET_IMAGE=core-image-minimal ;;
+        --weston)
+            TEMPLATE_POSTFIX="-weston"
+            TARGET_IMAGE=core-image-weston ;;
+        -h|--help)
+            Usage; exit 0 ;;
+        -s|--sdk)
+            IS_BUILD_SDK=yes  ;;
+        -q|--quiet)
+            IS_QUIET_BUILD=yes ;;
+        --sbom)
+            BUILD_SBOM=yes ;;
+        --rm-work)
+            REMOVE_WORKDIR=yes ;;
+        --sstate-mirror)
+            USE_SSTATE_MIRROR=yes ;;
+        --next-kernel)
+            USE_NEXT_KERNEL=yes ;;
+        --build-rootfs-only)
+            BUILD_ROOTFS_ONLY=yes ;;
+        *) ;; # Ignore unknown option
+    esac
+    shift
 done
 
 if [[ "$(cat ${SCRIPT_DIR}/conf/layer.conf 2>&1 | grep LAYERDEPENDS_sparrow-hawk )" != "" ]] ;then
