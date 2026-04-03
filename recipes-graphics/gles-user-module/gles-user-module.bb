@@ -41,7 +41,6 @@ do_install() {
     install -d ${D}${libdir}
     install -m 755 ${S}/usr/lib/*.so ${D}${libdir}/
     install -d ${D}/usr/local/bin
-    #install -m 755 ${S}/usr/local/bin/dlcsrv_REL ${D}/usr/local/bin/dlcsrv_REL
     install -m 755 ${S}/usr/local/bin/* ${D}/usr/local//bin/
     install -d ${D}${nonarch_base_libdir}/firmware
     install -m 644 ${S}/lib/firmware/* ${D}${nonarch_base_libdir}/firmware/
@@ -57,10 +56,6 @@ do_install() {
     cd ${D}${libdir}
     ln -s libEGL.so libEGL.so.1
     ln -s libGLESv2.so libGLESv2.so.2
-
-    # Set the "WindowSystem" parameter for wayland
-    #sed -i -e "s/WindowSystem=libpvrDRM_WSEGL.so/WindowSystem=libpvrWAYLAND_WSEGL.so/g" \
-    #    ${D}${sysconfdir}/powervr.ini
 
     # Install systemd service
     install -d ${D}${systemd_system_unitdir}/
