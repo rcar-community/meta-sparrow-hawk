@@ -16,6 +16,7 @@ IS_BUILD_INSIDE_REPO=yes
 IS_BUILD_SDK=no
 IS_QUIET_BUILD=no
 TEMPLATE_POSTFIX=""
+KERNEL_VERSION=""
 
 Usage () {
     echo "Usage:"
@@ -53,8 +54,9 @@ while [[ $# -gt 0 ]]; do
             REMOVE_WORKDIR=yes ;;
         --sstate-mirror)
             USE_SSTATE_MIRROR=yes ;;
-        --build-rootfs-only)
-            BUILD_ROOTFS_ONLY=yes ;;
+        --kernel-version)
+            KERNEL_VERSION=$2
+            shift ;;
         *) ;; # Ignore unknown option
     esac
     shift
@@ -121,10 +123,15 @@ INHERIT:remove = "create-spdx"
 EOS
 fi
 
-if [[ "${BUILD_ROOTFS_ONLY}" == "yes" ]]; then
+if [[ "${KERNEL_VERSION}" == "dummy" ]]; then
 cat << EOS >> conf/local.conf
 # Disable kernel building
 PREFERRED_PROVIDER_virtual/kernel = "linux-dummy"
+EOS
+elif [[ "${KERNEL_VERSION}" != "" ]]; then
+cat << EOS >> conf/local.conf
+PREFERRED_VERSION_linux-renesas = "${KERNEL_VERSION}%"
+LINUXLIBCVERSION = "${KERNEL_VERSION}%"
 EOS
 fi
 
