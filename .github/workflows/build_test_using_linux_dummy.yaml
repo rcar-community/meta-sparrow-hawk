@@ -24,6 +24,6 @@ jobs:
         shell: bash
         run: |
           while true; do echo "[keepalive] $(date)"; sleep 60; done &
-          ./build.sh -q --console --sbom --rm-work --build-rootfs-only
+          ./build.sh -q --console --sbom --rm-work --kernel-version dummy
           # ./build.sh --weston --sbom --rm-work --build-rootfs-only
 
