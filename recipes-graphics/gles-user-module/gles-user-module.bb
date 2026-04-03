@@ -29,15 +29,13 @@ do_compile[noexec] = "1"
 do_install() {
     # Install configuration files
     install -d ${D}${sysconfdir}/init.d
-    install -m 644 ${S}/etc/powervr.ini ${D}${sysconfdir}
+    cp -r ${S}/etc/* ${D}${sysconfdir}/
     install -m 755 ${S}/etc/init.d/rc.pvr ${D}${sysconfdir}/init.d/pvrinit
-    install -m 755 ${S}/etc/init.d/rc.pvr ${D}${sysconfdir}/init.d/
-    install -d ${D}${sysconfdir}/udev/rules.d
-    install -m 644 ${S}/etc/udev/rules.d/72-pvr-seat.rules ${D}${sysconfdir}/udev/rules.d/
 
-    # Install header files
+    # Install header files except OpenCL standard header
     install -d ${D}${includedir}/
     cp -r ${S}/usr/include/* ${D}${includedir}/
+    rm -rf ${D}${includedir}/CL
 
     # Install pre-builded binaries
     install -d ${D}${libdir}
@@ -47,6 +45,9 @@ do_install() {
     install -m 755 ${S}/usr/local/bin/* ${D}/usr/local//bin/
     install -d ${D}${nonarch_base_libdir}/firmware
     install -m 644 ${S}/lib/firmware/* ${D}${nonarch_base_libdir}/firmware/
+
+    # Remove conflict binary
+    rm -rf ${D}${libdir}/libOpenCL.so
 
     # Install pkgconfig
     install -d ${D}${libdir}/pkgconfig
