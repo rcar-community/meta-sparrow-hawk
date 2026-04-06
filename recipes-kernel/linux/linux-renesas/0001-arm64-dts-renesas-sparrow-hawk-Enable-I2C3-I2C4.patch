@@ -1,0 +1,32 @@
+From 72df6746b1a02d22dfd442f5709b13aa81f17d85 Mon Sep 17 00:00:00 2001
+From: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+Date: Mon, 6 Apr 2026 23:44:41 +0900
+Subject: [PATCH] arm64: dts: renesas: sparrow-hawk: Enable I2C3/I2C4
+
+Upstream-Status: Inappropriate [no upstream]
+
+Signed-off-by: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+---
+ arch/arm64/boot/dts/renesas/r8a779g3-sparrow-hawk.dts | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a779g3-sparrow-hawk.dts b/arch/arm64/boot/dts/renesas/r8a779g3-sparrow-hawk.dts
+index f80c0618dee9..1cc46f5cd1cc 100644
+--- a/arch/arm64/boot/dts/renesas/r8a779g3-sparrow-hawk.dts
++++ b/arch/arm64/boot/dts/renesas/r8a779g3-sparrow-hawk.dts
+@@ -953,3 +953,12 @@ &sensor_thermal_cr52 {
+ &sensor_thermal_ddr1 {
+ 	critical-action = "shutdown";
+ };
++
++&i2c3 {
++	status = "okay";
++};
++
++&i2c4 {
++	status = "okay";
++};
++
+-- 
+2.34.1
+
