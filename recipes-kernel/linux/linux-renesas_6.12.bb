@@ -22,7 +22,7 @@ PV = "${LINUX_VERSION}+git${SRCPV}"
 SRC_URI = "${REPO};branch=${BRANCH};protocol=https"
 SRC_URI:append:sparrow-hawk = " \
     file://sparrow_hawk.cfg \
-    file://sparrow-hawk-enable-i2c3-i2c4.dtsi;subdir=git/arch/arm64/boot/dts/renesas/ \
+    file://0001-arm64-dts-renesas-sparrow-hawk-Enable-I2C3-I2C4.patch \
     file://0002-HACK-drivers-gpu-drm-drm_file-Ingnore-flag-checking.patch \
 "
 S = "${WORKDIR}/git"
@@ -43,10 +43,6 @@ KERNEL_DEVICETREE:append:sparrow-hawk = " \
 "
 
 BBCLASSEXTEND ?= ""
-
-do_compile:prepend:sparrow-hawk () {
-    echo '#include "sparrow-hawk-enable-i2c3-i2c4.dtsi"' >>  ${S}/arch/arm64/boot/dts/renesas/r8a779g3-sparrow-hawk.dts
-}
 
 do_compile_kernelmodules:append () {
     if (grep -q -i -e '^CONFIG_MODULES=y$' ${B}/.config); then
