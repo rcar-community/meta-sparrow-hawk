@@ -118,10 +118,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
+          cd $GITHUB_WORKSPACE
           BRANCH="${{ github.ref_name }}"
           if [[ "$BRANCH" == "scarthgap" ]]; then
             # ex.) vYYYY-MM-DD
-            echo "TAG_NAME=v$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+            grep 'BSP_VERSION ??=' recipes-bsp/bsp-info/bsp-info.bb | cut -d'"' -f2 >> $GITHUB_ENV
           elif [[ "$BRANCH" == *-dev ]]; then
             echo "TAG_NAME=dev-latest" >> $GITHUB_ENV
           elif [[ "$BRANCH" == *-next ]]; then
