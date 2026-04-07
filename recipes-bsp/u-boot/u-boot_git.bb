@@ -10,28 +10,21 @@ DEPENDS += "bc-native dtc-native python3-pyelftools-native gnutls-native"
 
 UBOOT_URL = "git://source.denx.de/u-boot/u-boot.git"
 BRANCH = "master"
-SRCREV = "127a42c7257a6ffbbd1575ed1cbaa8f5408a44b3"
+SRCREV = "88dc2788777babfd6322fa655df549a019aa1e69"
 LICENSE = "GPL-2.0-or-later"
 LIC_FILES_CHKSUM = "file://Licenses/README;md5=2ca5f2c35c8cc335f0a19756634782f1"
 
 SRC_URI = "${UBOOT_URL};branch=${BRANCH};protocol=https"
 
-PV = "v2026.01+git${SRCPV}"
+PV = "v2026.04+git${SRCPV}"
 
 UBOOT_SREC_SUFFIX = "srec"
 UBOOT_SREC ?= "u-boot-elf.${UBOOT_SREC_SUFFIX}"
 UBOOT_SREC_IMAGE ?= "u-boot-elf-${MACHINE}-${PV}-${PR}.${UBOOT_SREC_SUFFIX}"
 UBOOT_SREC_SYMLINK ?= "u-boot-elf-${MACHINE}.${UBOOT_SREC_SUFFIX}"
 
-# Backport to enable PCIe feature
-SRC_URI:append = " file://0001-arm64-dts-renesas-r8a779g3-Reinstate-basic-PCIe-cloc.patch"
-
-# Backport to support over 2GB files and RAM bank, and enable wget command
+# Backport to support over 2GB RAM bank
 SRC_URI:append = "\
-    file://0001-gunzip-Fix-len-parameter-in-function-signature.patch \
-    file://0002-net-Stop-conflating-return-value-with-file-size-in-n.patch \
-    file://0003-net-tftp-Fix-TFTP-Transfer-Size-data-type.patch \
-    file://0004-arm-renesas-Enable-wget-command-and-TCP-on-all-R-Car.patch \
     file://0005-lmb-Reinstate-access-to-memory-above-ram_top.patch \
 "
 
