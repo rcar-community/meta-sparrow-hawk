@@ -73,8 +73,8 @@ else
 fi
 
 cd $WORK
-git clone git://git.yoctoproject.org/poky
-git clone git://git.openembedded.org/meta-openembedded
+git clone https://git.yoctoproject.org/poky
+git clone https://git.openembedded.org/meta-openembedded
 if [[ "${IS_BUILD_INSIDE_REPO}" == "yes" ]]; then
     rm -f meta-sparrow-hawk
     ln -sfd ${SCRIPT_DIR} meta-sparrow-hawk
