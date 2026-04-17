@@ -277,8 +277,7 @@ PACKAGECONFIG:append:pn-qemu-system-native = " sdl"
 CONF_VERSION = "2"
 
 # Add systemd configuration
-DISTRO_FEATURES:append = " usrmerge systemd"
-VIRTUAL-RUNTIME_init_manager = "systemd"
+INIT_MANAGER = "systemd"
 
 # add the static lib to SDK toolchain
 #SDKIMAGE_FEATURES:append = " staticdev-pkgs"
