@@ -75,10 +75,10 @@ fi
 
 # Check FAN
 setenv fan_conf ''
-if test "${fan}" -eq "pwm" ; then
+if itest.s "${fan}" == "pwm" ; then
     setenv fan_conf '#fan-pwm'
 fi
-if test "${fan}" -eq "argon40" ; then
+if itest.s "${fan}" == "argon40" ; then
     i2c dev 3
     if i2c probe 0x1a; then
         setenv fan_conf '#fan-argon40'
