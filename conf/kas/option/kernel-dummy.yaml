@@ -1,0 +1,7 @@
+header:
+  version: 1
+
+local_conf_header:
+  meta-custom-kernel-dummy: |
+    PREFERRED_PROVIDER_virtual/kernel = "linux-dummy"
+
