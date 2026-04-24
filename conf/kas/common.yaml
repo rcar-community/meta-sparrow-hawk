@@ -1,0 +1,93 @@
+# Every file needs to contain a header, that provides kas with information
+# about the context of this file.
+header:
+  # The `version` entry in the header describes for which configuration
+  # format version this file was created for. It is used by kas to figure
+  # out if it is compatible with this file. The version is an integer that
+  # is increased on every format change.
+  version: 1
+
+env:
+  KAS_WORK_DIR: "./kas-work"
+
+local_conf_header:
+  meta-custom: |
+    CONF_VERSION = "2"
+    MACHINE ??= "sparrow-hawk"
+    DISTRO ?= "poky"
+    PACKAGE_CLASSES ?= "package_deb"
+    EXTRA_IMAGE_FEATURES ?= "allow-empty-password empty-root-password allow-root-login"
+    USER_CLASSES ?= "buildstats"
+    PATCHRESOLVE = "noop"
+    BB_DISKMON_DIRS ??= "\
+      STOPTASKS,${TMPDIR},1G,100K \
+      STOPTASKS,${DL_DIR},1G,100K \
+      STOPTASKS,${SSTATE_DIR},1G,100K \
+      STOPTASKS,/tmp,100M,100K \
+      HALT,${TMPDIR},100M,1K \
+      HALT,${DL_DIR},100M,1K \
+      HALT,${SSTATE_DIR},100M,1K \
+      HALT,/tmp,10M,1K"
+    PACKAGECONFIG:append:pn-qemu-system-native = " sdl"
+    INIT_MANAGER = "systemd"
+
+    # add the static lib to SDK toolchain
+    SDKIMAGE_FEATURES:append = " staticdev-pkgs"
+
+    DISTRO_FEATURES:remove = "ptest"
+    LICENSE_FLAGS_ACCEPTED = "non-commercial"
+
+    # Reproducible Builds
+    export SOURCE_DATE_EPOCH = "${@time.strftime('%s', time.localtime())}"
+    REPRODUCIBLE_TIMESTAMP_ROOTFS = "${@time.strftime('%s', time.localtime())}"
+
+    PREFERRED_VERSION_linux-renesas = "6.18%"
+    LINUXLIBCVERSION = "6.18%"
+    # linux-libc-headers is depended on Yocto version
+    PREFERRED_VERSION_linux-libc-headers = "6.6"
+    PREFERRED_VERSION_nativesdk-linux-libc-headers = "6.6"
+
+    # Disable create-spdx
+    INHERIT:remove = "create-spdx"
+
+    # Reduce fetch size
+    BB_GIT_SHALLOW = "1"
+    BB_GENERATE_MIRROR_TARBALLS = "1"
+    BB_GIT_SHALLOW_DEPTH = "1"
+
+
+# The machine as it is written into the `local.conf` of bitbake.
+machine: sparrow-hawk
+distro: poky
+
+# The distro name as it is written into the `local.conf` of bitbake.
+distro: poky
+
+repos:
+  # This entry includes the repository where the config file is located
+  # to the bblayers.conf:
+  meta-custom:
+  # Here we include a list of layers from the poky repository to the
+  # bblayers.conf:
+  poky:
+    path: layers/poky
+    url: "https://git.yoctoproject.org/poky"
+    branch: scarthgap
+    #commit:
+    layers:
+      meta:
+      meta-poky:
+      meta-yocto-bsp:
+
+  meta-openembedded:
+    path: layers/meta-openembedded
+    url: "https://git.openembedded.org/meta-openembedded"
+    branch: scarthgap
+    #commit:
+    layers:
+      meta-oe:
+      meta-python:
+      meta-networking:
+      meta-multimedia:
+
+

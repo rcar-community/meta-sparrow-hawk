@@ -1,0 +1,7 @@
+header:
+  version: 1
+
+local_conf_header:
+  meta-custom-rm-work: |
+    INHERIT:appen =  " rm_work"
+

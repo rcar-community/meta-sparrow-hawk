@@ -1,0 +1,8 @@
+header:
+  version: 1
+
+local_conf_header:
+  meta-custom-kernel-618: |
+    PREFERRED_VERSION_linux-renesas = "6.18"
+    LINUXLIBCVERSION = "6.18"
+
