@@ -1,0 +1,11 @@
+header:
+  version: 1
+  includes:
+    - conf/kas/common.yaml
+
+local_conf_header:
+  minimal: |
+    BBMASK = "kernel-module-gles|gles-user-module|wayland-wsegl|wayland-kms|libgbm"
+
+target: core-image-minimal
+

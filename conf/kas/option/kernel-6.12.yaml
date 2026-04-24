@@ -1,0 +1,8 @@
+header:
+  version: 1
+
+local_conf_header:
+  meta-custom-kenrel-612: |
+    PREFERRED_VERSION_linux-renesas = "6.12"
+    LINUXLIBCVERSION = "6.12"
+
