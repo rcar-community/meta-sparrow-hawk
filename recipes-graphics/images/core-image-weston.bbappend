@@ -5,3 +5,7 @@ IMAGE_INSTALL:append:rcar-gen4 = " glmark2"
 IMAGE_INSTALL:append:rcar-gen4 = " \
     packagegroup-renesas-graphics \
 "
+# OpenCV packages
+IMAGE_INSTALL:append:rcar-gen4 = " \
+    packagegroup-opencv-sdk \
+"
