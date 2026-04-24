@@ -1,12 +1,12 @@
 name: Relase Yocto BSP for Sparrow-hawk
 run-name: Release Yocto BSP for Sparrow-hawk
 on:
+  push:
+    branches:
+      - 'scarthgap'
+      - '*-dev'
+      - '*-next'
   workflow_dispatch:
-  workflow_run:
-    workflows:
-      - "Fetch source code"
-    types:
-      - completed
 
 jobs:
   Release:
@@ -19,22 +19,6 @@ jobs:
 
       - name: Setup build envrionment
         uses: ./.github/workflows/setup_build_env
-
-      - name: Restore Yocto downloads cache
-        uses: actions/cache@v4
-        with:
-          path: build/build-sparrow-hawk/downloads
-          key: yocto-downloads-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            yocto-downloads-${{ runner.os }}-
-
-      - name: Restore Yocto sstate cache
-        uses: actions/cache@v4
-        with:
-          path: build/build-sparrow-hawk/sstate-cache
-          key: yocto-sstate-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            yocto-sstate-${{ runner.os }}-
 
       - name: Run build
         shell: bash
