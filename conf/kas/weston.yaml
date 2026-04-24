@@ -1,0 +1,19 @@
+header:
+  version: 1
+  includes:
+    - conf/kas/common.yaml
+
+local_conf_header:
+  weston: |
+    # Enable Wayland/Weston
+    DISTRO_FEATURES_NATIVESDK:append = " wayland"
+    DISTRO_FEATURES:append = " pam"
+
+    # To build gstreamer plugins
+    LICENSE_FLAGS_ACCEPTED = "commercial"
+
+    # Remove ptest to reduce the build time
+    # Remove x11 to avoid error after removing mesa
+    DISTRO_FEATURES:remove = "ptest x11"
+
+target: core-image-weston

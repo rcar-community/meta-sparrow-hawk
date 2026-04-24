@@ -1,0 +1,8 @@
+header:
+  version: 1
+
+local_conf_header:
+  meta-custom-sdk-sources: |
+    # The SDK installer includes nativesdk and cross-canadian (gcc, binutils)
+    # recipes, so archive the source of them too.
+    COPYLEFT_RECIPE_TYPES = "target nativesdk cross-canadian"

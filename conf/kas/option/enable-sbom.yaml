@@ -1,0 +1,30 @@
+
+header:
+  version: 1
+
+local_conf_header:
+  meta-custom-sbom: |
+    # required. enable to generate spdx files.
+    INHERIT:append = " create-spdx"
+
+    # optional. if "1", output spdx files will be formatted.
+    SPDX_PRETTY = "1"
+
+    # optional. if "1", output spdx files includes https://spdx.github.io/spdx-spec/v2.3/file-information/
+    SPDX_INCLUDE_SOURCES = "1"
+
+    # optional. if "1", bitbake will create output binary archive for each package.
+    SPDX_ARCHIVE_PACKAGED = "1"
+
+    # required. archive the source of GPL/LGPL/AGPL packages
+    # into tmp/deploy/sources.
+    INHERIT:append = " archiver"
+
+    # optional. archive the original source, patches and recipe.
+    ARCHIVER_MODE[src] = "original"
+    ARCHIVER_MODE[diff] = "1"
+    ARCHIVER_MODE[recipe] = "1"
+
+    # optional. archive the source only of the recipes included in the output.
+    # SDK build uses enable-sdk-sources.yaml to add nativesdk and cross-canadian.
+    COPYLEFT_RECIPE_TYPES ?= "target"
