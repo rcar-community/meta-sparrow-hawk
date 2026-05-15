@@ -1,4 +1,5 @@
 require recipes-core/images/core-image-minimal.bb
+require core-image-minimal.inc
 
 DESCRIPTION = "Image that includes everything within core-image-minimal \
 plus meta-toolchain, development headers and libraries to form a standalone SDK."
