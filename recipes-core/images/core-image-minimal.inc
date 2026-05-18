@@ -36,3 +36,6 @@ EXTRA_IMAGE_FEATURES += "package-management"
 # Enable ssh feature
 EXTRA_IMAGE_FEATURES:append = " ssh-server-openssh"
 
+# Fix SDK build error with apt package manger
+TOOLCHAIN_TARGET_TASK:remove = "target-sdk-provides-dummy"
+
