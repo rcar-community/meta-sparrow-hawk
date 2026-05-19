@@ -1,0 +1,29 @@
+name: Build test using kernel 6.12 for Sparrow-hawk
+run-name: Build test using kernel 6.12 for Sparrow-hawk
+on:
+  push:
+    branches:
+      - 'scarthgap'
+      - '*-dev'
+      - '*-next'
+  workflow_dispatch:
+
+jobs:
+  Release:
+    name: Release
+    if: github.repository_owner == 'rcar-community'
+    runs-on: ubuntu-22.04-arm
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup build envrionment
+        uses: ./.github/workflows/setup_build_env
+
+      - name: Run build
+        shell: bash
+        run: |
+          while true; do echo "[keepalive] $(date)"; sleep 60; done &
+          ./build.sh -q --console --sbom --rm-work --kernel-version 6.12
+          ./build.sh -q --weston  --sbom --rm-work --kernel-version 6.12
+
