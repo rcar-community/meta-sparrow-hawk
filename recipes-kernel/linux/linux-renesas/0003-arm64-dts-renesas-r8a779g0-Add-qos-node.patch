@@ -1,0 +1,33 @@
+From b3ecd415354973309209166f8ef4963250d59c18 Mon Sep 17 00:00:00 2001
+From: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+Date: Tue, 19 May 2026 16:04:45 +0900
+Subject: [PATCH] arm64: dts: renesas: r8a779g0: Add qos node
+
+Signed-off-by: Kenichi Nagai <kenichi.nagai.ry@renesas.com>
+Signed-off-by: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+
+Upstream-Status: Inappropriate [no upstream]
+
+---
+ arch/arm64/boot/dts/renesas/r8a779g0.dtsi | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/r8a779g0.dtsi b/arch/arm64/boot/dts/renesas/r8a779g0.dtsi
+index 2383f5508640..b729b587a6d0 100644
+--- a/arch/arm64/boot/dts/renesas/r8a779g0.dtsi
++++ b/arch/arm64/boot/dts/renesas/r8a779g0.dtsi
+@@ -2543,6 +2543,11 @@ port@1 {
+ 			};
+ 		};
+ 
++		qos@e67e0000 {
++			compatible = "renesas,qos";
++			reg = <0 0xe67e0000 0 0x10090>;
++		};
++
+ 		prr: chipid@fff00044 {
+ 			compatible = "renesas,prr";
+ 			reg = <0 0xfff00044 0 4>;
+-- 
+2.34.1
+
