@@ -8,10 +8,10 @@ PACKAGE_ARCH = "${MACHINE_ARCH}"
 
 inherit deploy
 
-PV:rcar-gen4:sparrow-hawk = "v2.14.0+upstream+git${SRCPV}"
+PV:rcar-gen4:sparrow-hawk = "v2.15.0-rc0+upstream+git${SRCPV}"
 BRANCH:rcar-gen4:sparrow-hawk = "master"
 SRC_URI = "git://github.com/ARM-software/arm-trusted-firmware.git;branch=${BRANCH};protocol=https"
-SRCREV:rcar-gen4:sparrow-hawk = "1d5aa939bc8d3d892e2ed9945fa50e36a1a924cc"
+SRCREV:rcar-gen4:sparrow-hawk = "3261aac4abaa7ab1c2eb9426f7f8389651790c4e"
 
 S = "${WORKDIR}/git"
 
