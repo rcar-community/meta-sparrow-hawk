@@ -1,7 +1,7 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/${BPN}:"
 
-require u-boot-common.inc
-require u-boot.inc
+require recipes-bsp/u-boot/u-boot-common.inc
+require recipes-bsp/u-boot/u-boot.inc
 
 COMPATIBLE_MACHINE = "(sparrow-hawk)"
 
