@@ -297,6 +297,9 @@ PREFERRED_PROVIDER_virtual/libgbm = "libgbm"
 PREFERRED_PROVIDER_libgbm-dev = "libgbm"
 BBMASK = "mesa-gl"
 
+# Enable OpenCL
+DISTRO_FEATURES:append = " opencl"
+
 # To build gstreamer plugins
 LICENSE_FLAGS_ACCEPTED = "commercial"
 

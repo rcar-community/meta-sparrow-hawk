@@ -282,6 +282,9 @@ INIT_MANAGER = "systemd"
 # add the static lib to SDK toolchain
 #SDKIMAGE_FEATURES:append = " staticdev-pkgs"
 
+# Enable OpenCL
+DISTRO_FEATURES:append = " opencl"
+
 # Remove ptest to reduce the build time
 DISTRO_FEATURES:remove = "ptest"
 
