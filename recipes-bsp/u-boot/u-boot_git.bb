@@ -26,6 +26,7 @@ UBOOT_SREC_SYMLINK ?= "u-boot-elf-${MACHINE}.${UBOOT_SREC_SUFFIX}"
 # Backport to support over 2GB RAM bank
 SRC_URI:append = "\
     file://0005-lmb-Reinstate-access-to-memory-above-ram_top.patch \
+    file://0001-PCI-rcar-gen4-Limit-Max_Read_Request_Size-and-Max_Pa.patch \
 "
 
 SRC_URI:append = "\
