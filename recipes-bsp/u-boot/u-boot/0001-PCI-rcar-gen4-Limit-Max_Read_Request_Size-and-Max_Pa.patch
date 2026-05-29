@@ -1,0 +1,154 @@
+From 575f76bdafb41dbe902c335ce246952df6c5cd3d Mon Sep 17 00:00:00 2001
+From: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+Date: Fri, 29 May 2026 16:49:12 +0900
+Subject: [PATCH] PCI: rcar-gen4: Limit Max_Read_Request_Size and
+ Max_Payload_Size to 256 Bytes
+
+Port of Linux upstream patch 5d329c6aa55a to U-Boot.
+
+R-Car Gen4 PCIe controller has a hardware limitation of 256 Bytes
+Max_Payload_Size (MPS). PCIe specification indicates that the MPS
+must not exceed minimum MPS of any element along the packet path.
+
+R-Car Gen4 Reference Manual, chapter 104.4.8 states that MRRS must
+be set to 128 or 256 bytes. Using 512+ bytes causes transferred data
+to wrap at the 256 Byte boundary, corrupting writes from PCIe devices
+such as non-HMB NVMe SSDs (e.g. Crucial P5 Plus). This is a real
+risk in U-Boot since the MRRS reset default is 512 Bytes.
+
+Add an optional enable_device() hook to struct dm_pci_ops so that
+host controller drivers can apply per-device quirks during PCI
+enumeration. rcar-gen4 implements this hook to clamp both MPS and
+MRRS to 256 Bytes for every device on its bus. Other controllers
+are unaffected (NULL hook is not called).
+
+Upstream-Status: Backport [5d329c6aa55acbd63b26cbf806d3751da73c7806]
+Fixes: 0d0c551011df ("PCI: rcar-gen4: Add R-Car Gen4 PCIe controller support for host mode")
+Signed-off-by: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+---
+ drivers/pci/pci-rcar-gen4.c | 58 +++++++++++++++++++++++++++++++++++++
+ drivers/pci/pci_auto.c      |  9 ++++++
+ include/pci.h               | 13 +++++++++
+ 3 files changed, 80 insertions(+)
+
+diff --git a/drivers/pci/pci-rcar-gen4.c b/drivers/pci/pci-rcar-gen4.c
+index e165271f58c..76a195f8406 100644
+--- a/drivers/pci/pci-rcar-gen4.c
++++ b/drivers/pci/pci-rcar-gen4.c
+@@ -573,9 +573,67 @@ static int rcar_gen4_pcie_of_to_plat(struct udevice *dev)
+ 	return 0;
+ }
+ 
++static int rcar_gen4_pcie_enable_device(struct udevice *ctlr,
++					struct udevice *dev)
++{
++	int pcie_off;
++	u16 devctl;
++
++	/* Only PCIe-capable devices have the Express capability. */
++	pcie_off = dm_pci_find_capability(dev, PCI_CAP_ID_EXP);
++	if (!pcie_off)
++		return 0;
++
++	dm_pci_read_config16(dev, pcie_off + PCI_EXP_DEVCTL, &devctl);
++
++	/*
++	 * R-Car Gen4 PCIe controller has a hardware limitation of 256 Bytes
++	 * Max_Payload_Size (MPS). PCIe specification indicates that the MPS
++	 * must not exceed minimum MPS of any element along the packet path.
++	 * Force limit Max_Payload_Size to at most 256 Bytes for each device
++	 * connected to this PCIe controller.
++	 *
++	 * For details, refer to chapter "104.1.1 Features" in either of:
++	 * R-Car S4 R19UH0161EJ0130 Rev.1.30 Jun. 16, 2025 or
++	 * R-Car V4H R19UH0186EJ0130 Rev.1.30 Apr. 21, 2025 or
++	 * R-Car V4M R19UH0217EJ0100 Rev.1.00 Dec. 12, 2025.
++	 */
++	if ((devctl & PCI_EXP_DEVCTL_PAYLOAD) > PCI_EXP_DEVCTL_PAYLOAD_256B) {
++		printf("PCI: Limiting MPS to 256 bytes\n");
++		dm_pci_clrset_config16(dev, pcie_off + PCI_EXP_DEVCTL,
++				       PCI_EXP_DEVCTL_PAYLOAD,
++				       PCI_EXP_DEVCTL_PAYLOAD_256B);
++	}
++
++	/*
++	 * R-Car Gen4 Reference Manual, chapter 104.4.8 Usage notes for
++	 * MRRS (Max Read Request Size) states:
++	 *   Please set "Max Read Request Size" to 128 bytes or 256 bytes.
++	 *   If "Max Read Request Size" is set to anything other than the
++	 *   above, the transferred data will not match the expected value.
++	 * This limitation also seems to apply to devices issuing MRd TLP.
++	 * Force limit Max_Read_Request_Size to at most 256 Bytes for each
++	 * device connected to this PCIe controller.
++	 *
++	 * For details, refer to aforementioned chapter in either of:
++	 * R-Car S4 R19UH0161EJ0130 Rev.1.30 Jun. 16, 2025 or
++	 * R-Car V4H R19UH0186EJ0130 Rev.1.30 Apr. 21, 2025 or
++	 * R-Car V4M R19UH0217EJ0100 Rev.1.00 Dec. 12, 2025.
++	 */
++	if ((devctl & PCI_EXP_DEVCTL_READRQ) > PCI_EXP_DEVCTL_READRQ_256B) {
++		printf("PCI: Limiting MRRS to 256 bytes\n");
++		dm_pci_clrset_config16(dev, pcie_off + PCI_EXP_DEVCTL,
++				       PCI_EXP_DEVCTL_READRQ,
++				       PCI_EXP_DEVCTL_READRQ_256B);
++	}
++
++	return 0;
++}
++
+ static const struct dm_pci_ops rcar_gen4_pcie_ops = {
+ 	.read_config	= pcie_dw_read_config,
+ 	.write_config	= pcie_dw_write_config,
++	.enable_device	= rcar_gen4_pcie_enable_device,
+ };
+ 
+ static const struct udevice_id rcar_gen4_pcie_ids[] = {
+diff --git a/drivers/pci/pci_auto.c b/drivers/pci/pci_auto.c
+index 4a1c782be36..1d632c33acb 100644
+--- a/drivers/pci/pci_auto.c
++++ b/drivers/pci/pci_auto.c
+@@ -181,6 +181,15 @@ static void dm_pciauto_setup_device(struct udevice *dev,
+ 	dm_pci_write_config8(dev, PCI_CACHE_LINE_SIZE,
+ 			     CFG_SYS_PCI_CACHE_LINE_SIZE);
+ 	dm_pci_write_config8(dev, PCI_LATENCY_TIMER, 0x80);
++
++	/* Call optional host-controller-specific per-device setup hook */
++	{
++		struct udevice *ctlr = pci_get_controller(dev);
++		const struct dm_pci_ops *ops = pci_get_ops(ctlr);
++
++		if (ops->enable_device)
++			ops->enable_device(ctlr, dev);
++	}
+ }
+ 
+ /*
+diff --git a/include/pci.h b/include/pci.h
+index 4b0facd6dcf..21d96056339 100644
+--- a/include/pci.h
++++ b/include/pci.h
+@@ -901,6 +901,19 @@ struct dm_pci_ops {
+ 	 */
+ 	int (*write_config)(struct udevice *bus, pci_dev_t bdf, uint offset,
+ 			    ulong value, enum pci_size_t size);
++	/**
++	 * enable_device() - Optional per-device setup callback
++	 *
++	 * Called during PCI enumeration after each child device has been
++	 * configured. Allows the host controller driver to apply
++	 * controller-specific quirks (e.g. MPS/MRRS limits) to every
++	 * device on its bus.
++	 *
++	 * @bus:	Host controller (root bus)
++	 * @dev:	Child device being configured
++	 * @return 0 if OK, -ve on error
++	 */
++	int (*enable_device)(struct udevice *bus, struct udevice *dev);
+ };
+ 
+ /* Get access to a PCI bus' operations */
+-- 
+2.34.1
+
