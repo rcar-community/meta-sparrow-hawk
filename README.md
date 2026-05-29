@@ -25,20 +25,35 @@ https://github.com/rcar-community/meta-sparrow-hawk/pulls
 
 This layer depends on:
 
-* poky
+* bitbake
 
 ```bash
-    URI: git://git.yoctoproject.org/poky
-    layers: meta, meta-poky, meta-yocto-bsp
-    branch: scarthgap
+    URI: https://git.openembedded.org/bitbake
+    branch: 2.18
+```
+
+* openembedded-core
+
+```bash
+    URI: https://git.openembedded.org/openembedded-core
+    layers: meta
+    branch: wrynose
+```
+
+* meta-yocto
+
+```bash
+    URI: https://git.yoctoproject.org/meta-yocto
+    layers: meta-poky
+    branch: wrynose
 ```
 
 * meta-openembedded
 
 ```bash
-    URI: git://git.openembedded.org/meta-openembedded
+    URI: https://git.openembedded.org/meta-openembedded
     layers: meta-oe, meta-python, meta-networking, meta-multimedia
-    branch: scarthgap
+    branch: wrynose
 ```
 
 
