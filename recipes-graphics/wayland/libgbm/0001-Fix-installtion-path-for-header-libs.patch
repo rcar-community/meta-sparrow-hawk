@@ -1,0 +1,45 @@
+From 449630c34053710ba6922bcedf7c6f678f2ab8f5 Mon Sep 17 00:00:00 2001
+From: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+Date: Wed, 3 Jun 2026 16:00:22 +0900
+Subject: [PATCH] Fix installtion path for header/libs
+
+Signed-off-by: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+
+Upstream-Status: Inappropriate [no upstream]
+---
+ Makefile.am | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/Makefile.am b/Makefile.am
+index 87e1dc8..8c9e3e4 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -1,6 +1,6 @@
+ lib_LTLIBRARIES = libgbm.la
+ 
+-moduledir = $(libdir)/gbm
++moduledir = $(libdir)
+ module_LTLIBRARIES = libgbm_kms.la
+ 
+ libgbm_la_SOURCES =	\
+@@ -14,7 +14,7 @@ libgbm_la_LIBADD =	\
+ libgbm_la_CFLAGS =	\
+ 	@LIBUDEV_CFLAGS@	\
+ 	-D_OS_UNIX=1	\
+-	-DMODULEDIR='"$(libdir)/gbm"'
++	-DMODULEDIR='"$(libdir)"'
+ 
+ libgbm_la_LDFLAGS = -version-info 1:0:0
+ 
+@@ -33,7 +33,7 @@ libgbm_kms_la_CFLAGS =	\
+ 
+ libgbm_kms_la_LDFLAGS = -version-info 1:0:0
+ 
+-extdir = $(includedir)/gbm
++extdir = $(includedir)
+ ext_HEADERS =		\
+ 	gbm.h		\
+ 	gbmint.h	\
+-- 
+2.34.1
+
