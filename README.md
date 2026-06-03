@@ -7,6 +7,10 @@ This layer provides support for Sparrow Hawk for use with OpenEmbedded and/or Yo
 * core-image-minimal
 * core-image-weston
 
+## Maintainer
+
+R-Car community team
+
 ## Contribution
 
 ### Question/Issue report
