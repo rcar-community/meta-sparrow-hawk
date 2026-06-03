@@ -10,12 +10,18 @@ OPTIONS=""
 IS_BUILD_SDK="no"
 
 Usage () {
-    echo "Usage: $0 <target>"
-    echo ""
+    echo "Usage:"
+    echo "    $0 <target> [option]"
     echo "target:"
-    for item in ${TARGETS[@]}; do
-    echo "  - ${item%.*}"
-    done
+    echo "    --minimal:        Use CLI"
+    echo "    --weston:         Use GUI"
+    echo "option:"
+    echo "    -h | --help:          Show this help"
+    echo "    -s | --sdk:           Build Yocto SDK"
+    echo "       | --sbom:          Build SBOM files"
+    echo "       | --sstate-mirror: Use sstate mirror server. This may decrease build time."
+    echo "       | --rm-work:       Remove working directory while building to reduce storage space."
+    echo "       | --fetchall:      Download source code only"
 }
 
 while [[ $# -gt 0 ]]; do
@@ -28,8 +34,6 @@ while [[ $# -gt 0 ]]; do
             Usage; exit 0 ;;
         -s|--sdk)
             IS_BUILD_SDK=yes  ;;
-        -q|--quiet)
-            IS_QUIET_BUILD=yes ;;
         --sbom)
             OPTIONS+=":${KAS_OPTION_DIR}/enable-sbom.yaml" ;;
         --rm-work)
