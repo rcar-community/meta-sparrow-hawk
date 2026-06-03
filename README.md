@@ -19,7 +19,7 @@ Please post in github discussion.
 
 https://github.com/orgs/rcar-community/discussions/categories/q-a
 
-### Suggestion with code
+### Suggestion with code / patch
 
 Please use Pull request feature.
 
