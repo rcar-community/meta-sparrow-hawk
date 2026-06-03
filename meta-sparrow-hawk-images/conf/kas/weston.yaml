@@ -1,7 +1,7 @@
 header:
   version: 1
   includes:
-    - conf/kas/common.yaml
+    - common.yaml
 
 local_conf_header:
   weston: |

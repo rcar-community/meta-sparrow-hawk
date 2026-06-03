@@ -1,9 +1,9 @@
 #!/bin/bash -eu
 
 SCRIPT_DIR=$(cd `dirname $0` && pwd)
-TARGETS=$(ls ${SCRIPT_DIR}/conf/kas/ | grep -v common.yaml)
-KAS_YAML_DIR=${SCRIPT_DIR}/conf/kas/
-KAS_OPTION_DIR=${SCRIPT_DIR}/conf/kas/option
+TARGETS=$(ls ${SCRIPT_DIR}/meta-sparrow-hawk-images/conf/kas/ | grep -v common.yaml | grep -v option)
+KAS_YAML_DIR=${SCRIPT_DIR}/meta-sparrow-hawk-images/conf/kas/
+KAS_OPTION_DIR=${SCRIPT_DIR}/meta-sparrow-hawk-images/conf/kas/option
 export KAS_WORK_DIR=kas-work
 TARGET=""
 OPTIONS=""
@@ -30,6 +30,8 @@ while [[ $# -gt 0 ]]; do
             TARGET=minimal ;;
         --weston)
             TARGET=weston ;;
+        --nodistro)
+            TARGET=nodistro;;
         -h|--help)
             Usage; exit 0 ;;
         -s|--sdk)
@@ -50,6 +52,11 @@ done
 
 if [[ "${TARGET}" == "" ]]; then
     Usage; exit;
+fi
+
+if [[ "${TARGET}" == "nodistro" ]]; then
+    KAS_YAML_DIR=$(echo $KAS_YAML_DIR | sed 's/meta-sparrow-hawk-images/meta-sparrow-hawk-bsp/')
+    OPTIONS=""
 fi
 
 mkdir -p ${KAS_WORK_DIR}
