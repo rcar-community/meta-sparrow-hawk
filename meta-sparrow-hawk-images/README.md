@@ -13,3 +13,7 @@ Yocto layer providing image recipes and configurations for the Sparrow Hawk boar
 ```bash
 bash scripts/run-yocto-layer-check-images.sh
 ```
+
+## Maintainer
+
+Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
