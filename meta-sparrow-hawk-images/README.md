@@ -14,6 +14,14 @@ Yocto layer providing image recipes and configurations for the Sparrow Hawk boar
 bash scripts/run-yocto-layer-check-images.sh
 ```
 
+## Contributing
+
+### Suggestion with code / patch
+
+Please use Pull request feature.
+
+https://github.com/rcar-community/meta-sparrow-hawk/pulls
+
 ## Maintainer
 
 Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>

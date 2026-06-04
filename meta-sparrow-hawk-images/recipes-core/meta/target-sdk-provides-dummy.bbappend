@@ -1,2 +1,2 @@
-DUMMYPROVIDES:append = " /bin/sed"
+DUMMYPROVIDES:append:rcar-gen4 = " /bin/sed"
 
