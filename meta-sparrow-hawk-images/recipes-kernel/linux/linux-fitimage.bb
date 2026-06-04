@@ -11,7 +11,7 @@ inherit deploy
 
 DEPENDS += " \
     u-boot-mkimage-native dtc-native \
-    virtual/kernel arm-trusted-firmware initramfs-image \
+    virtual/kernel arm-trusted-firmware \
 "
 
 SRC_URI = " \
