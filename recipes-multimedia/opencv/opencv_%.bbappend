@@ -1,3 +1,3 @@
-PACKAGECONFIG:append = " gtk"
-PACKAGECONFIG:append = " opencl"
-PACKAGECONFIG:append = " dnn"
+PACKAGECONFIG:sparrow-hawk:append = " gtk"
+PACKAGECONFIG:sparrow-hawk:append = " opencl"
+PACKAGECONFIG:sparrow-hawk:append = " dnn"
