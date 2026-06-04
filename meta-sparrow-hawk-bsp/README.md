@@ -1,0 +1,109 @@
+# OpenEmbedded/Yocto BSP layer for Sparrow Hawk
+
+This layer provides support for Sparrow Hawk for use with OpenEmbedded and/or Yocto.
+
+## Original BSP image
+
+* core-image-minimal
+* core-image-weston
+
+## Maintainer
+
+R-Car community team
+
+## Contribution
+
+### Question/Issue report
+
+Please post in github discussion.
+
+https://github.com/orgs/rcar-community/discussions/categories/q-a
+
+### Suggestion with code / patch
+
+Please use Pull request feature.
+
+https://github.com/rcar-community/meta-sparrow-hawk/pulls
+
+## Layer Dependencies
+
+This layer depends on:
+
+* poky
+
+```bash
+    URI: git://git.yoctoproject.org/poky
+    layers: meta, meta-poky, meta-yocto-bsp
+    branch: scarthgap
+```
+
+* meta-openembedded
+
+```bash
+    URI: git://git.openembedded.org/meta-openembedded
+    layers: meta-oe, meta-python, meta-networking, meta-multimedia
+    branch: scarthgap
+```
+
+
+# Build Instructions
+
+## Required Environment
+
+* Refer to https://docs.yoctoproject.org/brief-yoctoprojectqs/index.html to prepare Build Host.
+
+* This also needs git user name and email defined:
+
+```bash
+   $ git config --global user.email "you@example.com"
+   $ git config --global user.name "Your Name"
+```
+
+## Build using build script
+
+```bash
+git clone https://github.com/rcar-community/meta-sparrow-hawk -b scarthgap
+cd meta-sparrow-hawk
+# core-image-minimal case
+./build.sh
+# core-image-weston case
+./build.sh --weston
+```
+
+build option can be confirmed by -h option:
+```bash
+./build.sh -h
+```
+
+## Build Instructions for SDK
+
+```bash
+./build.sh --sdk
+```
+
+The SDK can be found in the output directory `tmp/deploy/sdk`
+
+* `poky-glibc-x86_64-core-image-<image type>-aarch64-<machine name>-toolchain-x.x.sh`
+
+
+### Usage of toolchain SDK
+
+Install the SDK(default path=`opt/poky/x.x`):
+
+```bash
+    $ sh poky-glibc-x86_64-core-image-<image type>-aarch64-<machine name>-toolchain-x.x.sh
+```
+
+Enable cross compile envrionment(default path case):
+
+```bash
+    $ source /opt/poky/x.x/environment-setup-aarch64-poky-linux
+```
+
+## Reference
+
+- R-Car Community site
+  - https://rcar-community.github.io/
+- Sparrow Hawk board page
+  - https://rcar-community.github.io/Sparrow-Hawk/index.html
+
