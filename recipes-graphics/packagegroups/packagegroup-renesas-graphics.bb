@@ -11,14 +11,12 @@ PR = "r0"
 PACKAGES = " \
     packagegroup-renesas-graphics \
     packagegroup-graphics-renesas-gles \
-    packagegroup-graphics-renesas-wayland \
     packagegroup-graphics-oss-wayland \
     packagegroup-graphics-oss-opencl \
 "
 
 RDEPENDS:packagegroup-renesas-graphics = " \
     packagegroup-graphics-renesas-gles \
-    packagegroup-graphics-renesas-wayland \
     packagegroup-graphics-oss-wayland \
     packagegroup-graphics-oss-opencl \
 "
@@ -27,16 +25,6 @@ RDEPENDS:packagegroup-renesas-graphics = " \
 RDEPENDS:packagegroup-graphics-renesas-gles = " \
     kernel-module-gles \
     gles-user-module \
-"
-
-DEPENDS:packagegroup-graphics-renesas-wayland = "libegl libgles2"
-
-RDEPENDS:packagegroup-graphics-renesas-wayland = " \
-    libgbm \
-    libgbm-dev \
-    wayland-kms \
-    wayland-wsegl \
-    libdrm-kms \
 "
 
 RDEPENDS:packagegroup-graphics-oss-wayland = " \
