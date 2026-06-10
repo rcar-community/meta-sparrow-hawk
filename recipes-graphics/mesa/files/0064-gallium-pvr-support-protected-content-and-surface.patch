@@ -1,0 +1,168 @@
+From 5fbd7beb38b8b1b0a555581eadf5e9ae1c51dd0c Mon Sep 17 00:00:00 2001
+From: Brendan King <Brendan.King@imgtec.com>
+Date: Mon, 8 Apr 2024 13:25:32 +0100
+Subject: [PATCH 64/71] gallium/pvr: support protected content and surface
+
+Add support for EXT_protected_content and EXT_protected surface.
+
+Changes are also required in the PVR DRI support library in the
+IMG DDK.
+
+This change should be merged with the "Add PVR Gallium driver"
+commit when the IMG Mesa patches are ported to the next major
+version of Mesa.
+
+Upstream-Status: Inappropriate [oe specific]
+
+---
+ src/gallium/frontends/pvr/dri_support.h | 18 +++++++++++++
+ src/gallium/frontends/pvr/pvrcompat.c   | 36 ++++++++++++++++++++++---
+ src/gallium/frontends/pvr/pvrdri.c      |  6 ++++-
+ 3 files changed, 56 insertions(+), 4 deletions(-)
+
+diff --git a/src/gallium/frontends/pvr/dri_support.h b/src/gallium/frontends/pvr/dri_support.h
+index 4aab0f2ad91..78a98cc5de7 100644
+--- a/src/gallium/frontends/pvr/dri_support.h
++++ b/src/gallium/frontends/pvr/dri_support.h
+@@ -133,6 +133,9 @@ struct PVRDRIContextConfig
+ 	int iResetStrategy;
+ 	unsigned int uPriority;
+ 	int iReleaseBehavior;
++
++	/* Introduced for v8.CreateContext */
++	bool bProtected;
+ };
+ 
+ /*
+@@ -549,6 +552,16 @@ struct  PVRDRISupportInterfaceV2
+ 		int (*QueryCompatibleRenderOnlyDeviceFD)
+ 			(int iFD);
+ 	} v7;
++	struct {
++		unsigned int (*CreateContext)
++			(PVRDRIAPIType eAPI,
++			 PVRDRIConfig *psPVRDRIConfig,
++			 struct PVRDRIContextConfig *psCtxConfig,
++			 struct __DRIcontextRec *psDRIContext,
++			 struct DRISUPContext *psDRISUPSharedContext,
++			 struct DRISUPScreen *psDRISUPScreen,
++			 struct DRISUPContext **ppsDRISUPContext);
++	} v8;
+ };
+ 
+ struct PVRDRIImageList {
+@@ -647,6 +660,11 @@ struct PVRDRICallbacksV2
+ 			(const struct __DRIscreenRec *psDRIScreen,
+ 			 void *pvLoaderPrivate);
+ 	} v4;
++	/*
++	 * The v5 interface has no additional entry points, it indicates
++	 * that support is required for the EXT_protected_content and
++	 * EXT_protected_surface EGL extensions.
++	 */
+ };
+ 
+ #endif /* defined(__PVRDRIIFCE_H__) */
+diff --git a/src/gallium/frontends/pvr/pvrcompat.c b/src/gallium/frontends/pvr/pvrcompat.c
+index 2fd218e9378..46ca6fe8c39 100644
+--- a/src/gallium/frontends/pvr/pvrcompat.c
++++ b/src/gallium/frontends/pvr/pvrcompat.c
+@@ -245,6 +245,7 @@ MODSUPRegisterSupportInterfaceV2(const void *pvInterface,
+    case 5:
+    case 6:
+    case 7:
++   case 8:
+       /* These versions require version 0 */
+       return false;
+    default:
+@@ -254,6 +255,13 @@ MODSUPRegisterSupportInterfaceV2(const void *pvInterface,
+    /* The "default" case should be associated with the latest version */
+    switch (uVersion) {
+    default:
++   case 8:
++      /* This version is an extension of versions 0 to 7 */
++      if (uMinVersion > 0)
++         return false;
++
++      uEnd = PVRDRIInterfaceV2End(v8);
++      break;
+    case 7:
+       /* This version is an extension of versions 0 to 6 */
+       if (uMinVersion > 0)
+@@ -333,19 +341,41 @@ DRISUPDestroyScreen(struct DRISUPScreen *psDRISUPScreen)
+               psDRISUPScreen);
+ }
+ 
++static unsigned int
++DRISUPCreateContextV0(PVRDRIAPIType eAPI,
++                      PVRDRIConfig *psPVRDRIConfig,
++                      struct PVRDRIContextConfig *psCtxConfig,
++                      struct __DRIcontextRec *psDRIContext,
++                      struct DRISUPContext *psDRISUPSharedContext,
++                      struct DRISUPScreen *psDRISUPScreen,
++                      struct DRISUPContext **ppsDRISUPContext)
++{
++   CallFuncV2(v0.CreateContext,
++              eAPI, psPVRDRIConfig, psCtxConfig, psDRIContext,
++              psDRISUPSharedContext, psDRISUPScreen, ppsDRISUPContext);
++
++   return __DRI_CTX_ERROR_BAD_API;
++}
++
+ unsigned int
+-DRISUPCreateContext(PVRDRIAPIType eAPI, PVRDRIConfig *psPVRDRIConfig,
++DRISUPCreateContext(PVRDRIAPIType eAPI,
++                    PVRDRIConfig *psPVRDRIConfig,
+                     struct PVRDRIContextConfig *psCtxConfig,
+                     struct __DRIcontextRec *psDRIContext,
+                     struct DRISUPContext *psDRISUPSharedContext,
+                     struct DRISUPScreen *psDRISUPScreen,
+                     struct DRISUPContext **ppsDRISUPContext)
+ {
+-   CallFuncV2(v0.CreateContext,
++   CallFuncV2(v8.CreateContext,
+               eAPI, psPVRDRIConfig, psCtxConfig, psDRIContext,
+               psDRISUPSharedContext, psDRISUPScreen, ppsDRISUPContext);
+ 
+-   return __DRI_CTX_ERROR_BAD_API;
++   if (!psCtxConfig->bProtected)
++      return DRISUPCreateContextV0(eAPI, psPVRDRIConfig, psCtxConfig,
++                                   psDRIContext, psDRISUPSharedContext,
++                                   psDRISUPScreen, ppsDRISUPContext);
++
++   return __DRI_CTX_ERROR_UNKNOWN_ATTRIBUTE;
+ }
+ 
+ void
+diff --git a/src/gallium/frontends/pvr/pvrdri.c b/src/gallium/frontends/pvr/pvrdri.c
+index cbb0a8880c1..d2c9fd3244d 100644
+--- a/src/gallium/frontends/pvr/pvrdri.c
++++ b/src/gallium/frontends/pvr/pvrdri.c
+@@ -208,12 +208,13 @@ PVRDRIInitScreen(struct dri_screen *psDRIScreen)
+       .v3.DrawableRemoveReference = MODSUPDrawableRemoveReference,
+       /* Version 4 callbacks */
+       .v4.DestroyLoaderImageState = MODSUPDestroyLoaderImageState,
++      /* Version 5 has no callbacks */
+    };
+ 
+    if (!PVRLoaderIsSupported(psDRIScreen))
+       return NULL;
+ 
+-   if (!PVRDRICompatInit(&sDRICallbacksV2, 4, 0))
++   if (!PVRDRICompatInit(&sDRICallbacksV2, 5, 0))
+       return NULL;
+ 
+    psPVRScreen = calloc(1, sizeof(*psPVRScreen));
+@@ -378,6 +379,9 @@ PVRDRICreateContext(gl_api eMesaAPI, const struct gl_config *psGLMode,
+       sCtxConfig.uPriority = psCtxConfig->priority;
+    }
+ 
++   sCtxConfig.bProtected = (psCtxConfig->attribute_mask &
++                            __DRIVER_CONTEXT_ATTRIB_PROTECTED);
++
+    *puError = DRISUPCreateContext(eAPI, &psPVRContext->sConfig, &sCtxConfig,
+                                   opaque_dri_context(psDRIContext),
+                                   psDRISUPSharedContext,
+-- 
+2.34.1
+

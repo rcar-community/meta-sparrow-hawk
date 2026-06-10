@@ -1,0 +1,176 @@
+From 888c15df3735a07f3fd0f478ea5f63f638421b25 Mon Sep 17 00:00:00 2001
+From: Brendan King <Brendan.King@imgtec.com>
+Date: Mon, 10 Feb 2020 09:23:03 +0000
+Subject: [PATCH 33/71] egl: query the supported ES2 context version
+
+For OpenGL ES contexts, the EGL specification states that querying
+EGL_CONTEXT_CLIENT_VERSION with eglQueryContext may return a version
+that differs from that specified at context creation time. For example,
+if an OpenGL ES2 context is specified at context creation time, an
+OpenGL ES3 context may be created, and so "3" should be returned
+when EGL_CONTEXT_CLIENT_VERSION is queried.
+
+A new EGL driver API function has been added,
+QueryContextClientVersion, that is called when the context client
+version is queried, allowing EGL drivers to override the default
+value (i.e. the version specified at context creation time). If the
+function returns zero, the default is used.
+
+For DRI drivers, QueryContextClientVersion returns zero for all API
+contexts other than OpenGL ES2. For OpenGL ES2, the supported context
+client version is queried via the Query Renderer driver extension, using
+integer query __DRI2_RENDERER_OPENGL_ES2_CONTEXT_CLIENT_VERSION_IMG. If
+the query isn't supported, or the query returns zero, zero is returned
+to the caller.
+
+This change uses dri2_renderer_query_integer, which was removed
+by commit 5ff8edaa2a161da34c7efab36a7b9810dccc27ed, but restored
+by another IMG patch.
+
+IMG NOTE: In order to avoid potential name and value clashes, "_IMG"
+has been added to the end of the new query name, this should be removed
+if an attempt is made to push this patch upstream. The value of the new
+query should be adjusted to be the next one in sequence, rather than the
+large value it currently has.
+
+Upstream-Status: Inappropriate [oe specific]
+
+---
+ include/GL/internal/dri_interface.h |  2 ++
+ src/egl/drivers/dri2/egl_dri2.c     | 21 +++++++++++++++++++++
+ src/egl/drivers/haiku/egl_haiku.cpp |  8 ++++++++
+ src/egl/main/eglcontext.c           | 14 +++++++++++++-
+ src/egl/main/egldriver.h            |  1 +
+ 5 files changed, 45 insertions(+), 1 deletion(-)
+
+diff --git a/include/GL/internal/dri_interface.h b/include/GL/internal/dri_interface.h
+index 43c641f83cd..1e9f875f7b5 100644
+--- a/include/GL/internal/dri_interface.h
++++ b/include/GL/internal/dri_interface.h
+@@ -2018,6 +2018,8 @@ typedef struct __DRIconfigOptionsExtensionRec {
+ 
+ #define __DRI2_RENDERER_HAS_PROTECTED_CONTEXT                 0x0020
+ 
++#define __DRI2_RENDERER_OPENGL_ES2_CONTEXT_CLIENT_VERSION_IMG 0x7001
++
+ typedef struct __DRI2rendererQueryExtensionRec __DRI2rendererQueryExtension;
+ struct __DRI2rendererQueryExtensionRec {
+    __DRIextension base;
+diff --git a/src/egl/drivers/dri2/egl_dri2.c b/src/egl/drivers/dri2/egl_dri2.c
+index ad0685c6a77..b6195ad5943 100644
+--- a/src/egl/drivers/dri2/egl_dri2.c
++++ b/src/egl/drivers/dri2/egl_dri2.c
+@@ -2027,6 +2027,26 @@ dri2_make_current(_EGLDisplay *disp, _EGLSurface *dsurf, _EGLSurface *rsurf,
+    return EGL_TRUE;
+ }
+ 
++static EGLint
++dri2_query_context_client_version(_EGLDisplay *disp, _EGLContext *ctx)
++{
++   struct dri2_egl_context *dri2_ctx = dri2_egl_context(ctx);
++   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
++
++   switch (dri2_ctx->base.ClientAPI) {
++   case EGL_OPENGL_ES_API:
++      switch (dri2_ctx->base.ClientMajorVersion) {
++      case 2:
++         return dri2_renderer_query_integer(dri2_dpy,
++                   __DRI2_RENDERER_OPENGL_ES2_CONTEXT_CLIENT_VERSION_IMG);
++      default:
++         return 0;
++      }
++   default:
++      return 0;
++   }
++}
++
+ __DRIdrawable *
+ dri2_surface_get_dri_drawable(_EGLSurface *surf)
+ {
+@@ -3999,6 +4019,7 @@ const _EGLDriver _eglDriver = {
+    .CreateContext = dri2_create_context,
+    .DestroyContext = dri2_destroy_context,
+    .MakeCurrent = dri2_make_current,
++   .QueryContextClientVersion = dri2_query_context_client_version,
+    .CreateWindowSurface = dri2_create_window_surface,
+    .CreatePixmapSurface = dri2_create_pixmap_surface,
+    .CreatePbufferSurface = dri2_create_pbuffer_surface,
+diff --git a/src/egl/drivers/haiku/egl_haiku.cpp b/src/egl/drivers/haiku/egl_haiku.cpp
+index fcdeb32311f..81c535f1c2b 100644
+--- a/src/egl/drivers/haiku/egl_haiku.cpp
++++ b/src/egl/drivers/haiku/egl_haiku.cpp
+@@ -493,12 +493,20 @@ haiku_make_current(_EGLDisplay *disp, _EGLSurface *dsurf, _EGLSurface *rsurf,
+    return EGL_TRUE;
+ }
+ 
++static EGLint
++haiku_dri2_query_context_client_version(_EGLDisplay *disp, _EGLContext *ctx)
++{
++   /* Tell caller to use the default value */
++   return 0;
++}
++
+ extern "C" const _EGLDriver _eglDriver = {
+    .Initialize = haiku_initialize,
+    .Terminate = haiku_terminate,
+    .CreateContext = haiku_create_context,
+    .DestroyContext = haiku_destroy_context,
+    .MakeCurrent = haiku_make_current,
++   .QueryContextClientVersion = haiku_dri2_query_context_client_version,
+    .CreateWindowSurface = haiku_create_window_surface,
+    .CreatePixmapSurface = haiku_create_pixmap_surface,
+    .CreatePbufferSurface = haiku_create_pbuffer_surface,
+diff --git a/src/egl/main/eglcontext.c b/src/egl/main/eglcontext.c
+index fa14bdf3943..a2957421a9e 100644
+--- a/src/egl/main/eglcontext.c
++++ b/src/egl/main/eglcontext.c
+@@ -37,6 +37,7 @@
+ #include "egldisplay.h"
+ #include "egllog.h"
+ #include "eglsurface.h"
++#include "egldriver.h"
+ 
+ /**
+  * Return the API bit (one of EGL_xxx_BIT) of the context.
+@@ -701,6 +702,17 @@ _eglQueryContextRenderBuffer(_EGLContext *ctx)
+    }
+ }
+ 
++static EGLint
++_eglQueryContextClientVersion(_EGLContext *ctx)
++{
++   _EGLDisplay *disp = ctx->Resource.Display;
++   EGLint version;
++
++   version = disp->Driver->QueryContextClientVersion(disp, ctx);
++
++   return (version) ? version : ctx->ClientMajorVersion;
++}
++
+ EGLBoolean
+ _eglQueryContext(_EGLContext *c, EGLint attribute, EGLint *value)
+ {
+@@ -721,7 +733,7 @@ _eglQueryContext(_EGLContext *c, EGLint attribute, EGLint *value)
+       *value = c->Config ? c->Config->ConfigID : 0;
+       break;
+    case EGL_CONTEXT_CLIENT_VERSION:
+-      *value = c->ClientMajorVersion;
++      *value = _eglQueryContextClientVersion(c);
+       break;
+    case EGL_CONTEXT_CLIENT_TYPE:
+       *value = c->ClientAPI;
+diff --git a/src/egl/main/egldriver.h b/src/egl/main/egldriver.h
+index 89ac2473527..16a2a22f86a 100644
+--- a/src/egl/main/egldriver.h
++++ b/src/egl/main/egldriver.h
+@@ -94,6 +94,7 @@ struct _egl_driver {
+     */
+    EGLBoolean (*MakeCurrent)(_EGLDisplay *disp, _EGLSurface *draw,
+                              _EGLSurface *read, _EGLContext *ctx);
++   EGLint (*QueryContextClientVersion)(_EGLDisplay *disp, _EGLContext *ctx);
+ 
+    /* surface funcs */
+    _EGLSurface *(*CreateWindowSurface)(_EGLDisplay *disp, _EGLConfig *config,
+-- 
+2.34.1
+

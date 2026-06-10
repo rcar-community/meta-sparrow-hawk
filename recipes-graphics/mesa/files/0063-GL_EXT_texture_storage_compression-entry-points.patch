@@ -1,0 +1,132 @@
+From 577baf5657ebcebd6bac1713d5c6f469d48a86db Mon Sep 17 00:00:00 2001
+From: Brendan King <Brendan.King@imgtec.com>
+Date: Wed, 21 Feb 2024 11:04:54 +0000
+Subject: [PATCH 63/71] GL_EXT_texture_storage_compression entry points
+
+This has been cherry picked from parts of an upstream draft:
+
+https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/27109
+
+"Draft: Add support for fixed-rate compression extensions".
+
+If that draft gets merged, it will conflict with some of the changes
+made here:
+
+1. The functions in EXT_texture_storage_compression.xml have been
+marked "dynamic", to avoid having to provide an implementation in
+Mesa.
+
+2. The dispatch table offsets in static_data.py are different from
+those in the draft, as they have been placed after those added by
+other IMG patches.
+
+The above changes will not be needed once the draft is merged; in
+fact this whole commit can then be dropped.
+
+Upstream-Status: Inappropriate [oe specific]
+
+---
+ .../gen/EXT_texture_storage_compression.xml   | 52 +++++++++++++++++++
+ src/mapi/glapi/gen/es_EXT.xml                 |  2 +
+ src/mapi/glapi/gen/meson.build                |  1 +
+ src/mapi/glapi/gen/static_data.py             |  2 +
+ 4 files changed, 57 insertions(+)
+ create mode 100644 src/mapi/glapi/gen/EXT_texture_storage_compression.xml
+
+diff --git a/src/mapi/glapi/gen/EXT_texture_storage_compression.xml b/src/mapi/glapi/gen/EXT_texture_storage_compression.xml
+new file mode 100644
+index 00000000000..71267813f7e
+--- /dev/null
++++ b/src/mapi/glapi/gen/EXT_texture_storage_compression.xml
+@@ -0,0 +1,52 @@
++<?xml version="1.0"?>
++<!DOCTYPE OpenGLAPI SYSTEM "gl_API.dtd">
++
++<OpenGLAPI>
++
++<category name="GL_EXT_texture_storage_compression" number="336">
++
++  <enum name="SURFACE_COMPRESSION_EXT"                     count="1" value="0x96C0">
++    <size name="GetTexParameterfv" mode="get"/>
++    <size name="GetTexParameteriv" mode="get"/>
++  </enum>
++  <enum name="NUM_SURFACE_COMPRESSION_FIXED_RATES_EXT"     count="1" value="0x8F6E">
++    <size name="GetInternalformativ" mode="get"/>
++  </enum>
++
++  <enum name="SURFACE_COMPRESSION_FIXED_RATE_NONE_EXT"     value="0x96C1"/>
++  <enum name="SURFACE_COMPRESSION_FIXED_RATE_DEFAULT_EXT"  value="0x96C2"/>
++  <enum name="SURFACE_COMPRESSION_FIXED_RATE_1BPC_EXT"     value="0x96C4"/>
++  <enum name="SURFACE_COMPRESSION_FIXED_RATE_2BPC_EXT"     value="0x96C5"/>
++  <enum name="SURFACE_COMPRESSION_FIXED_RATE_3BPC_EXT"     value="0x96C6"/>
++  <enum name="SURFACE_COMPRESSION_FIXED_RATE_4BPC_EXT"     value="0x96C7"/>
++  <enum name="SURFACE_COMPRESSION_FIXED_RATE_5BPC_EXT"     value="0x96C8"/>
++  <enum name="SURFACE_COMPRESSION_FIXED_RATE_6BPC_EXT"     value="0x96C9"/>
++  <enum name="SURFACE_COMPRESSION_FIXED_RATE_7BPC_EXT"     value="0x96CA"/>
++  <enum name="SURFACE_COMPRESSION_FIXED_RATE_8BPC_EXT"     value="0x96CB"/>
++  <enum name="SURFACE_COMPRESSION_FIXED_RATE_9BPC_EXT"     value="0x96CC"/>
++  <enum name="SURFACE_COMPRESSION_FIXED_RATE_10BPC_EXT"    value="0x96CD"/>
++  <enum name="SURFACE_COMPRESSION_FIXED_RATE_11BPC_EXT"    value="0x96CE"/>
++  <enum name="SURFACE_COMPRESSION_FIXED_RATE_12BPC_EXT"    value="0x96CF"/>
++
++  <function name="TexStorageAttribs2DEXT" es2="3.0" no_error="true" exec="dynamic">
++    <param name="target" type="GLenum"/>
++    <param name="levels" type="GLsizei"/>
++    <param name="internalFormat" type="GLenum"/>
++    <param name="width" type="GLsizei"/>
++    <param name="height" type="GLsizei"/>
++    <param name="attrib_list" type="const GLint *"/>
++  </function>
++
++  <function name="TexStorageAttribs3DEXT" es2="3.0" no_error="true" exec="dynamic">
++    <param name="target" type="GLenum"/>
++    <param name="levels" type="GLsizei"/>
++    <param name="internalFormat" type="GLenum"/>
++    <param name="width" type="GLsizei"/>
++    <param name="height" type="GLsizei"/>
++    <param name="depth" type="GLsizei"/>
++    <param name="attrib_list" type="const GLint *"/>
++  </function>
++
++</category>
++
++</OpenGLAPI>
+diff --git a/src/mapi/glapi/gen/es_EXT.xml b/src/mapi/glapi/gen/es_EXT.xml
+index f2f5d4c0dce..4a597124448 100644
+--- a/src/mapi/glapi/gen/es_EXT.xml
++++ b/src/mapi/glapi/gen/es_EXT.xml
+@@ -1721,4 +1721,6 @@
+    </function>
+ </category>
+ 
++<xi:include href="EXT_texture_storage_compression.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
++
+ </OpenGLAPI>
+diff --git a/src/mapi/glapi/gen/meson.build b/src/mapi/glapi/gen/meson.build
+index 7baa275ed14..1bce5240d7a 100644
+--- a/src/mapi/glapi/gen/meson.build
++++ b/src/mapi/glapi/gen/meson.build
+@@ -124,6 +124,7 @@ api_xml_files = files(
+   'EXT_shader_image_load_store.xml',
+   'EXT_texture_array.xml',
+   'EXT_texture_integer.xml',
++  'EXT_texture_storage_compression.xml',
+   'EXT_transform_feedback.xml',
+   'EXT_vertex_attrib_64bit.xml',
+   'EXT_window_rectangles.xml',
+diff --git a/src/mapi/glapi/gen/static_data.py b/src/mapi/glapi/gen/static_data.py
+index 8c09d2c08fb..3661095220f 100644
+--- a/src/mapi/glapi/gen/static_data.py
++++ b/src/mapi/glapi/gen/static_data.py
+@@ -1742,6 +1742,8 @@ offsets = {
+     "DrawArraysInstancedNV" : 1706,
+     "DrawElementsInstancedNV" : 1707,
+     "VertexAttribDivisorNV" : 1708,
++    "TexStorageAttribs2DEXT": 1709,
++    "TexStorageAttribs3DEXT": 1710,
+ }
+ 
+ functions = [
+-- 
+2.34.1
+

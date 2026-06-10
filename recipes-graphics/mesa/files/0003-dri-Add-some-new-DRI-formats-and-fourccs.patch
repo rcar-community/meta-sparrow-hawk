@@ -1,0 +1,65 @@
+From 5f144ef19584d4c927344a455805cc1aa362fa23 Mon Sep 17 00:00:00 2001
+From: Frank Binns <frank.binns@imgtec.com>
+Date: Thu, 5 Jun 2014 12:07:01 +0100
+Subject: [PATCH 03/71] dri: Add some new DRI formats and fourccs
+
+Add YVU444_PACK10_IMG DRI format and fourcc.
+Add BGR888 DRI format and fourcc.
+
+Upstream-Status: Inappropriate [oe specific]
+
+---
+ include/GL/internal/dri_interface.h | 4 ++++
+ include/drm-uapi/drm_fourcc.h       | 1 +
+ src/egl/drivers/dri2/egl_dri2.c     | 1 +
+ 3 files changed, 6 insertions(+)
+
+diff --git a/include/GL/internal/dri_interface.h b/include/GL/internal/dri_interface.h
+index 0f2c0b2877c..2abeda8fa1f 100644
+--- a/include/GL/internal/dri_interface.h
++++ b/include/GL/internal/dri_interface.h
+@@ -1281,6 +1281,8 @@ struct __DRIdri2ExtensionRec {
+ #define __DRI_IMAGE_FORMAT_XRGB1555	0x101d
+ #define __DRI_IMAGE_FORMAT_ABGR1555	0x101e
+ #define __DRI_IMAGE_FORMAT_XBGR1555	0x101f
++#define __DRI_IMAGE_FORMAT_YVU444_PACK10_IMG 0x1020
++#define __DRI_IMAGE_FORMAT_BGR888       0x1021
+ 
+ #define __DRI_IMAGE_USE_SHARE		0x0001
+ #define __DRI_IMAGE_USE_SCANOUT		0x0002
+@@ -1312,6 +1314,8 @@ struct __DRIdri2ExtensionRec {
+ #define __DRI_IMAGE_FOURCC_SARGB8888	0x83324258
+ #define __DRI_IMAGE_FOURCC_SABGR8888	0x84324258
+ #define __DRI_IMAGE_FOURCC_SXRGB8888	0x85324258
++#define __DRI_IMAGE_FOURCC_RGBA16161616 0x38344152  /* fourcc_code('R', 'A', '4', '8' ) */
++#define __DRI_IMAGE_FOURCC_SBGR888	0xff324742
+ 
+ /**
+  * Queryable on images created by createImageFromNames.
+diff --git a/include/drm-uapi/drm_fourcc.h b/include/drm-uapi/drm_fourcc.h
+index 5d7240e726f..e5453cb3967 100644
+--- a/include/drm-uapi/drm_fourcc.h
++++ b/include/drm-uapi/drm_fourcc.h
+@@ -397,6 +397,7 @@ extern "C" {
+ #define DRM_FORMAT_YUV444	fourcc_code('Y', 'U', '2', '4') /* non-subsampled Cb (1) and Cr (2) planes */
+ #define DRM_FORMAT_YVU444	fourcc_code('Y', 'V', '2', '4') /* non-subsampled Cr (1) and Cb (2) planes */
+ 
++#define DRM_FORMAT_YVU444_PACK10_IMG fourcc_code('I', 'M', 'G', '2')
+ 
+ /*
+  * Format Modifiers:
+diff --git a/src/egl/drivers/dri2/egl_dri2.c b/src/egl/drivers/dri2/egl_dri2.c
+index fb980f6127d..e220c0fa929 100644
+--- a/src/egl/drivers/dri2/egl_dri2.c
++++ b/src/egl/drivers/dri2/egl_dri2.c
+@@ -2756,6 +2756,7 @@ dri2_num_fourcc_format_planes(EGLint format)
+    case DRM_FORMAT_Y410:
+    case DRM_FORMAT_Y412:
+    case DRM_FORMAT_Y416:
++   case DRM_FORMAT_YVU444_PACK10_IMG:
+       return 1;
+ 
+    case DRM_FORMAT_NV12:
+-- 
+2.34.1
+

@@ -1,0 +1,38 @@
+From 00134d820e989b0cc9e1b10c0a8ec14046e7e942 Mon Sep 17 00:00:00 2001
+From: Brendan King <Brendan.King@imgtec.com>
+Date: Thu, 31 Aug 2023 12:16:52 +0100
+Subject: [PATCH 57/71] vulkan/wsi: use can_present_on_device for Wayland
+
+Use can_present_on_device to determine whether the GPU can present
+directly on the display device, avoiding the need for a blit.
+
+This change requires IMG change "vulkan/wsi: make the display FD
+available".
+
+Upstream-Status: Inappropriate [oe specific]
+
+---
+ src/vulkan/wsi/wsi_common_wayland.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/src/vulkan/wsi/wsi_common_wayland.c b/src/vulkan/wsi/wsi_common_wayland.c
+index c8cf23df933..901b4d977fa 100644
+--- a/src/vulkan/wsi/wsi_common_wayland.c
++++ b/src/vulkan/wsi/wsi_common_wayland.c
+@@ -992,8 +992,11 @@ wsi_wl_display_init(struct wsi_wayland *wsi_wl,
+          /* Round-trip again to fetch dma-buf feedback */
+          wl_display_roundtrip_queue(display->wl_display, display->queue);
+ 
+-         if (wsi_wl->wsi->drm_info.hasRender ||
+-             wsi_wl->wsi->drm_info.hasPrimary) {
++         if (wsi_wl->wsi->can_present_on_device)
++            display->same_gpu = wsi_wl->wsi->can_present_on_device(wsi_wl->wsi->pdevice,
++                                                                   display->fd);
++         else if (wsi_wl->wsi->drm_info.hasRender ||
++                  wsi_wl->wsi->drm_info.hasPrimary) {
+             /* Apparently some wayland compositor do not send the render
+              * device node but the primary, so test against both.
+              */
+-- 
+2.34.1
+

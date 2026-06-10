@@ -1,0 +1,54 @@
+From d866dbc7fa485d4d40a633dc8c0c8e327dbc0f56 Mon Sep 17 00:00:00 2001
+From: Frank Binns <frank.binns@imgtec.com>
+Date: Tue, 15 Sep 2015 14:15:31 +0100
+Subject: [PATCH 07/71] egl: optimise eglMakeCurrent for the case where nothing
+ has changed
+
+When an application calls eglMakeCurrent with a context, draw surface and
+read surface that match those that are currently bound to the calling
+thread don't perform a flush as this is an expensive operation.
+
+Upstream-Status: Inappropriate [oe specific]
+
+---
+ src/egl/main/eglapi.c | 17 ++++++++++++++---
+ 1 file changed, 14 insertions(+), 3 deletions(-)
+
+diff --git a/src/egl/main/eglapi.c b/src/egl/main/eglapi.c
+index 3142abdfd85..11253be3fe2 100644
+--- a/src/egl/main/eglapi.c
++++ b/src/egl/main/eglapi.c
+@@ -925,6 +925,7 @@ PUBLIC EGLBoolean EGLAPIENTRY
+ eglMakeCurrent(EGLDisplay dpy, EGLSurface draw, EGLSurface read, EGLContext ctx)
+ {
+    _EGLDisplay *disp = _eglLockDisplay(dpy);
++   _EGLContext *current_context = _eglGetCurrentContext();
+    _EGLContext *context = _eglLookupContext(ctx, disp);
+    _EGLSurface *draw_surf = _eglLookupSurface(draw, disp);
+    _EGLSurface *read_surf = _eglLookupSurface(read, disp);
+@@ -978,9 +979,19 @@ eglMakeCurrent(EGLDisplay dpy, EGLSurface draw, EGLSurface read, EGLContext ctx)
+        !draw_surf->ProtectedContent)
+       RETURN_EGL_ERROR(disp, EGL_BAD_ACCESS, EGL_FALSE);
+ 
+-   egl_relax (disp, &draw_surf->Resource, &read_surf->Resource,
+-              &context->Resource) {
+-      ret = disp->Driver->MakeCurrent(disp, draw_surf, read_surf, context);
++   /* As an optimisation don't do anything unless something has changed */
++   if (context != current_context ||
++       (current_context &&
++        (draw_surf != current_context->DrawSurface ||
++         read_surf != current_context->ReadSurface)) ||
++       (!current_context && (draw_surf || read_surf))) {
++           egl_relax (disp, &draw_surf->Resource, &read_surf->Resource,
++                      &context->Resource) {
++              ret = disp->Driver->MakeCurrent(disp, draw_surf, read_surf,
++                                              context);
++	   }
++   } else {
++	   ret = EGL_TRUE;
+    }
+ 
+    RETURN_EGL_EVAL(disp, ret);
+-- 
+2.34.1
+

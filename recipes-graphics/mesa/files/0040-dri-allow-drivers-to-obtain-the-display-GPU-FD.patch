@@ -1,0 +1,205 @@
+From bf7d9e455ffdbdc5423773eb8a5e3ad10f1d1436 Mon Sep 17 00:00:00 2001
+From: Brendan King <Brendan.King@imgtec.com>
+Date: Tue, 9 Mar 2021 17:15:30 +0000
+Subject: [PATCH 40/71] dri: allow drivers to obtain the display GPU FD
+
+If an application uses a different GPU from the default, the file
+descriptor (FD) for the original GPU/display is preserved.
+Drivers may wish to use the original FD to allocate shared surfaces,
+to ensure the surface properties are compatible with the original
+GPU/display (e.g. for X11 or Wayland).
+
+This feature is only available on platforms that choose to support
+it, by implementing the new getDisplayFD function in the DRI image,
+and DRI2 loader extensions.
+
+If the feature is available, drivers can obtain the original FD
+by calling the getDisplayFD function in the relevant loader extension.
+Drivers should check the FD is valid before use (i.e. not -1). If
+the FD is valid, it may be equal to the current GPU FD if a different
+GPU is not being used. The FD is owned by the platform, not the
+driver, and the platform is responsible for closing it.
+
+The feature is currently supported by the Wayland, and DRI3 based
+X11 EGL and GLX platforms.
+
+Upstream-Status: Inappropriate [oe specific]
+
+---
+ include/GL/internal/dri_interface.h      | 26 ++++++++++++++++++++++--
+ src/egl/drivers/dri2/egl_dri2.c          |  2 +-
+ src/egl/drivers/dri2/platform_wayland.c  | 12 ++++++++++-
+ src/egl/drivers/dri2/platform_x11_dri3.c | 13 +++++++++++-
+ src/glx/dri3_glx.c                       | 11 +++++++++-
+ 5 files changed, 58 insertions(+), 6 deletions(-)
+
+diff --git a/include/GL/internal/dri_interface.h b/include/GL/internal/dri_interface.h
+index 1e9f875f7b5..301e09e42a3 100644
+--- a/include/GL/internal/dri_interface.h
++++ b/include/GL/internal/dri_interface.h
+@@ -1060,7 +1060,7 @@ struct __DRIbufferRec {
+ 
+ /* The X server implements up to version 3 of the DRI2 loader. */
+ #define __DRI_DRI2_LOADER "DRI_DRI2Loader"
+-#define __DRI_DRI2_LOADER_VERSION 5
++#define __DRI_DRI2_LOADER_VERSION 6
+ 
+ enum dri_loader_cap {
+    /* Whether the loader handles RGBA channel ordering correctly. If not,
+@@ -1141,6 +1141,17 @@ struct __DRIdri2LoaderExtensionRec {
+      * \since 5
+      */
+     void (*destroyLoaderImageState)(void *loaderPrivate);
++
++    /**
++     * Get the display FD
++     *
++     * Get the FD of the display device.
++     *
++     * \param loaderPrivate The last parameter of createNewScreen or
++     *                      createNewScreen2.
++     * \since 6
++     */
++     int (*getDisplayFD)(void *loaderPrivate);
+ };
+ 
+ /**
+@@ -2092,7 +2103,7 @@ struct __DRIimageList {
+ };
+ 
+ #define __DRI_IMAGE_LOADER "DRI_IMAGE_LOADER"
+-#define __DRI_IMAGE_LOADER_VERSION 4
++#define __DRI_IMAGE_LOADER_VERSION 5
+ 
+ struct __DRIimageLoaderExtensionRec {
+     __DRIextension base;
+@@ -2160,6 +2171,17 @@ struct __DRIimageLoaderExtensionRec {
+      * \since 4
+      */
+     void (*destroyLoaderImageState)(void *loaderPrivate);
++
++    /**
++     * Get the display FD
++     *
++     * Get the FD of the display device.
++     *
++     * \param loaderPrivate The last parameter of createNewScreen or
++     *                      createNewScreen2.
++     * \since 5
++     */
++     int (*getDisplayFD)(void *loaderPrivate);
+ };
+ 
+ /**
+diff --git a/src/egl/drivers/dri2/egl_dri2.c b/src/egl/drivers/dri2/egl_dri2.c
+index b6195ad5943..2ebbd1a7272 100644
+--- a/src/egl/drivers/dri2/egl_dri2.c
++++ b/src/egl/drivers/dri2/egl_dri2.c
+@@ -3563,7 +3563,7 @@ dri2_bind_wayland_display_wl(_EGLDisplay *disp, struct wl_display *wl_dpy)
+    if (dri2_dpy->wl_server_drm)
+       goto fail;
+ 
+-   device_name = drmGetRenderDeviceNameFromFd(dri2_dpy->fd_render_gpu);
++   device_name = drmGetRenderDeviceNameFromFd(dri2_dpy->fd_display_gpu);
+    if (!device_name)
+       device_name = strdup(dri2_dpy->device_name);
+    if (!device_name)
+diff --git a/src/egl/drivers/dri2/platform_wayland.c b/src/egl/drivers/dri2/platform_wayland.c
+index b6e85be396e..da250c063d6 100644
+--- a/src/egl/drivers/dri2/platform_wayland.c
++++ b/src/egl/drivers/dri2/platform_wayland.c
+@@ -1488,12 +1488,22 @@ dri2_wl_get_capability(void *loaderPrivate, enum dri_loader_cap cap)
+    }
+ }
+ 
++static int
++dri2_wl_get_display_fd(void *loaderPrivate)
++{
++   _EGLDisplay *disp = loaderPrivate;
++   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
++
++   return dri2_dpy->fd_display_gpu;
++}
++
+ static const __DRIimageLoaderExtension image_loader_extension = {
+-   .base = {__DRI_IMAGE_LOADER, 2},
++   .base = {__DRI_IMAGE_LOADER, 5},
+ 
+    .getBuffers = image_get_buffers,
+    .flushFrontBuffer = dri2_wl_flush_front_buffer,
+    .getCapability = dri2_wl_get_capability,
++   .getDisplayFD = dri2_wl_get_display_fd,
+ };
+ 
+ static void
+diff --git a/src/egl/drivers/dri2/platform_x11_dri3.c b/src/egl/drivers/dri2/platform_x11_dri3.c
+index f301ae35d8b..486f7aacd75 100644
+--- a/src/egl/drivers/dri2/platform_x11_dri3.c
++++ b/src/egl/drivers/dri2/platform_x11_dri3.c
+@@ -33,6 +33,7 @@
+ 
+ #include <xf86drm.h>
+ #include "util/macros.h"
++#include "util/os_file.h"
+ 
+ #include "egl_dri2.h"
+ #include "platform_x11_dri3.h"
+@@ -425,11 +426,21 @@ dri3_flush_front_buffer(__DRIdrawable *driDrawable, void *loaderPrivate)
+               "FIXME: egl/x11 doesn't support front buffer rendering.");
+ }
+ 
++static int
++dri3_get_display_fd(void *loaderPrivate)
++{
++   _EGLDisplay *disp = loaderPrivate;
++   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
++
++   return dri2_dpy->fd_display_gpu;
++}
++
+ const __DRIimageLoaderExtension dri3_image_loader_extension = {
+-   .base = {__DRI_IMAGE_LOADER, 1},
++   .base = {__DRI_IMAGE_LOADER, 5},
+ 
+    .getBuffers = loader_dri3_get_buffers,
+    .flushFrontBuffer = dri3_flush_front_buffer,
++   .getDisplayFD = dri3_get_display_fd,
+ };
+ 
+ static EGLBoolean
+diff --git a/src/glx/dri3_glx.c b/src/glx/dri3_glx.c
+index f479bd0bea3..9dfdfac1016 100644
+--- a/src/glx/dri3_glx.c
++++ b/src/glx/dri3_glx.c
+@@ -511,6 +511,14 @@ dri3_flush_swap_buffers(__DRIdrawable *driDrawable, void *loaderPrivate)
+    loader_dri3_swapbuffer_barrier(draw);
+ }
+ 
++static int
++dri3_get_display_fd(void *loaderPrivate)
++{
++   struct dri3_screen *psc = (struct dri3_screen *)loaderPrivate;
++
++   return psc->fd_display_gpu;
++}
++
+ static void
+ dri_set_background_context(void *loaderPrivate)
+ {
+@@ -529,11 +537,12 @@ dri_is_thread_safe(void *loaderPrivate)
+ /* The image loader extension record for DRI3
+  */
+ static const __DRIimageLoaderExtension imageLoaderExtension = {
+-   .base = { __DRI_IMAGE_LOADER, 3 },
++   .base = { __DRI_IMAGE_LOADER, 5 },
+ 
+    .getBuffers          = loader_dri3_get_buffers,
+    .flushFrontBuffer    = dri3_flush_front_buffer,
+    .flushSwapBuffers    = dri3_flush_swap_buffers,
++   .getDisplayFD        = dri3_get_display_fd,
+ };
+ 
+ const __DRIuseInvalidateExtension dri3UseInvalidate = {
+-- 
+2.34.1
+

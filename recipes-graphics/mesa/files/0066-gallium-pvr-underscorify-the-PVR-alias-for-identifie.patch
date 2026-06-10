@@ -1,0 +1,44 @@
+From bf122b5725b9b3f17aafaca441a05b8136df7fca Mon Sep 17 00:00:00 2001
+From: Brendan King <Brendan.King@imgtec.com>
+Date: Fri, 1 Aug 2025 16:10:35 +0100
+Subject: [PATCH] gallium/pvr: underscorify the PVR alias for identifiers
+
+Generate a version of the PVR alias suitable for use in C sources,
+such as #defines or identifiers. Some driver names have characters
+in them (such as "-") that make them unsuitable for using directly.
+
+Upstream-Status: Inappropriate [oe specific]
+
+---
+ src/gallium/drivers/pvr_alias/meson.build | 3 ++-
+ src/gallium/targets/dri/target.c          | 4 ++--
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/src/gallium/drivers/pvr_alias/meson.build b/src/gallium/drivers/pvr_alias/meson.build
+index 128efd7b5fb..a3f73af01fb 100644
+--- a/src/gallium/drivers/pvr_alias/meson.build
++++ b/src/gallium/drivers/pvr_alias/meson.build
+@@ -19,5 +19,6 @@
+ # SOFTWARE.
+ 
+ driver_pvr_alias = declare_dependency(
+-  compile_args: '-DGALLIUM_PVR_ALIAS=@0@'.format(gallium_pvr_alias)
++  compile_args: [ '-DGALLIUM_PVR_ALIAS=@0@'.format(gallium_pvr_alias),
++                  '-DGALLIUM_PVR_ALIAS_IDENT=@0@'.format(gallium_pvr_alias.underscorify()) ]
+ )
+diff --git a/src/gallium/targets/dri/target.c b/src/gallium/targets/dri/target.c
+index 645153b7e47..fafbf60a1aa 100644
+--- a/src/gallium/targets/dri/target.c
++++ b/src/gallium/targets/dri/target.c
+@@ -166,6 +166,6 @@ DEFINE_LOADER_DRM_ENTRYPOINT(d3d12);
+ DEFINE_LOADER_PVR_ENTRYPOINT(pvr);
+ #endif
+ 
+-#if defined(GALLIUM_PVR_ALIAS)
+-DEFINE_LOADER_PVR_ALIAS_ENTRYPOINT(GALLIUM_PVR_ALIAS);
++#if defined(GALLIUM_PVR_ALIAS_IDENT)
++DEFINE_LOADER_PVR_ALIAS_ENTRYPOINT(GALLIUM_PVR_ALIAS_IDENT);
+ #endif
+-- 
+2.34.1
+

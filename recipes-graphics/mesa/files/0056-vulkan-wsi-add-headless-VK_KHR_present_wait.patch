@@ -1,0 +1,152 @@
+From 262c3f7bcadaaf87871dfc5c7196924bb8653d8f Mon Sep 17 00:00:00 2001
+From: Brendan King <Brendan.King@imgtec.com>
+Date: Tue, 15 Aug 2023 17:34:36 +0100
+Subject: [PATCH 56/71] vulkan/wsi: add headless VK_KHR_present_wait
+
+Add support for VkPresentIdKHR and VK_KHR_present_wait to headless
+swapchains. The code is almost identical to that used for display
+swapchains.
+
+Without the changes, applications that try to use VK_KHR_present_wait
+with headless swapchains will abort. Here is an example from dEQP,
+built for the "vulkan_headless" target:
+
+Test case 'dEQP-VK.wsi.headless.present_id_wait.wait.single_no_timeout'..
+deqp-vk: ../src/vulkan/wsi/wsi_common.c:2277: wsi_common_wait_for_present: Assertion `swapchain->wait_for_present' failed.
+Aborted (core dumped)
+
+Upstream-Status: Inappropriate [oe specific]
+
+---
+ src/vulkan/wsi/wsi_common_headless.c | 74 ++++++++++++++++++++++++++++
+ 1 file changed, 74 insertions(+)
+
+diff --git a/src/vulkan/wsi/wsi_common_headless.c b/src/vulkan/wsi/wsi_common_headless.c
+index b197576175e..b33d8eab20e 100644
+--- a/src/vulkan/wsi/wsi_common_headless.c
++++ b/src/vulkan/wsi/wsi_common_headless.c
+@@ -25,6 +25,7 @@
+ 
+ #include "util/macros.h"
+ #include "util/hash_table.h"
++#include "util/os_time.h"
+ #include "util/timespec.h"
+ #include "util/u_thread.h"
+ #include "util/xmlconfig.h"
+@@ -260,6 +261,10 @@ struct wsi_headless_swapchain {
+    VkPresentModeKHR                            present_mode;
+    bool                                        fifo_ready;
+ 
++   pthread_mutex_t                             present_id_mutex;
++   pthread_cond_t                              present_id_cond;
++   uint64_t                                    present_id;
++
+    struct wsi_headless_image                       images[0];
+ };
+ VK_DEFINE_NONDISP_HANDLE_CASTS(wsi_headless_swapchain, base.base, VkSwapchainKHR,
+@@ -321,9 +326,59 @@ wsi_headless_swapchain_queue_present(struct wsi_swapchain *wsi_chain,
+ 
+    chain->images[image_index].busy = false;
+ 
++   if (present_id) {
++      pthread_mutex_lock(&chain->present_id_mutex);
++      if (present_id > chain->present_id) {
++         chain->present_id = present_id;
++         pthread_cond_broadcast(&chain->present_id_cond);
++      }
++      pthread_mutex_unlock(&chain->present_id_mutex);
++   }
++
+    return VK_SUCCESS;
+ }
+ 
++static VkResult
++wsi_headless_wait_for_present(struct wsi_swapchain *wsi_chain,
++                              uint64_t waitValue,
++                              uint64_t timeout)
++{
++   struct wsi_headless_swapchain *chain =
++      (struct wsi_headless_swapchain *)wsi_chain;
++   struct timespec abs_timespec;
++   uint64_t abs_timeout = 0;
++
++   if (timeout != 0)
++      abs_timeout = os_time_get_absolute_timeout(timeout);
++
++   /* Need to observe that the swapchain semaphore has been unsignalled,
++    * as this is guaranteed when a present is complete. */
++   VkResult result = wsi_swapchain_wait_for_present_semaphore(
++      &chain->base, waitValue, timeout);
++   if (result != VK_SUCCESS)
++      return result;
++
++   timespec_from_nsec(&abs_timespec, abs_timeout);
++
++   pthread_mutex_lock(&chain->present_id_mutex);
++   while (chain->present_id < waitValue) {
++      int ret = pthread_cond_timedwait(&chain->present_id_cond,
++                                       &chain->present_id_mutex,
++                                       &abs_timespec);
++      if (ret == ETIMEDOUT) {
++         result = VK_TIMEOUT;
++         break;
++      }
++      if (ret) {
++         result = VK_ERROR_DEVICE_LOST;
++         break;
++      }
++   }
++   pthread_mutex_unlock(&chain->present_id_mutex);
++
++   return result;
++}
++
+ static VkResult
+ wsi_headless_swapchain_destroy(struct wsi_swapchain *wsi_chain,
+                                const VkAllocationCallbacks *pAllocator)
+@@ -338,6 +393,9 @@ wsi_headless_swapchain_destroy(struct wsi_swapchain *wsi_chain,
+ 
+    u_vector_finish(&chain->modifiers);
+ 
++   pthread_mutex_destroy(&chain->present_id_mutex);
++   pthread_cond_destroy(&chain->present_id_cond);
++
+    wsi_swapchain_finish(&chain->base);
+ 
+    vk_free(pAllocator, chain);
+@@ -462,9 +520,24 @@ wsi_headless_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
+       .same_gpu = true,
+    };
+ 
++   int ret = pthread_mutex_init(&chain->present_id_mutex, NULL);
++   if (ret != 0) {
++      vk_free(pAllocator, chain);
++      return VK_ERROR_OUT_OF_HOST_MEMORY;
++   }
++
++   bool bret = wsi_init_pthread_cond_monotonic(&chain->present_id_cond);
++   if (!bret) {
++      pthread_mutex_destroy(&chain->present_id_mutex);
++      vk_free(pAllocator, chain);
++      return VK_ERROR_OUT_OF_HOST_MEMORY;
++   }
++
+    result = wsi_swapchain_init(wsi_device, &chain->base, device,
+                                pCreateInfo, &drm_params.base, pAllocator, -1);
+    if (result != VK_SUCCESS) {
++      pthread_cond_destroy(&chain->present_id_cond);
++      pthread_mutex_destroy(&chain->present_id_mutex);
+       vk_free(pAllocator, chain);
+       return result;
+    }
+@@ -473,6 +546,7 @@ wsi_headless_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
+    chain->base.get_wsi_image = wsi_headless_swapchain_get_wsi_image;
+    chain->base.acquire_next_image = wsi_headless_swapchain_acquire_next_image;
+    chain->base.queue_present = wsi_headless_swapchain_queue_present;
++   chain->base.wait_for_present = wsi_headless_wait_for_present;
+    chain->base.present_mode = wsi_swapchain_get_present_mode(wsi_device, pCreateInfo);
+    chain->base.image_count = num_images;
+    chain->extent = pCreateInfo->imageExtent;
+-- 
+2.34.1
+

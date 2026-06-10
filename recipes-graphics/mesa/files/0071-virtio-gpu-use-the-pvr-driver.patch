@@ -1,0 +1,30 @@
+From 452fd55a8e8a99ac43d4d9d7eb7a295bc340389c Mon Sep 17 00:00:00 2001
+From: Brendan King <Brendan.King@imgtec.com>
+Date: Fri, 16 Sep 2022 14:04:02 +0100
+Subject: [PATCH 71/71] virtio-gpu: use the pvr driver
+
+Use the pvr driver with the VirtIO GPU display, rather than the
+virtio_gpu driver.
+
+Upstream-Status: Inappropriate [oe specific]
+
+---
+ src/loader/pci_id_driver_map.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/loader/pci_id_driver_map.h b/src/loader/pci_id_driver_map.h
+index 2da47a16776..96e8ebe7996 100644
+--- a/src/loader/pci_id_driver_map.h
++++ b/src/loader/pci_id_driver_map.h
+@@ -60,7 +60,7 @@ static const struct {
+    { 0x1002, "r600", r600_chip_ids, ARRAY_SIZE(r600_chip_ids) },
+    { 0x1002, "radeonsi", NULL, -1 },
+    { 0x10de, "nouveau", NULL, -1, },
+-   { 0x1af4, "virtio_gpu", virtio_gpu_chip_ids, ARRAY_SIZE(virtio_gpu_chip_ids) },
++   { 0x1af4, "pvr", virtio_gpu_chip_ids, ARRAY_SIZE(virtio_gpu_chip_ids) },
+    { 0x15ad, "vmwgfx", vmwgfx_chip_ids, ARRAY_SIZE(vmwgfx_chip_ids) },
+ };
+ 
+-- 
+2.34.1
+

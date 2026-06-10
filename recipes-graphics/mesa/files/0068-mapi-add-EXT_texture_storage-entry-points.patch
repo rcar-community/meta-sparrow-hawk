@@ -1,0 +1,164 @@
+From 90a86373ee016051aec08e1de738c804f08af5c9 Mon Sep 17 00:00:00 2001
+From: Igor Naigovzin <igor.naigovzin@imgtec.com>
+Date: Tue, 17 Sep 2024 08:32:53 +0100
+Subject: [PATCH 68/71] mapi: add EXT_texture_storage entry points
+
+This change has been backported from:
+
+commit 4de62731f4db56360026cbb6a3b8566f86f22466
+Author: Erik Faye-Lund <kusmabite@gmail.com>
+Date:   Tue Jan 23 17:41:21 2024 +0100
+
+    mesa/main: add support for EXT_texture_storage
+
+Upstream-Status: Inappropriate [oe specific]
+
+---
+ src/mapi/glapi/gen/ARB_texture_storage.xml | 27 ---------
+ src/mapi/glapi/gen/EXT_texture_storage.xml | 68 ++++++++++++++++++++++
+ src/mapi/glapi/gen/gl_API.xml              |  3 +
+ src/mapi/glapi/gen/meson.build             |  1 +
+ 4 files changed, 72 insertions(+), 27 deletions(-)
+ create mode 100644 src/mapi/glapi/gen/EXT_texture_storage.xml
+
+diff --git a/src/mapi/glapi/gen/ARB_texture_storage.xml b/src/mapi/glapi/gen/ARB_texture_storage.xml
+index 4dbab3947e9..5a6da38b044 100644
+--- a/src/mapi/glapi/gen/ARB_texture_storage.xml
++++ b/src/mapi/glapi/gen/ARB_texture_storage.xml
+@@ -34,33 +34,6 @@
+     <param name="depth" type="GLsizei"/>
+   </function>
+ 
+-  <function name="TextureStorage1DEXT">
+-    <param name="texture" type="GLuint"/>
+-    <param name="target" type="GLenum"/>
+-    <param name="levels" type="GLsizei"/>
+-    <param name="internalFormat" type="GLenum"/>
+-    <param name="width" type="GLsizei"/>
+-  </function>
+-
+-  <function name="TextureStorage2DEXT">
+-    <param name="texture" type="GLuint"/>
+-    <param name="target" type="GLenum"/>
+-    <param name="levels" type="GLsizei"/>
+-    <param name="internalFormat" type="GLenum"/>
+-    <param name="width" type="GLsizei"/>
+-    <param name="height" type="GLsizei"/>
+-  </function>
+-
+-  <function name="TextureStorage3DEXT">
+-    <param name="texture" type="GLuint"/>
+-    <param name="target" type="GLenum"/>
+-    <param name="levels" type="GLsizei"/>
+-    <param name="internalFormat" type="GLenum"/>
+-    <param name="width" type="GLsizei"/>
+-    <param name="height" type="GLsizei"/>
+-    <param name="depth" type="GLsizei"/>
+-  </function>
+-
+ </category>
+ 
+ 
+diff --git a/src/mapi/glapi/gen/EXT_texture_storage.xml b/src/mapi/glapi/gen/EXT_texture_storage.xml
+new file mode 100644
+index 00000000000..8a0cd4c66a1
+--- /dev/null
++++ b/src/mapi/glapi/gen/EXT_texture_storage.xml
+@@ -0,0 +1,68 @@
++<?xml version="1.0"?>
++<!DOCTYPE OpenGLAPI SYSTEM "gl_API.dtd">
++
++<OpenGLAPI>
++
++<category name="GL_EXT_texture_storage" number="556">
++
++  <enum name="TEXTURE_IMMUTABLE_FORMAT_EXT" value="0x912F"/>
++  <enum name="ALPHA8_EXT" value="0x803C"/>
++  <enum name="LUMINANCE8_EXT" value="0x8040"/>
++  <enum name="LUMINANCE8_ALPHA8_EXT" value="0x8045"/>
++
++  <function name="TexStorage1DEXT" alias="TexStorage1D">
++    <param name="target" type="GLenum"/>
++    <param name="levels" type="GLsizei"/>
++    <param name="internalFormat" type="GLenum"/>
++    <param name="width" type="GLsizei"/>
++  </function>
++
++  <function name="TexStorage2DEXT" es2="2.0" alias="TexStorage2D">
++    <param name="target" type="GLenum"/>
++    <param name="levels" type="GLsizei"/>
++    <param name="internalFormat" type="GLenum"/>
++    <param name="width" type="GLsizei"/>
++    <param name="height" type="GLsizei"/>
++  </function>
++
++  <function name="TexStorage3DEXT" es2="2.0" alias="TexStorage3D">
++    <param name="target" type="GLenum"/>
++    <param name="levels" type="GLsizei"/>
++    <param name="internalFormat" type="GLenum"/>
++    <param name="width" type="GLsizei"/>
++    <param name="height" type="GLsizei"/>
++    <param name="depth" type="GLsizei"/>
++  </function>
++
++  <function name="TextureStorage1DEXT">
++    <param name="texture" type="GLuint"/>
++    <param name="target" type="GLenum"/>
++    <param name="levels" type="GLsizei"/>
++    <param name="internalFormat" type="GLenum"/>
++    <param name="width" type="GLsizei"/>
++  </function>
++
++  <function name="TextureStorage2DEXT">
++    <param name="texture" type="GLuint"/>
++    <param name="target" type="GLenum"/>
++    <param name="levels" type="GLsizei"/>
++    <param name="internalFormat" type="GLenum"/>
++    <param name="width" type="GLsizei"/>
++    <param name="height" type="GLsizei"/>
++  </function>
++
++  <function name="TextureStorage3DEXT">
++    <param name="texture" type="GLuint"/>
++    <param name="target" type="GLenum"/>
++    <param name="levels" type="GLsizei"/>
++    <param name="internalFormat" type="GLenum"/>
++    <param name="width" type="GLsizei"/>
++    <param name="height" type="GLsizei"/>
++    <param name="depth" type="GLsizei"/>
++  </function>
++
++</category>
++
++
++</OpenGLAPI>
++
+diff --git a/src/mapi/glapi/gen/gl_API.xml b/src/mapi/glapi/gen/gl_API.xml
+index 383d61b9d5a..e28185e50a1 100644
+--- a/src/mapi/glapi/gen/gl_API.xml
++++ b/src/mapi/glapi/gen/gl_API.xml
+@@ -12557,6 +12557,9 @@
+ 
+ <xi:include href="NV_copy_image.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ 
++<xi:include href="EXT_texture_storage.xml"
++	    xmlns:xi="http://www.w3.org/2001/XInclude"/>
++
+ <xi:include href="EXT_vertex_attrib_64bit.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+ 
+ <xi:include href="AMD_depth_clamp_separate.xml"
+diff --git a/src/mapi/glapi/gen/meson.build b/src/mapi/glapi/gen/meson.build
+index 1bce5240d7a..4325d22665f 100644
+--- a/src/mapi/glapi/gen/meson.build
++++ b/src/mapi/glapi/gen/meson.build
+@@ -124,6 +124,7 @@ api_xml_files = files(
+   'EXT_shader_image_load_store.xml',
+   'EXT_texture_array.xml',
+   'EXT_texture_integer.xml',
++  'EXT_texture_storage.xml',
+   'EXT_texture_storage_compression.xml',
+   'EXT_transform_feedback.xml',
+   'EXT_vertex_attrib_64bit.xml',
+-- 
+2.34.1
+
