@@ -22,7 +22,6 @@ jobs:
       - name: Run build
         shell: bash
         run: |
-          while true; do echo "[keepalive] $(date)"; sleep 60; done &
-          ./build.sh -q --console --rm-work
-          ./build.sh -q --weston  --rm-work
+          ./build.sh --console --rm-work
+          ./build.sh --weston  --rm-work
 
