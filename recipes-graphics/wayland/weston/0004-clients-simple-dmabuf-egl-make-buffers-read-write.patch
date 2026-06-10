@@ -1,0 +1,30 @@
+From 2a6f5be0c67a5a01a734358f1f3311b5ccb0b6dd Mon Sep 17 00:00:00 2001
+From: Brendan King <Brendan.King@imgtec.com>
+Date: Tue, 19 Nov 2024 15:54:24 +0000
+Subject: [PATCH 4/4] clients/simple-dmabuf-egl: make buffers read/write
+
+Pass DRM_RDWR to drmPrimeHandleToFD, to indicate that the GBM buffers
+are writeable.
+
+Upstream-Status: Inappropriate [oe specific]
+
+---
+ clients/simple-dmabuf-egl.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/clients/simple-dmabuf-egl.c b/clients/simple-dmabuf-egl.c
+index 77573129..adf47b0d 100644
+--- a/clients/simple-dmabuf-egl.c
++++ b/clients/simple-dmabuf-egl.c
+@@ -387,7 +387,7 @@ create_dmabuf_buffer(struct display *display, struct buffer *buffer,
+ 			goto error;
+ 		}
+ 
+-		ret = drmPrimeHandleToFD(display->gbm.drm_fd, handle.u32, 0,
++		ret = drmPrimeHandleToFD(display->gbm.drm_fd, handle.u32, DRM_RDWR,
+ 					 &buffer->dmabuf_fds[i]);
+ 		if (ret < 0 || buffer->dmabuf_fds[i] < 0) {
+ 			fprintf(stderr, "error: failed to get dmabuf_fd\n");
+-- 
+2.34.1
+

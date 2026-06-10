@@ -7,6 +7,8 @@ SRC_URI:append:rcar-gen4 = " \
     file://weston.sh \
 "
 
+PACKAGECONFIG:append = " no-idle-timeout"
+
 do_install:append:rcar-gen4() {
     install -d ${D}/${sysconfdir}/xdg/weston
     # install weston.ini as sample settings of gl-renderer
