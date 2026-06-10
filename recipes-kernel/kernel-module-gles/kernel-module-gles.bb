@@ -6,6 +6,7 @@ LIC_FILES_CHKSUM = " \
 "
 
 require include/rcar-gfx-common.inc
+require include/roguekm_build_config.inc
 
 COMPATIBLE_MACHINE = "(rcar-gen4)"
 PACKAGE_ARCH = "${MACHINE_ARCH}"
@@ -25,7 +26,7 @@ S = "${WORKDIR}/rogue_km"
 B = "${KBUILD_DIR}"
 
 KBUILD_DIR:r8a779g3 = "${S}/build/linux/r8a779g_linux"
-KBUILD_OUTDIR:r8a779g3 = "binary_r8a779g_linux_nullws_drm_release/target_aarch64/kbuild"
+KBUILD_OUTDIR:r8a779g3 = "binary_r8a779g_linux_lws-generic_release/target_aarch64/kbuild"
 
 EXTRA_OEMAKE = "KERNELDIR=${STAGING_KERNEL_BUILDDIR}"
 EXTRA_OEMAKE += "CROSS_COMPILE=${CROSS_COMPILE}"
@@ -81,6 +82,3 @@ RPROVIDES:${PN} += "kernel-module-pvrsrvkm kernel-module-dc-linuxfb"
 
 # Currently, output contains buildpaths, which produce build warning
 INSANE_SKIP:append = " buildpaths"
-
-INHIBIT_PACKAGE_STRIP = "1"
-INHIBIT_PACKAGE_DEBUG_SPLIT = "0"
