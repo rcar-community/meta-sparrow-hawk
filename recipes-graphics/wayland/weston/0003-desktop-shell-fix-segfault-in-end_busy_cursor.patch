@@ -1,0 +1,55 @@
+From 4a275da584f9473e42673b5c157216e223cc0565 Mon Sep 17 00:00:00 2001
+From: Brendan King <Brendan.King@imgtec.com>
+Date: Wed, 8 May 2024 07:42:33 +0100
+Subject: [PATCH 3/4] desktop-shell: fix segfault in end_busy_cursor
+
+It is possible for the desktop surface pointer in the shell_surface
+structure to be NULL, but end_busy_cursor doesn't check for this
+before calling weston_desktop_surface_get_client.
+
+ Thread 1 "weston" received signal SIGSEGV, Segmentation fault.
+ 0x00007f2d2beffb96 in weston_desktop_surface_get_client (surface=0x0)
+    at ../source/libweston/desktop/surface.c:591
+ 591             return surface->client;
+
+ #0  0x00007f2d2beffb96 in weston_desktop_surface_get_client (surface=0x0)
+    at ../source/libweston/desktop/surface.c:591
+ #1  0x00007f2d29c3dd19 in end_busy_cursor (compositor=0x5a132676c450,
+    desktop_client=0x5a132686adf0) at ../source/desktop-shell/shell.c:2661
+ #2  0x00007f2d29c3df32 in desktop_surface_pong (desktop_client=0x5a132686adf0,
+    shell_=0x5a1326afb3a0) at ../source/desktop-shell/shell.c:2722
+ #3  0x00007f2d2befcdcf in weston_desktop_api_pong (desktop=0x5a1326b52960,
+    client=0x5a132686adf0)
+    at ../source/libweston/desktop/libweston-desktop.c:126
+ #4  0x00007f2d2befd85d in weston_desktop_client_pong (client=0x5a132686adf0,
+    serial=5) at ../source/libweston/desktop/client.c:220
+ #5  0x00007f2d2bf03e99 in weston_desktop_xdg_shell_protocol_pong (
+    wl_client=0x5a1326aad260, resource=0x5a1326c689f0, serial=5)
+    at ../source/libweston/desktop/xdg-shell.c:1703
+
+The setup in which the segfault was encountered has a display with low
+throughput, resulting in desktop_surface_ping_timeout being called,
+which in turn calls set_busy_cursor.
+
+Upstream-Status: Inappropriate [oe specific]
+
+---
+ desktop-shell/shell.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/desktop-shell/shell.c b/desktop-shell/shell.c
+index 084e6029..dd75676b 100644
+--- a/desktop-shell/shell.c
++++ b/desktop-shell/shell.c
+@@ -2653,7 +2653,7 @@ end_busy_cursor(struct weston_compositor *compositor,
+ 
+ 		grab = (struct shell_grab *) pointer->grab;
+ 		shsurf = grab->shsurf;
+-		if (!shsurf)
++		if (!shsurf || !shsurf->desktop_surface)
+ 			continue;
+ 
+ 		grab_client =
+-- 
+2.34.1
+
