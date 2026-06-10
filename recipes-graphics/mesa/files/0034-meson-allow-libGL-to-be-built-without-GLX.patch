@@ -1,0 +1,135 @@
+From 52ca21d43be16a17995d025923576e3f2cffd27e Mon Sep 17 00:00:00 2001
+From: Brendan King <Brendan.King@imgtec.com>
+Date: Thu, 11 Jun 2020 12:29:51 +0100
+Subject: [PATCH 34/71] meson: allow libGL to be built without GLX
+
+If Meson is run with option "glx" set to "null", build the OpenGL
+library without GLX.
+
+Upstream-Status: Inappropriate [oe specific]
+
+---
+ meson.build               |  8 ++++++--
+ meson_options.txt         |  2 +-
+ src/egl/main/eglcurrent.h |  2 +-
+ src/glx/meson.build       | 20 ++++++++++++++++----
+ src/meson.build           |  2 +-
+ 5 files changed, 25 insertions(+), 9 deletions(-)
+
+diff --git a/meson.build b/meson.build
+index b39ca9b5e35..0d19902ee6e 100644
+--- a/meson.build
++++ b/meson.build
+@@ -495,6 +495,10 @@ if with_egl and not _platforms.contains(egl_native_platform)
+   error('-Degl-native-platform does not specify an enabled platform')
+ endif
+ 
++if with_egl and with_opengl and with_glx != 'disabled'
++   pre_args += '-DEGL_WITH_OPENGL'
++endif
++
+ if 'x11' in _platforms
+   _platforms += 'xcb'
+ endif
+@@ -544,7 +548,7 @@ if not have_mtls_dialect
+   endif
+ endif
+ 
+-if with_glx != 'disabled'
++if with_glx != 'disabled' and with_glx != 'null'
+   if not (with_platform_x11 and with_any_opengl)
+     error('Cannot build GLX support without X11 platform support and at least one OpenGL API')
+   elif with_glx == 'xlib'
+@@ -590,7 +594,7 @@ if with_any_vk and (with_platform_x11 and not with_dri3)
+   error('Vulkan drivers require dri3 for X11 support')
+ endif
+ if with_dri
+-  if with_glx == 'disabled' and not with_egl and not with_gbm
++  if (with_glx == 'disabled' or with_glx == 'null') and not with_egl and not with_gbm
+     error('building dri drivers require at least one windowing system')
+   endif
+ endif
+diff --git a/meson_options.txt b/meson_options.txt
+index 71e052f5764..2b95156a34f 100644
+--- a/meson_options.txt
++++ b/meson_options.txt
+@@ -354,7 +354,7 @@ option(
+   'glx',
+   type : 'combo',
+   value : 'auto',
+-  choices : ['auto', 'disabled', 'dri', 'xlib'],
++  choices : ['auto', 'disabled', 'dri', 'xlib', 'null'],
+   description : 'Build support for GLX platform'
+ )
+ 
+diff --git a/src/egl/main/eglcurrent.h b/src/egl/main/eglcurrent.h
+index 270c7dde7a1..f32f14eba99 100644
+--- a/src/egl/main/eglcurrent.h
++++ b/src/egl/main/eglcurrent.h
+@@ -64,7 +64,7 @@ struct _egl_thread_info {
+ static inline EGLBoolean
+ _eglIsApiValid(EGLenum api)
+ {
+-#if HAVE_OPENGL && !defined(ANDROID)
++#ifdef EGL_WITH_OPENGL
+    /* OpenGL is not a valid/supported API on Android */
+    if (api == EGL_OPENGL_API)
+       return true;
+diff --git a/src/glx/meson.build b/src/glx/meson.build
+index 1a5e9833956..f66674ca989 100644
+--- a/src/glx/meson.build
++++ b/src/glx/meson.build
+@@ -122,7 +122,15 @@ else
+   )
+ endif
+ 
+-libglx = static_library(
++gl_lib_cargs = [
++  '-D_REENTRANT',
++]
++
++if with_glx == 'null'
++  libglx_link = [libglapi]
++  libglx_link_whole = [libglapi_static]
++else
++  libglx = static_library(
+   'glx',
+   [files_libglx, glx_generated],
+   include_directories : [inc_include, inc_src, inc_glapi, inc_loader],
+@@ -138,13 +146,17 @@ libglx = static_library(
+     idep_mesautil, idep_xmlconfig,
+     dep_libdrm, dep_dri2proto, dep_glproto, dep_x11, dep_xext, dep_glvnd, dep_xxf86vm, dep_xshmfence
+   ],
+-)
++  )
++
++  libglx_link = [libglapi_static,libglapi]
++  libglx_link_whole = [libglx]
++endif
+ 
+ libgl = shared_library(
+   gl_lib_name,
+   [],
+-  link_with : [libglapi_static, libglapi],
+-  link_whole : libglx,
++  link_with : libglx_link,
++  link_whole : libglx_link_whole,
+   link_args : [ld_args_bsymbolic, ld_args_gc_sections, extra_ld_args_libgl],
+   dependencies : [
+     dep_libdrm, dep_dl, dep_m, dep_thread, dep_x11, dep_xcb_glx, dep_xcb,
+diff --git a/src/meson.build b/src/meson.build
+index 8fb5e33b5ac..19e79e49a41 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -128,7 +128,7 @@ endif
+ if with_gallium
+   subdir('mesa')
+   subdir('gallium')
+-  if with_glx == 'dri'
++  if with_glx == 'dri' or with_glx == 'null'
+      subdir('glx')
+   endif
+   # This has to be here since it requires libgallium, and subdir cannot
+-- 
+2.34.1
+

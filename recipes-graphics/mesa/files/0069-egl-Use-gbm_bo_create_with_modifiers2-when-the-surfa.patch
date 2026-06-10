@@ -1,0 +1,40 @@
+From 30856a2fcd6945bd139037b53dd125e8bb1c09e1 Mon Sep 17 00:00:00 2001
+From: Boris Brezillon <boris.brezillon@collabora.com>
+Date: Mon, 6 Nov 2023 16:34:00 +0100
+Subject: [PATCH 69/71] egl: Use gbm_bo_create_with_modifiers2() when the
+ surface has non-zero flags
+
+We need to pass the flags around when creating a BO for a surface that
+has explicit flags set.
+
+Signed-off-by: Boris Brezillon <boris.brezillon@collabora.com>
+Reviewed-by: Erik Faye-Lund <erik.faye-lund@collabora.com>
+Part-of: <https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/27109>
+
+Upstream-Status: Inappropriate [oe specific]
+
+---
+ src/egl/drivers/dri2/platform_drm.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/src/egl/drivers/dri2/platform_drm.c b/src/egl/drivers/dri2/platform_drm.c
+index 9848e431776..e63392e856b 100644
+--- a/src/egl/drivers/dri2/platform_drm.c
++++ b/src/egl/drivers/dri2/platform_drm.c
+@@ -316,7 +316,12 @@ get_back_bo(struct dri2_egl_surface *dri2_surf)
+    if (dri2_surf->back == NULL)
+       return -1;
+    if (dri2_surf->back->bo == NULL) {
+-      if (surf->base.v0.modifiers)
++      if (surf->base.v0.modifiers && surf->base.v0.flags)
++         dri2_surf->back->bo = gbm_bo_create_with_modifiers2(
++            &dri2_dpy->gbm_dri->base, surf->base.v0.width, surf->base.v0.height,
++            surf->base.v0.format, surf->base.v0.modifiers, surf->base.v0.count,
++            surf->base.v0.flags);
++      else if (surf->base.v0.modifiers)
+          dri2_surf->back->bo = gbm_bo_create_with_modifiers(
+             &dri2_dpy->gbm_dri->base, surf->base.v0.width, surf->base.v0.height,
+             surf->base.v0.format, surf->base.v0.modifiers, surf->base.v0.count);
+-- 
+2.34.1
+

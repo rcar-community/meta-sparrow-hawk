@@ -1,0 +1,72 @@
+From b3cdef0fabc1e5cd32dd74d681b2fe45e36437c7 Mon Sep 17 00:00:00 2001
+From: Brendan King <Brendan.King@imgtec.com>
+Date: Wed, 26 Jul 2023 11:53:18 +0100
+Subject: [PATCH 54/71] GL_NV_draw_instanced and GL_NV_instanced_arrays entry
+ points
+
+Upstream-Status: Inappropriate [oe specific]
+
+---
+ src/mapi/glapi/gen/es_EXT.xml     | 31 +++++++++++++++++++++++++++++++
+ src/mapi/glapi/gen/static_data.py |  3 +++
+ 2 files changed, 34 insertions(+)
+
+diff --git a/src/mapi/glapi/gen/es_EXT.xml b/src/mapi/glapi/gen/es_EXT.xml
+index fe38ad2331c..f2f5d4c0dce 100644
+--- a/src/mapi/glapi/gen/es_EXT.xml
++++ b/src/mapi/glapi/gen/es_EXT.xml
+@@ -963,6 +963,37 @@
+     </function>
+ </category>
+ 
++<!-- 141. GL_NV_draw_instanced -->
++<category name="GL_NV_draw_instanced" number="141">
++
++    <function name="DrawArraysInstancedNV" es2="2.0" exec="dynamic">
++        <param name="mode" type="GLenum"/>
++        <param name="first" type="GLint"/>
++        <param name="count" type="GLsizei"/>
++        <param name="primcount" type="GLsizei"/>
++    </function>
++
++    <function name="DrawElementsInstancedNV" es2="2.0" exec="dynamic">
++        <param name="mode" type="GLenum"/>
++        <param name="count" type="GLsizei"/>
++        <param name="type" type="GLenum"/>
++        <param name="indices" type="const GLvoid *"/>
++        <param name="primcount" type="GLsizei"/>
++    </function>
++
++</category>
++
++<!-- 145. GL_NV_instanced_arrays -->
++<category name="GL_NV_instanced_arrays" number="145">
++    <enum name="VERTEX_ATTRIB_ARRAY_DIVISOR_NV" value="0x88FE"/>
++
++    <function name="VertexAttribDivisorNV" es2="2.0" exec="dynamic">
++        <param name="index" type="GLuint"/>
++        <param name="divisor" type="GLuint"/>
++    </function>
++
++</category>
++
+ <!-- 150. GL_EXT_disjoint_timer_query -->
+ <category name="GL_EXT_disjoint_timer_query" number="150">
+     <enum name="QUERY_COUNTER_BITS_EXT"     value="0x8864"/>
+diff --git a/src/mapi/glapi/gen/static_data.py b/src/mapi/glapi/gen/static_data.py
+index fb2b97cf8c7..8c09d2c08fb 100644
+--- a/src/mapi/glapi/gen/static_data.py
++++ b/src/mapi/glapi/gen/static_data.py
+@@ -1739,6 +1739,9 @@ offsets = {
+     "FramebufferTextureARB" : 1703,
+     "FramebufferTextureLayerARB" : 1704,
+     "FramebufferTextureFaceARB" : 1705,
++    "DrawArraysInstancedNV" : 1706,
++    "DrawElementsInstancedNV" : 1707,
++    "VertexAttribDivisorNV" : 1708,
+ }
+ 
+ functions = [
+-- 
+2.34.1
+

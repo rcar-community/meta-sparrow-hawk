@@ -1,0 +1,134 @@
+From fb90bbc0eb117598f115f4f5c7cb6fe792c6c808 Mon Sep 17 00:00:00 2001
+From: brendan King <Brendan.King@imgtec.com>
+Date: Tue, 12 Dec 2023 10:04:50 +0000
+Subject: [PATCH 59/71] gallium: add support for image driver
+ createNewDrawableType
+
+With GLX, pixmaps may be created using double buffered configs,
+but rendering needs to be done to the front buffer. Providing a
+hint that a drawable is actually a pixmap, makes it easier to
+ensure this is done.
+
+The existing createNewDrawable entry point has a is_pixmap parameter
+that indicates whether a drawable is a pixmap, but it has fallen into
+disuse, with some drivers expecting it to always be false.
+
+The new createNewDrawableType entry point has the same parameters
+as createNewDrawable, but may set is_pixmap to indicate that a drawable
+is a pixmap. Drivers should treat is_pixmap as a hint; if the parameter
+is false, the drawable may still be a pixmap.
+
+This change ought to be merged with "Add PVR Gallium driver" the
+next time the IMG Mesa patches are generated.
+
+Upstream-Status: Inappropriate [oe specific]
+
+---
+ include/GL/internal/dri_interface.h  | 11 ++++++++++-
+ src/gallium/frontends/dri/dri_util.c | 23 ++++++++++++++++++-----
+ 2 files changed, 28 insertions(+), 6 deletions(-)
+
+diff --git a/include/GL/internal/dri_interface.h b/include/GL/internal/dri_interface.h
+index d1acd0e05cb..06c1823d151 100644
+--- a/include/GL/internal/dri_interface.h
++++ b/include/GL/internal/dri_interface.h
+@@ -1018,6 +1018,12 @@ typedef __DRIdrawable *
+                               const __DRIconfig *config,
+                               void *loaderPrivate);
+ 
++typedef __DRIdrawable *
++(*__DRIcreateNewDrawableTypeFunc)(__DRIscreen *screen,
++                                  const __DRIconfig *config,
++                                  void *loaderPrivate,
++                                  bool is_pixmap);
++
+ typedef __DRIcontext *
+ (*__DRIcreateContextAttribsFunc)(__DRIscreen *screen,
+                                  int api,
+@@ -2197,7 +2203,7 @@ struct __DRIimageLoaderExtensionRec {
+  */
+ 
+ #define __DRI_IMAGE_DRIVER           "DRI_IMAGE_DRIVER"
+-#define __DRI_IMAGE_DRIVER_VERSION   1
++#define __DRI_IMAGE_DRIVER_VERSION   2
+ 
+ struct __DRIimageDriverExtensionRec {
+    __DRIextension               base;
+@@ -2207,6 +2213,9 @@ struct __DRIimageDriverExtensionRec {
+    __DRIcreateNewDrawableFunc           createNewDrawable;
+    __DRIcreateContextAttribsFunc        createContextAttribs;
+    __DRIgetAPIMaskFunc                  getAPIMask;
++
++   /* Since version 2 */
++   __DRIcreateNewDrawableTypeFunc       createNewDrawableType;
+ };
+ 
+ /**
+diff --git a/src/gallium/frontends/dri/dri_util.c b/src/gallium/frontends/dri/dri_util.c
+index 77837b84fd6..cfa36a1951f 100644
+--- a/src/gallium/frontends/dri/dri_util.c
++++ b/src/gallium/frontends/dri/dri_util.c
+@@ -875,9 +875,10 @@ static int driUnbindContext(__DRIcontext *pcp)
+ /*@}*/
+ 
+ static __DRIdrawable *
+-driCreateNewDrawable(__DRIscreen *psp,
+-                     const __DRIconfig *config,
+-                     void *data)
++driCreateNewDrawableType(__DRIscreen *psp,
++                         const __DRIconfig *config,
++                         void *data,
++                         bool is_pixmap)
+ {
+     assert(data != NULL);
+ 
+@@ -885,6 +886,9 @@ driCreateNewDrawable(__DRIscreen *psp,
+     struct dri_drawable *drawable;
+ 
+     if (screen->driver) {
++        GLboolean is_pixmap_hint = (screen->driver->base.version >= 2) ?
++                                   (GLboolean)is_pixmap : GL_FALSE;
++
+         drawable = CALLOC_STRUCT(dri_drawable);
+         if (!drawable)
+ 	    return NULL;
+@@ -895,7 +899,7 @@ driCreateNewDrawable(__DRIscreen *psp,
+         drawable->refcount = 1;
+ 
+         if (!screen->driver->createBuffer(screen, drawable, &config->modes,
+-                                          GL_FALSE)) {
++                                          is_pixmap_hint)) {
+            FREE(drawable);
+            return NULL;
+         }
+@@ -907,6 +911,14 @@ driCreateNewDrawable(__DRIscreen *psp,
+     return opaque_dri_drawable(drawable);
+ }
+ 
++static __DRIdrawable *
++driCreateNewDrawable(__DRIscreen *psp,
++                     const __DRIconfig *config,
++                     void *data)
++{
++    return driCreateNewDrawableType(psp, config, data, false);
++}
++
+ void
+ dri_put_drawable(struct dri_drawable *drawable)
+ {
+@@ -1310,10 +1322,11 @@ driImageFormatToGLFormat(uint32_t image_format)
+ 
+ /** Image driver interface */
+ const __DRIimageDriverExtension driImageDriverExtension = {
+-    .base = { __DRI_IMAGE_DRIVER, 1 },
++    .base = { __DRI_IMAGE_DRIVER, 2 },
+ 
+     .createNewScreen2           = driCreateNewScreen2,
+     .createNewDrawable          = driCreateNewDrawable,
+     .getAPIMask                 = driGetAPIMask,
+     .createContextAttribs       = driCreateContextAttribs,
++    .createNewDrawableType      = driCreateNewDrawableType,
+ };
+-- 
+2.34.1
+

@@ -1,0 +1,47 @@
+From f1bb40d0e034c68b233db7b71fb3b18435a39068 Mon Sep 17 00:00:00 2001
+From: Brendan King <Brendan.King@imgtec.com>
+Date: Tue, 12 Dec 2023 12:39:37 +0000
+Subject: [PATCH 60/71] loader/dri3: indicate to driver when drawable is a
+ pixmap
+
+When a new drawable is a pixmap, and the image driver supports
+the createNewDrawableType entry point, indicate to the driver if
+the drawable is a pixmap or not.
+
+With GLX, pixmaps may be created using double buffered configs,
+but rendering needs to be done to the front buffer. Providing a
+hint that a drawable is actually a pixmap, makes it easier to
+ensure this is done.
+
+Upstream-Status: Inappropriate [oe specific]
+
+---
+ src/loader/loader_dri3_helper.c | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/src/loader/loader_dri3_helper.c b/src/loader/loader_dri3_helper.c
+index dc1db4fa8be..78d20967af8 100644
+--- a/src/loader/loader_dri3_helper.c
++++ b/src/loader/loader_dri3_helper.c
+@@ -441,8 +441,16 @@ loader_dri3_drawable_init(xcb_connection_t *conn,
+    dri3_update_max_num_back(draw);
+ 
+    /* Create a new drawable */
+-   draw->dri_drawable =
+-      draw->ext->image_driver->createNewDrawable(dri_screen_render_gpu,
++   if (draw->ext->image_driver->base.version >= 2 &&
++       draw->ext->image_driver->createNewDrawableType != NULL)
++      draw->dri_drawable =
++         draw->ext->image_driver->createNewDrawableType(dri_screen_render_gpu,
++                                                 dri_config,
++                                                 draw,
++                                                 type == LOADER_DRI3_DRAWABLE_PIXMAP);
++   else
++      draw->dri_drawable =
++         draw->ext->image_driver->createNewDrawable(dri_screen_render_gpu,
+                                                  dri_config,
+                                                  draw);
+ 
+-- 
+2.34.1
+

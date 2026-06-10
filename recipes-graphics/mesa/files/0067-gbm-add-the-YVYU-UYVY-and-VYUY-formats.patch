@@ -1,0 +1,38 @@
+From 92c5c26798cad5bf425a2ed13aab8a44cebc6f12 Mon Sep 17 00:00:00 2001
+From: Brendan King <Brendan.King@imgtec.com>
+Date: Thu, 28 Mar 2024 14:53:39 +0000
+Subject: [PATCH 67/71] gbm: add the YVYU, UYVY and VYUY formats
+
+This change should be merged with commit "gbm: add some new GBM
+formats" the next time the IMG patches are generated for a new
+version of Mesa.
+
+Upstream-Status: Inappropriate [oe specific]
+
+---
+ src/gbm/backends/dri/gbm_dri.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/src/gbm/backends/dri/gbm_dri.c b/src/gbm/backends/dri/gbm_dri.c
+index 7c48106ae57..13819f813c7 100644
+--- a/src/gbm/backends/dri/gbm_dri.c
++++ b/src/gbm/backends/dri/gbm_dri.c
+@@ -508,6 +508,15 @@ static const struct gbm_dri_visual gbm_dri_visuals_table[] = {
+    {
+      GBM_FORMAT_YUYV, __DRI_IMAGE_FORMAT_YUYV,
+    },
++   {
++     GBM_FORMAT_YVYU, __DRI_IMAGE_FORMAT_YVYU,
++   },
++   {
++     GBM_FORMAT_UYVY, __DRI_IMAGE_FORMAT_UYVY,
++   },
++   {
++     GBM_FORMAT_VYUY, __DRI_IMAGE_FORMAT_VYUY,
++   },
+    {
+      GBM_FORMAT_YVU444_PACK10_IMG, __DRI_IMAGE_FORMAT_YVU444_PACK10_IMG,
+    },
+-- 
+2.34.1
+

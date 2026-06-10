@@ -1,0 +1,35 @@
+From c1b3124bd7101c064b09ba20f539b20916379d60 Mon Sep 17 00:00:00 2001
+From: Brendan King <Brendan.King@imgtec.com>
+Date: Wed, 8 Nov 2017 15:26:25 +0000
+Subject: [PATCH 16/71] egl/wayland: flush the swap buffers blit
+
+Pass the flush flag to the blitImage call.
+
+Upstream-Status: Inappropriate [oe specific]
+
+---
+ src/egl/drivers/dri2/platform_wayland.c | 8 +-------
+ 1 file changed, 1 insertion(+), 7 deletions(-)
+
+diff --git a/src/egl/drivers/dri2/platform_wayland.c b/src/egl/drivers/dri2/platform_wayland.c
+index aa9634cff2f..a207a8681e5 100644
+--- a/src/egl/drivers/dri2/platform_wayland.c
++++ b/src/egl/drivers/dri2/platform_wayland.c
+@@ -1635,13 +1635,7 @@ dri2_wl_swap_buffers_with_damage(_EGLDisplay *disp, _EGLSurface *draw,
+          dri2_ctx->dri_context, dri2_surf->current->linear_copy,
+          dri2_surf->current->dri_image, 0, 0, dri2_surf->base.Width,
+          dri2_surf->base.Height, 0, 0, dri2_surf->base.Width,
+-         dri2_surf->base.Height, 0);
+-
+-      if (dri2_dpy->flush) {
+-         __DRIdrawable *dri_drawable = dri2_dpy->vtbl->get_dri_drawable(draw);
+-
+-         dri2_dpy->flush->flush(dri_drawable);
+-      }
++         dri2_surf->base.Height, __BLIT_FLAG_FLUSH);
+    }
+ 
+    wl_surface_commit(dri2_surf->wl_surface_wrapper);
+-- 
+2.34.1
+

@@ -1,0 +1,54 @@
+From a9861b96c521019e73947c84a93509760033d61b Mon Sep 17 00:00:00 2001
+From: Brendan King <Brendan.King@imgtec.com>
+Date: Mon, 14 Aug 2023 17:06:43 +0100
+Subject: [PATCH 55/71] vulkan/wsi: fix headless swapchain memory leaks
+
+Fix memory leaks found with dEQP test case
+dEQP-VK.wsi.headless.swapchain.simulate_oom.min_image_count.
+
+Don't call wsi_configure_image in wsi_headless_surface_create_swapchain,
+as it has already been called, via wsi_swapchain_init.
+
+When wsi_create_image fails in wsi_headless_surface_create_swapchain,
+destroy any other images created so far. On failure, wsi_create_image
+doesn't reset any of the wsi_image structure fields it may have set,
+so ensure wsi_headless_swapchain_destroy doesn't call wsi_destroy_image
+for failed image creation attempts.
+
+Upstream-Status: Inappropriate [oe specific]
+
+---
+ src/vulkan/wsi/wsi_common_headless.c | 11 ++++-------
+ 1 file changed, 4 insertions(+), 7 deletions(-)
+
+diff --git a/src/vulkan/wsi/wsi_common_headless.c b/src/vulkan/wsi/wsi_common_headless.c
+index 402e0c4fd73..b197576175e 100644
+--- a/src/vulkan/wsi/wsi_common_headless.c
++++ b/src/vulkan/wsi/wsi_common_headless.c
+@@ -478,19 +478,16 @@ wsi_headless_surface_create_swapchain(VkIcdSurfaceBase *icd_surface,
+    chain->extent = pCreateInfo->imageExtent;
+    chain->vk_format = pCreateInfo->imageFormat;
+ 
+-   result = wsi_configure_image(&chain->base, pCreateInfo,
+-                                0, -1, &chain->base.image_info);
+-   if (result != VK_SUCCESS) {
+-      goto fail;
+-   }
+    chain->base.image_info.create_mem = wsi_create_null_image_mem;
+ 
+ 
+    for (uint32_t i = 0; i < chain->base.image_count; i++) {
+       result = wsi_create_image(&chain->base, &chain->base.image_info, -1,
+                                 &chain->images[i].base);
+-      if (result != VK_SUCCESS)
+-         return result;
++      if (result != VK_SUCCESS) {
++         chain->images[i].base.image = VK_NULL_HANDLE;
++         goto fail;
++      }
+ 
+       chain->images[i].busy = false;
+    }
+-- 
+2.34.1
+

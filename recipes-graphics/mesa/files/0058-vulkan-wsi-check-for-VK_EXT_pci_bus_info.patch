@@ -1,0 +1,134 @@
+From d037535a5b1ecf5c3b1fda008648d00b4974172e Mon Sep 17 00:00:00 2001
+From: Brendan King <Brendan.King@imgtec.com>
+Date: Tue, 5 Sep 2023 12:42:14 +0100
+Subject: [PATCH 58/71] vulkan/wsi: check for VK_EXT_pci_bus_info
+
+Check for VK_EXT_pci_bus_info before attempting to use it.
+
+Upstream-Status: Inappropriate [oe specific]
+
+---
+ src/vulkan/wsi/wsi_common.c     | 66 +++++++++++++++++++--------------
+ src/vulkan/wsi/wsi_common.h     |  2 +
+ src/vulkan/wsi/wsi_common_drm.c |  3 +-
+ 3 files changed, 42 insertions(+), 29 deletions(-)
+
+diff --git a/src/vulkan/wsi/wsi_common.c b/src/vulkan/wsi/wsi_common.c
+index 6250b6f4411..c167e0fb1d6 100644
+--- a/src/vulkan/wsi/wsi_common.c
++++ b/src/vulkan/wsi/wsi_common.c
+@@ -93,15 +93,49 @@ wsi_device_init2(struct wsi_device *wsi,
+    WSI_GET_CB(GetPhysicalDeviceQueueFamilyProperties);
+ #undef WSI_GET_CB
+ 
++   const struct vk_device_extension_table *supported_extensions;
++
++   if (device_extensions)
++      supported_extensions = device_extensions;
++   else if (!opaque_vk_handles)
++      supported_extensions =
++         &vk_physical_device_from_handle(pdevice)->supported_extensions;
++   else
++      supported_extensions = NULL;
++
++   if (supported_extensions) {
++      wsi->has_import_memory_host =
++         supported_extensions->EXT_external_memory_host;
++      wsi->khr_present_wait =
++         supported_extensions->KHR_present_id &&
++         supported_extensions->KHR_present_wait;
++
++      /* We cannot expose KHR_present_wait without timeline semaphores. */
++      assert(!wsi->khr_present_wait || supported_extensions->KHR_timeline_semaphore);
++
++      wsi->ext_attachment_feedback_loop_layout =
++         supported_extensions->EXT_attachment_feedback_loop_layout;
++
++      wsi->ext_pci_bus_info =
++         supported_extensions->EXT_pci_bus_info;
++   }
++
+    wsi->drm_info.sType =
+       VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRM_PROPERTIES_EXT;
+-   wsi->pci_bus_info.sType =
+-      VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT;
+-   wsi->pci_bus_info.pNext = &wsi->drm_info;
++
+    VkPhysicalDeviceProperties2 pdp2 = {
+       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
+-      .pNext = &wsi->pci_bus_info,
+    };
++
++   if (wsi->ext_pci_bus_info) {
++      wsi->pci_bus_info.sType =
++         VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PCI_BUS_INFO_PROPERTIES_EXT;
++      wsi->pci_bus_info.pNext = &wsi->drm_info;
++
++      pdp2.pNext = &wsi->pci_bus_info;
++   } else {
++      pdp2.pNext = &wsi->drm_info;
++   }
+    GetPhysicalDeviceProperties2(pdevice, &pdp2);
+ 
+    wsi->maxImageDimension2D = pdp2.properties.limits.maxImageDimension2D;
+@@ -140,30 +174,6 @@ wsi_device_init2(struct wsi_device *wsi,
+          wsi->semaphore_export_handle_types |= handle_type;
+    }
+ 
+-   const struct vk_device_extension_table *supported_extensions;
+-
+-   if (device_extensions)
+-      supported_extensions = device_extensions;
+-   else if (!opaque_vk_handles)
+-      supported_extensions =
+-         &vk_physical_device_from_handle(pdevice)->supported_extensions;
+-   else
+-      supported_extensions = NULL;
+-
+-   if (supported_extensions) {
+-      wsi->has_import_memory_host =
+-         supported_extensions->EXT_external_memory_host;
+-      wsi->khr_present_wait =
+-         supported_extensions->KHR_present_id &&
+-         supported_extensions->KHR_present_wait;
+-
+-      /* We cannot expose KHR_present_wait without timeline semaphores. */
+-      assert(!wsi->khr_present_wait || supported_extensions->KHR_timeline_semaphore);
+-
+-      wsi->ext_attachment_feedback_loop_layout =
+-         supported_extensions->EXT_attachment_feedback_loop_layout;
+-   }
+-
+    list_inithead(&wsi->hotplug_fences);
+ 
+ #define WSI_GET_CB(func) \
+diff --git a/src/vulkan/wsi/wsi_common.h b/src/vulkan/wsi/wsi_common.h
+index 5613b4ea590..05bbdaadda5 100644
+--- a/src/vulkan/wsi/wsi_common.h
++++ b/src/vulkan/wsi/wsi_common.h
+@@ -245,6 +245,8 @@ struct wsi_device {
+ 
+    bool ext_attachment_feedback_loop_layout;
+ 
++   bool ext_pci_bus_info;
++
+ #define WSI_CB(cb) PFN_vk##cb cb
+    WSI_CB(AllocateMemory);
+    WSI_CB(AllocateCommandBuffers);
+diff --git a/src/vulkan/wsi/wsi_common_drm.c b/src/vulkan/wsi/wsi_common_drm.c
+index b9fb5ee4e5f..9fb802cb2ed 100644
+--- a/src/vulkan/wsi/wsi_common_drm.c
++++ b/src/vulkan/wsi/wsi_common_drm.c
+@@ -267,7 +267,8 @@ wsi_device_matches_drm_fd(const struct wsi_device *wsi, int drm_fd)
+    bool match = false;
+    switch (fd_device->bustype) {
+    case DRM_BUS_PCI:
+-      match = wsi->pci_bus_info.pciDomain == fd_device->businfo.pci->domain &&
++      match = wsi->ext_pci_bus_info &&
++              wsi->pci_bus_info.pciDomain == fd_device->businfo.pci->domain &&
+               wsi->pci_bus_info.pciBus == fd_device->businfo.pci->bus &&
+               wsi->pci_bus_info.pciDevice == fd_device->businfo.pci->dev &&
+               wsi->pci_bus_info.pciFunction == fd_device->businfo.pci->func;
+-- 
+2.34.1
+

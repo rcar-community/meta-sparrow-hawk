@@ -1,0 +1,5619 @@
+From 07e3fbfcd034ef8c3adfda306df26ecb435bbf5f Mon Sep 17 00:00:00 2001
+From: Brendan King <Brendan.King@imgtec.com>
+Date: Mon, 21 Mar 2022 19:08:33 +0000
+Subject: [PATCH 01/71] Add PVR Gallium driver
+
+The driver is essentially a Gallium frontend for the proprietary
+Imagination Technologies driver. It makes use of the Gallium DRI
+infrastructure, but little else.
+
+Some query renderer driver extension infrastructure has been
+restored, as the PVR driver doesn't support the Gallium pipe
+screen get_param function.
+
+A DRI Driver Compatibility extension function has been implemented,
+to check the compatibility of the render and display GPUs. This
+relies on another IMG patch, "dri2: add a driver compatibility check
+extension".
+
+For DRI Driver API version 2, the is_pixmap parameter of the
+createBuffer entry point may be set true if the drawable is a
+pixmap. This relies on two other IMG patches, "gallium: add support
+for image driver createNewDrawableType", and "loader/dri3: indicate
+to driver when drawable is a pixmap".
+
+Add support for queryCompatibleRenderOnlyDeviceFd. This also requires
+changes to the PVR DRI Support library within the IMG Rogue DDK.
+
+Upstream-Status: Inappropriate [oe specific]
+
+---
+ include/GL/internal/dri_interface.h           |  17 +
+ include/GL/internal/driver_interface.h        |  76 ++
+ meson.build                                   |  27 +-
+ meson_options.txt                             |   9 +-
+ src/egl/drivers/dri2/egl_dri2.c               |  73 +-
+ src/egl/drivers/dri2/egl_dri2.h               |   2 +
+ src/gallium/drivers/pvr/meson.build           |  23 +
+ src/gallium/drivers/pvr_alias/meson.build     |  23 +
+ src/gallium/frontends/dri/dri_context.h       |   2 +
+ src/gallium/frontends/dri/dri_drawable.c      |  14 +-
+ src/gallium/frontends/dri/dri_drawable.h      |   5 +
+ .../frontends/dri/dri_query_renderer.c        |   9 +
+ .../frontends/dri/dri_query_renderer.h        |   4 +
+ src/gallium/frontends/dri/dri_screen.c        |  10 +-
+ src/gallium/frontends/dri/dri_screen.h        |  16 +
+ src/gallium/frontends/dri/dri_util.c          | 211 +++-
+ src/gallium/frontends/dri/dri_util.h          |   5 +
+ src/gallium/frontends/dri/meson.build         |   4 +
+ src/gallium/frontends/pvr/dri_support.h       | 647 ++++++++++++
+ src/gallium/frontends/pvr/mesa_context.c      | 206 ++++
+ src/gallium/frontends/pvr/meson.build         |  49 +
+ src/gallium/frontends/pvr/pvrcb.c             | 354 +++++++
+ src/gallium/frontends/pvr/pvrcompat.c         | 951 ++++++++++++++++++
+ src/gallium/frontends/pvr/pvrdri.c            | 695 +++++++++++++
+ src/gallium/frontends/pvr/pvrdri.h            | 193 ++++
+ src/gallium/frontends/pvr/pvrdri_support.h    | 239 +++++
+ src/gallium/frontends/pvr/pvrext.c            | 805 +++++++++++++++
+ src/gallium/frontends/pvr/pvrmesa.h           |  36 +
+ src/gallium/frontends/pvr/pvrutil.c           | 242 +++++
+ src/gallium/meson.build                       |  15 +
+ src/gallium/targets/dri/meson.build           |   8 +-
+ src/gallium/targets/dri/target.c              |  18 +
+ src/meson.build                               |   2 +
+ 33 files changed, 4939 insertions(+), 51 deletions(-)
+ create mode 100644 include/GL/internal/driver_interface.h
+ create mode 100644 src/gallium/drivers/pvr/meson.build
+ create mode 100644 src/gallium/drivers/pvr_alias/meson.build
+ create mode 100644 src/gallium/frontends/pvr/dri_support.h
+ create mode 100644 src/gallium/frontends/pvr/mesa_context.c
+ create mode 100644 src/gallium/frontends/pvr/meson.build
+ create mode 100644 src/gallium/frontends/pvr/pvrcb.c
+ create mode 100644 src/gallium/frontends/pvr/pvrcompat.c
+ create mode 100644 src/gallium/frontends/pvr/pvrdri.c
+ create mode 100644 src/gallium/frontends/pvr/pvrdri.h
+ create mode 100644 src/gallium/frontends/pvr/pvrdri_support.h
+ create mode 100644 src/gallium/frontends/pvr/pvrext.c
+ create mode 100644 src/gallium/frontends/pvr/pvrmesa.h
+ create mode 100644 src/gallium/frontends/pvr/pvrutil.c
+
+diff --git a/include/GL/internal/dri_interface.h b/include/GL/internal/dri_interface.h
+index a428e3c98fb..7778241485c 100644
+--- a/include/GL/internal/dri_interface.h
++++ b/include/GL/internal/dri_interface.h
+@@ -1931,8 +1931,25 @@ typedef struct __DRIconfigOptionsExtensionRec {
+ #define __DRI2_RENDERER_OPENGL_COMPATIBILITY_PROFILE_VERSION  0x0008
+ #define __DRI2_RENDERER_OPENGL_ES_PROFILE_VERSION             0x0009
+ #define __DRI2_RENDERER_OPENGL_ES2_PROFILE_VERSION            0x000a
++#define __DRI2_RENDERER_HAS_TEXTURE_3D                        0x000b
++/* Whether there is an sRGB format support for every supported 32-bit UNORM
++ * color format.
++ */
++#define __DRI2_RENDERER_HAS_FRAMEBUFFER_SRGB                  0x000c
++
++/* Bitmaks of supported/available context priorities - must match
++ * __EGL_CONTEXT_PRIORITY_LOW_BIT et al
++ */
++#define __DRI2_RENDERER_HAS_CONTEXT_PRIORITY                  0x000d
++#define   __DRI2_RENDERER_HAS_CONTEXT_PRIORITY_LOW            (1 << 0)
++#define   __DRI2_RENDERER_HAS_CONTEXT_PRIORITY_MEDIUM         (1 << 1)
++#define   __DRI2_RENDERER_HAS_CONTEXT_PRIORITY_HIGH           (1 << 2)
+ 
++#define __DRI2_RENDERER_HAS_PROTECTED_SURFACE                 0x000e
+ #define __DRI2_RENDERER_PREFER_BACK_BUFFER_REUSE              0x000f
++#define __DRI2_RENDERER_HAS_NO_ERROR_CONTEXT                  0x0010
++
++#define __DRI2_RENDERER_HAS_PROTECTED_CONTEXT                 0x0020
+ 
+ typedef struct __DRI2rendererQueryExtensionRec __DRI2rendererQueryExtension;
+ struct __DRI2rendererQueryExtensionRec {
+diff --git a/include/GL/internal/driver_interface.h b/include/GL/internal/driver_interface.h
+new file mode 100644
+index 00000000000..02d0e9d2549
+--- /dev/null
++++ b/include/GL/internal/driver_interface.h
+@@ -0,0 +1,76 @@
++/*
++ * Permission is hereby granted, free of charge, to any person obtaining a
++ * copy of this software and associated documentation files (the "Software"),
++ * to deal in the Software without restriction, including without limitation
++ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
++ * and/or sell copies of the Software, and to permit persons to whom the
++ * Software is furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice (including the next
++ * paragraph) shall be included in all copies or substantial portions of the
++ * Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
++ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
++ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
++ * IN THE SOFTWARE.
++ */
++
++#ifndef DRIVER_INTERFACE_H
++#define DRIVER_INTERFACE_H
++
++#include "dri_interface.h"
++#include "main/menums.h"
++
++struct dri_screen;
++struct dri_context;
++struct dri_drawable;
++struct gl_config;
++struct __DriverContextConfig;
++
++typedef struct __DRIDriverAPIExtensionRec __DRIDriverAPIExtension;
++
++#define __DRI_DRIVER_API "DRI_API_Driver"
++#define __DRI_DRIVER_API_VERSION 1
++
++struct __DRIDriverAPIExtensionRec {
++   __DRIextension base;
++
++   const __DRIconfig **(*initScreen)(struct dri_screen *screen);
++
++   void (*destroyScreen)(struct dri_screen *screen);
++
++   GLboolean (*createContext)(gl_api api,
++                              const struct gl_config *visual,
++                              struct dri_context *context,
++                              const struct __DriverContextConfig *ctx_config,
++                              unsigned int *error,
++                              struct dri_context *shared_context);
++
++  void (*destroyContext)(struct dri_context *context);
++
++  GLboolean (*makeCurrent)(struct dri_context *context,
++                           struct dri_drawable *draw,
++                           struct dri_drawable *read);
++
++  void (*unbindContext)(struct dri_context *context);
++
++  GLboolean (*createBuffer)(struct dri_screen *screen,
++                            struct dri_drawable *drawable,
++                            const struct gl_config *visual,
++                            GLboolean is_pixmap);
++
++  void (*destroyBuffer)(struct dri_drawable *drawable);
++
++  __DRIbuffer *(*allocateBuffer) (struct dri_screen *screen,
++                                  unsigned int attachment,
++                                  unsigned int format,
++                                  int width, int height);
++
++  void (*releaseBuffer) (struct dri_screen *screen, __DRIbuffer *buffer);
++};
++
++#endif /* DRIVER_INTERFACE_H */
+diff --git a/meson.build b/meson.build
+index 41ca6cfeda7..5b7c263d087 100644
+--- a/meson.build
++++ b/meson.build
+@@ -137,16 +137,16 @@ if gallium_drivers.contains('auto')
+     if ['x86', 'x86_64'].contains(host_machine.cpu_family())
+       gallium_drivers = [
+         'r300', 'r600', 'radeonsi', 'nouveau', 'virgl', 'svga', 'swrast',
+-        'iris', 'crocus', 'i915'
++        'iris', 'crocus', 'i915', 'pvr'
+       ]
+     elif ['arm', 'aarch64'].contains(host_machine.cpu_family())
+       gallium_drivers = [
+         'v3d', 'vc4', 'freedreno', 'etnaviv', 'nouveau', 'svga',
+-        'tegra', 'virgl', 'lima', 'panfrost', 'swrast', 'iris'
++        'tegra', 'virgl', 'lima', 'panfrost', 'swrast', 'iris', 'pvr'
+       ]
+     elif ['mips', 'mips64', 'riscv32', 'riscv64'].contains(host_machine.cpu_family())
+       gallium_drivers = [
+-        'r300', 'r600', 'radeonsi', 'nouveau', 'virgl', 'swrast'
++        'r300', 'r600', 'radeonsi', 'nouveau', 'virgl', 'swrast', 'pvr'
+       ]
+     elif ['loongarch64'].contains(host_machine.cpu_family())
+       gallium_drivers = [
+@@ -192,6 +192,7 @@ with_gallium_lima = gallium_drivers.contains('lima')
+ with_gallium_zink = gallium_drivers.contains('zink')
+ with_gallium_d3d12 = gallium_drivers.contains('d3d12')
+ with_gallium_asahi = gallium_drivers.contains('asahi')
++with_gallium_pvr = gallium_drivers.contains('pvr')
+ foreach gallium_driver : gallium_drivers
+   pre_args += '-DHAVE_@0@'.format(gallium_driver.to_upper())
+ endforeach
+@@ -207,6 +208,26 @@ with_gallium_kmsro = system_has_kms_drm and [
+   with_gallium_vc4,
+ ].contains(true)
+ 
++if with_gallium_pvr
++  gallium_pvr_alias = get_option('gallium-pvr-alias')
++  if gallium_pvr_alias == 'pvr'
++    gallium_pvr_alias = ''
++  endif
++  with_gallium_pvr_alias = gallium_pvr_alias != ''
++else
++  gallium_pvr_alias = ''
++  with_gallium_pvr_alias = false
++endif
++
++with_dri = false
++if with_gallium and system_has_kms_drm
++  _glx = get_option('glx')
++  _egl = get_option('egl')
++  if _glx == 'dri' or _egl.enabled() or (_glx == 'disabled' and _egl.allowed())
++    with_dri = true
++  endif
++endif
++
+ _vulkan_drivers = get_option('vulkan-drivers')
+ if _vulkan_drivers.contains('auto')
+   if system_has_kms_drm
+diff --git a/meson_options.txt b/meson_options.txt
+index 500a2eb695f..d9bf8872718 100644
+--- a/meson_options.txt
++++ b/meson_options.txt
+@@ -82,13 +82,20 @@ option(
+   choices : [
+     'auto', 'kmsro', 'radeonsi', 'r300', 'r600', 'nouveau', 'freedreno',
+     'swrast', 'v3d', 'vc4', 'etnaviv', 'tegra', 'i915', 'svga', 'virgl',
+-    'panfrost', 'iris', 'lima', 'zink', 'd3d12', 'asahi', 'crocus', 'all',
++    'panfrost', 'iris', 'lima', 'zink', 'd3d12', 'asahi', 'crocus', 'pvr',
++    'all',
+   ],
+   description : 'List of gallium drivers to build. If this is set to auto ' +
+                 'all drivers applicable to the target OS/architecture ' +
+                 'will be built'
+ )
+ 
++option(
++  'gallium-pvr-alias',
++  type : 'string',
++  value : '',
++  description : 'Gallium PVR alias. This must match the name of the kernel display driver.'
++)
+ option(
+   'gallium-extra-hud',
+   type : 'boolean',
+diff --git a/src/egl/drivers/dri2/egl_dri2.c b/src/egl/drivers/dri2/egl_dri2.c
+index 7d67e31f177..88d5681ddfd 100644
+--- a/src/egl/drivers/dri2/egl_dri2.c
++++ b/src/egl/drivers/dri2/egl_dri2.c
+@@ -736,10 +736,12 @@ static const struct dri_extension_match swrast_core_extensions[] = {
+ };
+ 
+ static const struct dri_extension_match optional_core_extensions[] = {
++   { __DRI2_ROBUSTNESS, 1, offsetof(struct dri2_egl_display, robustness), true },
+    {__DRI2_CONFIG_QUERY, 1, offsetof(struct dri2_egl_display, config), true},
+    {__DRI2_FENCE, 2, offsetof(struct dri2_egl_display, fence), true},
+    {__DRI2_BUFFER_DAMAGE, 1, offsetof(struct dri2_egl_display, buffer_damage),
+     true},
++   { __DRI2_RENDERER_QUERY, 1, offsetof(struct dri2_egl_display, rendererQuery), true },
+    {__DRI2_INTEROP, 1, offsetof(struct dri2_egl_display, interop), true},
+    {__DRI2_FLUSH_CONTROL, 1, offsetof(struct dri2_egl_display, flush_control),
+     true},
+@@ -806,6 +808,20 @@ dri2_load_driver_swrast(_EGLDisplay *disp)
+                                   ARRAY_SIZE(swrast_driver_extensions));
+ }
+ 
++static unsigned
++dri2_renderer_query_integer(struct dri2_egl_display *dri2_dpy, int param)
++{
++   const __DRI2rendererQueryExtension *rendererQuery = dri2_dpy->rendererQuery;
++   unsigned int value = 0;
++
++   if (!rendererQuery ||
++       rendererQuery->queryInteger(dri2_dpy->dri_screen_render_gpu, param,
++                                   &value) == -1)
++      return 0;
++
++   return value;
++}
++
+ static const char *
+ dri2_query_driver_name(_EGLDisplay *disp)
+ {
+@@ -826,12 +842,54 @@ dri2_query_driver_config(_EGLDisplay *disp)
+    return ret;
+ }
+ 
++static EGLBoolean
++have_pipe_screen(_EGLDisplay *disp)
++{
++   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
++   struct dri_screen *screen = dri_screen(dri2_dpy->dri_screen_render_gpu);
++
++   return screen->base.screen != NULL;
++}
++
+ static int
+ get_screen_param(_EGLDisplay *disp, enum pipe_cap param)
+ {
+    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
+    struct dri_screen *screen = dri_screen(dri2_dpy->dri_screen_render_gpu);
+-   return screen->base.screen->get_param(screen->base.screen, param);
++
++   if (have_pipe_screen(disp)) {
++      return screen->base.screen->get_param(screen->base.screen, param);
++   } else {
++      int qparam;
++
++      switch (param) {
++      case PIPE_CAP_DEVICE_RESET_STATUS_QUERY:
++         return dri2_dpy->robustness ? 1 : 0;
++      default:
++         break;
++      }
++
++      switch (param) {
++      case PIPE_CAP_CONTEXT_PRIORITY_MASK:
++         qparam = __DRI2_RENDERER_HAS_CONTEXT_PRIORITY;
++         break;
++      case PIPE_CAP_MAX_TEXTURE_3D_LEVELS:
++         qparam = __DRI2_RENDERER_HAS_TEXTURE_3D;
++         break;
++      case PIPE_CAP_DEVICE_PROTECTED_SURFACE:
++         qparam = __DRI2_RENDERER_HAS_PROTECTED_SURFACE;
++         break;
++      case PIPE_CAP_DEVICE_PROTECTED_CONTEXT:
++         qparam = __DRI2_RENDERER_HAS_PROTECTED_CONTEXT;
++         break;
++      default:
++         _eglLog(_EGL_WARNING, "egl: No renderer query mapping for %d",
++                 (int) param);
++         return 0;
++      }
++
++      return (int) dri2_renderer_query_integer(dri2_dpy, qparam);
++   }
+ }
+ 
+ void
+@@ -866,7 +924,6 @@ dri2_setup_screen(_EGLDisplay *disp)
+ 
+    assert(dri2_dpy->image_driver || dri2_dpy->dri2 || dri2_dpy->swrast);
+    disp->Extensions.KHR_create_context = EGL_TRUE;
+-   disp->Extensions.KHR_create_context_no_error = EGL_TRUE;
+    disp->Extensions.KHR_no_config_context = EGL_TRUE;
+    disp->Extensions.KHR_surfaceless_context = EGL_TRUE;
+ 
+@@ -884,9 +941,12 @@ dri2_setup_screen(_EGLDisplay *disp)
+ 
+    disp->Extensions.EXT_pixel_format_float = EGL_TRUE;
+ 
+-   if (pscreen->is_format_supported(pscreen, PIPE_FORMAT_B8G8R8A8_SRGB,
++   if ((have_pipe_screen(disp) && pscreen->is_format_supported(pscreen,
++                                    PIPE_FORMAT_B8G8R8A8_SRGB,
+                                     PIPE_TEXTURE_2D, 0, 0,
+-                                    PIPE_BIND_RENDER_TARGET)) {
++                                    PIPE_BIND_RENDER_TARGET)) ||
++       dri2_renderer_query_integer(dri2_dpy,
++                                   __DRI2_RENDERER_HAS_FRAMEBUFFER_SRGB)) {
+       disp->Extensions.KHR_gl_colorspace = EGL_TRUE;
+    }
+ 
+@@ -898,6 +958,11 @@ dri2_setup_screen(_EGLDisplay *disp)
+    disp->Extensions.EXT_query_reset_notification_strategy =
+       disp->Extensions.EXT_create_context_robustness;
+ 
++   if (have_pipe_screen(disp) ||
++       dri2_renderer_query_integer(dri2_dpy,
++                                   __DRI2_RENDERER_HAS_NO_ERROR_CONTEXT))
++      disp->Extensions.KHR_create_context_no_error = EGL_TRUE;
++
+    if (dri2_dpy->fence) {
+       disp->Extensions.KHR_fence_sync = EGL_TRUE;
+       disp->Extensions.KHR_wait_sync = EGL_TRUE;
+diff --git a/src/egl/drivers/dri2/egl_dri2.h b/src/egl/drivers/dri2/egl_dri2.h
+index 57d8820c079..4c29a50ff1a 100644
+--- a/src/egl/drivers/dri2/egl_dri2.h
++++ b/src/egl/drivers/dri2/egl_dri2.h
+@@ -244,11 +244,13 @@ struct dri2_egl_display {
+    const __DRI2flushExtension *flush;
+    const __DRI2flushControlExtension *flush_control;
+    const __DRItexBufferExtension *tex_buffer;
++   const __DRIrobustnessExtension *robustness;
+    const __DRIimageExtension *image;
+    const __DRI2configQueryExtension *config;
+    const __DRI2fenceExtension *fence;
+    const __DRI2bufferDamageExtension *buffer_damage;
+    const __DRI2blobExtension *blob;
++   const __DRI2rendererQueryExtension *rendererQuery;
+    const __DRI2interopExtension *interop;
+    const __DRIconfigOptionsExtension *configOptions;
+    const __DRImutableRenderBufferDriverExtension *mutable_render_buffer;
+diff --git a/src/gallium/drivers/pvr/meson.build b/src/gallium/drivers/pvr/meson.build
+new file mode 100644
+index 00000000000..4f3e2005ee4
+--- /dev/null
++++ b/src/gallium/drivers/pvr/meson.build
+@@ -0,0 +1,23 @@
++# Copyright (c) Imagination Technologies Ltd.
++
++# Permission is hereby granted, free of charge, to any person obtaining a copy
++# of this software and associated documentation files (the "Software"), to deal
++# in the Software without restriction, including without limitation the rights
++# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++# copies of the Software, and to permit persons to whom the Software is
++# furnished to do so, subject to the following conditions:
++
++# The above copyright notice and this permission notice shall be included in
++# all copies or substantial portions of the Software.
++
++# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
++# SOFTWARE.
++
++driver_pvr = declare_dependency(
++  compile_args : '-DGALLIUM_PVR'
++)
+diff --git a/src/gallium/drivers/pvr_alias/meson.build b/src/gallium/drivers/pvr_alias/meson.build
+new file mode 100644
+index 00000000000..128efd7b5fb
+--- /dev/null
++++ b/src/gallium/drivers/pvr_alias/meson.build
+@@ -0,0 +1,23 @@
++# Copyright (c) Imagination Technologies Ltd.
++
++# Permission is hereby granted, free of charge, to any person obtaining a copy
++# of this software and associated documentation files (the "Software"), to deal
++# in the Software without restriction, including without limitation the rights
++# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++# copies of the Software, and to permit persons to whom the Software is
++# furnished to do so, subject to the following conditions:
++
++# The above copyright notice and this permission notice shall be included in
++# all copies or substantial portions of the Software.
++
++# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
++# SOFTWARE.
++
++driver_pvr_alias = declare_dependency(
++  compile_args: '-DGALLIUM_PVR_ALIAS=@0@'.format(gallium_pvr_alias)
++)
+diff --git a/src/gallium/frontends/dri/dri_context.h b/src/gallium/frontends/dri/dri_context.h
+index e008ed34912..4d0421d17ec 100644
+--- a/src/gallium/frontends/dri/dri_context.h
++++ b/src/gallium/frontends/dri/dri_context.h
+@@ -68,6 +68,8 @@ struct dri_context
+     */
+    void *loaderPrivate;
+ 
++   void *driverPrivate;
++
+    struct {
+        int draw_stamp;
+        int read_stamp;
+diff --git a/src/gallium/frontends/dri/dri_drawable.c b/src/gallium/frontends/dri/dri_drawable.c
+index 58008b3c584..b958b1ef21a 100644
+--- a/src/gallium/frontends/dri/dri_drawable.c
++++ b/src/gallium/frontends/dri/dri_drawable.c
+@@ -187,7 +187,7 @@ fail:
+    return NULL;
+ }
+ 
+-static void
++void
+ dri_destroy_drawable(struct dri_drawable *drawable)
+ {
+    struct dri_screen *screen = drawable->screen;
+@@ -208,18 +208,6 @@ dri_destroy_drawable(struct dri_drawable *drawable)
+    FREE(drawable);
+ }
+ 
+-void
+-dri_put_drawable(struct dri_drawable *drawable)
+-{
+-   if (drawable) {
+-      int refcount = --drawable->refcount;
+-      assert(refcount >= 0);
+-
+-      if (!refcount)
+-         dri_destroy_drawable(drawable);
+-   }
+-}
+-
+ /**
+  * Validate the texture at an attachment.  Allocate the texture if it does not
+  * exist.  Used by the TFP extension.
+diff --git a/src/gallium/frontends/dri/dri_drawable.h b/src/gallium/frontends/dri/dri_drawable.h
+index 041957035f8..f4b951fc104 100644
+--- a/src/gallium/frontends/dri/dri_drawable.h
++++ b/src/gallium/frontends/dri/dri_drawable.h
+@@ -65,6 +65,8 @@ struct dri_drawable
+     */
+    void *loaderPrivate;
+ 
++   void *driverPrivate;
++
+    /**
+     * Reference count for number of context's currently bound to this
+     * drawable.
+@@ -139,6 +141,9 @@ struct dri_drawable *
+ dri_create_drawable(struct dri_screen *screen, const struct gl_config *visual,
+                     bool isPixmap, void *loaderPrivate);
+ 
++void
++dri_destroy_drawable(struct dri_drawable *drawable);
++
+ void
+ dri_put_drawable(struct dri_drawable *drawable);
+ 
+diff --git a/src/gallium/frontends/dri/dri_query_renderer.c b/src/gallium/frontends/dri/dri_query_renderer.c
+index 36666243424..773699af8f5 100644
+--- a/src/gallium/frontends/dri/dri_query_renderer.c
++++ b/src/gallium/frontends/dri/dri_query_renderer.c
+@@ -75,6 +75,15 @@ driQueryRendererIntegerCommon(struct dri_screen *screen, int param, unsigned int
+    return -1;
+ }
+ 
++int
++dri2_query_renderer_integer_common(__DRIscreen *_screen, int param,
++                                   unsigned int *value)
++{
++   struct dri_screen *screen = dri_screen(_screen);
++
++   return driQueryRendererIntegerCommon(screen, param, value);
++}
++
+ static int
+ dri2_query_renderer_integer(__DRIscreen *_screen, int param,
+                             unsigned int *value)
+diff --git a/src/gallium/frontends/dri/dri_query_renderer.h b/src/gallium/frontends/dri/dri_query_renderer.h
+index 59b3ff8e5b3..dd60e354b98 100644
+--- a/src/gallium/frontends/dri/dri_query_renderer.h
++++ b/src/gallium/frontends/dri/dri_query_renderer.h
+@@ -3,6 +3,10 @@
+ 
+ #include "dri_util.h"
+ 
++int
++dri2_query_renderer_integer_common(__DRIscreen *_screen, int param,
++                                   unsigned int *value);
++
+ extern const
+ __DRI2rendererQueryExtension dri2RendererQueryExtension;
+ 
+diff --git a/src/gallium/frontends/dri/dri_screen.c b/src/gallium/frontends/dri/dri_screen.c
+index a1fc9f0a30b..ddbd6e91b69 100644
+--- a/src/gallium/frontends/dri/dri_screen.c
++++ b/src/gallium/frontends/dri/dri_screen.c
+@@ -139,7 +139,7 @@ dri_loader_get_cap(struct dri_screen *screen, enum dri_loader_cap cap)
+  * Currently the only cause of failure is a bad parameter (i.e., unsupported
+  * \c format).
+  */
+-static __DRIconfig **
++__DRIconfig **
+ driCreateConfigs(mesa_format format,
+                  const uint8_t * depth_bits, const uint8_t * stencil_bits,
+                  unsigned num_depth_stencil_bits,
+@@ -357,7 +357,7 @@ driCreateConfigs(mesa_format format,
+     return configs;
+ }
+ 
+-static __DRIconfig **
++__DRIconfig **
+ driConcatConfigs(__DRIconfig **a, __DRIconfig **b)
+ {
+     __DRIconfig **all;
+@@ -828,11 +828,7 @@ dri_destroy_screen(struct dri_screen *screen)
+    free(screen->options.force_gl_renderer);
+    free(screen->options.mesa_extension_override);
+ 
+-   driDestroyOptionCache(&screen->optionCache);
+-   driDestroyOptionInfo(&screen->optionInfo);
+-
+-   /* The caller in dri_util preserves the fd ownership */
+-   free(screen);
++   /* The remaining cleanup been moved into driDestroyScreen */
+ }
+ 
+ static void
+diff --git a/src/gallium/frontends/dri/dri_screen.h b/src/gallium/frontends/dri/dri_screen.h
+index b35d623c926..ad708ca07e5 100644
+--- a/src/gallium/frontends/dri/dri_screen.h
++++ b/src/gallium/frontends/dri/dri_screen.h
+@@ -57,6 +57,7 @@ struct dri_screen
+    int myNum;
+ 
+    void *loaderPrivate;
++   void *driverPrivate;
+ 
+    int max_gl_core_version;
+    int max_gl_compat_version;
+@@ -85,6 +86,8 @@ struct dri_screen
+       const __DRImutableRenderBufferLoaderExtension *loader;
+    } mutableRenderBuffer;
+ 
++   const __DRIDriverAPIExtension *driver;
++
+    driOptionCache optionInfo;
+    driOptionCache optionCache;
+ 
+@@ -228,6 +231,17 @@ dri_release_screen(struct dri_screen * screen);
+ void
+ dri_destroy_screen(struct dri_screen *screen);
+ 
++__DRIconfig **
++driCreateConfigs(mesa_format format,
++                 const uint8_t * depth_bits, const uint8_t * stencil_bits,
++                 unsigned num_depth_stencil_bits,
++                 const bool *db_modes, unsigned num_db_modes,
++                 const uint8_t * msaa_samples, unsigned num_msaa_modes,
++                 GLboolean enable_accum, GLboolean color_depth_match);
++
++__DRIconfig **
++driConcatConfigs(__DRIconfig **a, __DRIconfig **b);
++
+ extern const struct __DriverAPIRec dri_swrast_kms_driver_api;
+ extern const __DRIextension *dri_swrast_kms_driver_extensions[];
+ extern const struct __DriverAPIRec galliumdrm_driver_api;
+@@ -238,6 +252,8 @@ extern const struct __DriverAPIRec galliumvk_driver_api;
+ extern const __DRIextension *galliumvk_driver_extensions[];
+ extern const __DRIconfigOptionsExtension gallium_config_options;
+ 
++extern const struct __DriverAPIRec pvr_driver_api;
++extern const __DRIextension *pvr_driver_extensions[];
+ #endif
+ 
+ /* vim: set sw=3 ts=8 sts=3 expandtab: */
+diff --git a/src/gallium/frontends/dri/dri_util.c b/src/gallium/frontends/dri/dri_util.c
+index 201fc7f63d4..2ddb10758f6 100644
+--- a/src/gallium/frontends/dri/dri_util.c
++++ b/src/gallium/frontends/dri/dri_util.c
+@@ -41,8 +41,8 @@
+ 
+ #include <stdbool.h>
+ #include "dri_util.h"
+-#include "dri_context.h"
+ #include "dri_screen.h"
++#include "dri_context.h"
+ #include "dri_drawable.h"
+ #include "util/u_endian.h"
+ #include "util/u_memory.h"
+@@ -114,6 +114,13 @@ driCreateNewScreen2(int scrn, int fd,
+        if (strcmp(driver_extensions[i]->name, __DRI_MESA) == 0) {
+           mesa = (__DRImesaCoreExtension *)driver_extensions[i];
+        }
++       if (strcmp(driver_extensions[i]->name, __DRI_DRIVER_API) == 0) {
++          screen->driver = (__DRIDriverAPIExtension *)driver_extensions[i];
++       }
++    }
++    if (mesa == NULL || (screen->driver && mesa->initScreen)) {
++        free(screen);
++        return NULL;
+     }
+ 
+     setupLoaderExtensions(screen, loader_extensions);
+@@ -136,7 +143,11 @@ driCreateNewScreen2(int scrn, int fd,
+     driParseConfigFiles(&screen->optionCache, &screen->optionInfo, screen->myNum,
+                         "dri2", NULL, NULL, NULL, 0, NULL, 0);
+ 
+-    *driver_configs = mesa->initScreen(screen);
++    if (screen->driver)
++        *driver_configs = screen->driver->initScreen(screen);
++    else
++        *driver_configs = mesa->initScreen(screen);
++
+     if (*driver_configs == NULL) {
+         dri_destroy_screen(screen);
+         return NULL;
+@@ -192,6 +203,18 @@ swkmsCreateNewScreen(int scrn, int fd,
+                               driver_configs, data);
+ }
+ 
++#if defined(GALLIUM_PVR)
++static __DRIscreen *
++pvrCreateNewScreen(int scrn, int fd,
++		   const __DRIextension **extensions,
++		   const __DRIconfig ***driver_configs, void *data)
++{
++   return driCreateNewScreen2(scrn, fd, extensions,
++                              pvr_driver_extensions,
++                              driver_configs, data);
++}
++#endif
++
+ /** swrast driver createNewScreen entrypoint. */
+ static __DRIscreen *
+ driSWRastCreateNewScreen(int scrn, const __DRIextension **extensions,
+@@ -221,12 +244,22 @@ driSWRastCreateNewScreen2(int scrn, const __DRIextension **extensions,
+ static void driDestroyScreen(__DRIscreen *psp)
+ {
+     if (psp) {
++        struct dri_screen *screen = dri_screen(psp);
++
+         /* No interaction with the X-server is possible at this point.  This
+          * routine is called after XCloseDisplay, so there is no protocol
+          * stream open to the X-server anymore.
+          */
+ 
+-        dri_destroy_screen(dri_screen(psp));
++        if (screen->driver)
++            screen->driver->destroyScreen(screen);
++        else
++            dri_destroy_screen(screen);
++
++        driDestroyOptionCache(&screen->optionCache);
++        driDestroyOptionInfo(&screen->optionInfo);
++
++        FREE(screen);
+     }
+ }
+ 
+@@ -628,10 +661,31 @@ driCreateContextAttribs(__DRIscreen *psp, int api,
+     if (*error != __DRI_CTX_ERROR_SUCCESS)
+        return NULL;
+ 
+-    struct dri_context *ctx = dri_create_context(screen, mesa_api,
+-                                                 modes, &ctx_config, error,
+-                                                 dri_context(shared),
+-                                                 data);
++    struct dri_context *ctx;
++
++    if (screen->driver) {
++        ctx = CALLOC_STRUCT(dri_context);
++        if (!ctx) {
++            *error = __DRI_CTX_ERROR_NO_MEMORY;
++            return NULL;
++        }
++
++        ctx->loaderPrivate = data;
++        ctx->screen = screen;
++
++        if (!screen->driver->createContext(mesa_api, modes, ctx,
++                                           &ctx_config, error,
++                                           dri_context(shared))) {
++            FREE(ctx);
++            return NULL;
++        }
++    } else {
++        ctx = dri_create_context(screen, mesa_api,
++                                 modes, &ctx_config, error,
++                                 dri_context(shared),
++                                 data);
++    }
++
+     return opaque_dri_context(ctx);
+ }
+ 
+@@ -664,8 +718,16 @@ driCreateNewContext(__DRIscreen *screen, const __DRIconfig *config,
+ static void
+ driDestroyContext(__DRIcontext *pcp)
+ {
+-    if (pcp)
+-        dri_destroy_context(dri_context(pcp));
++    if (pcp) {
++        struct dri_context *ctx = dri_context(pcp);
++
++        if (ctx->screen->driver) {
++            ctx->screen->driver->destroyContext(ctx);
++            FREE(ctx);
++	} else {
++            dri_destroy_context(ctx);
++	}
++    }
+ }
+ 
+ static int
+@@ -702,8 +764,35 @@ static int driBindContext(__DRIcontext *pcp,
+     if (!pcp)
+         return GL_FALSE;
+ 
+-    return dri_make_current(dri_context(pcp), dri_drawable(pdp),
+-                            dri_drawable(prp));
++    struct dri_context *ctx = dri_context(pcp);
++
++    if (ctx->screen->driver)
++    {
++        struct dri_drawable *draw = dri_drawable(pdp);
++        struct dri_drawable *read = dri_drawable(prp);
++
++        assert(!ctx->draw);
++        assert(!ctx->read);
++
++        if ((draw && !read) || (!draw && read))
++            return GL_FALSE;
++
++        if (!ctx->screen->driver->makeCurrent(ctx, draw, read))
++            return GL_FALSE;
++
++        ctx->draw = draw;
++        ctx->read = read;
++
++        if (draw)
++            dri_get_drawable(draw);
++
++        if (read && read != draw)
++            dri_get_drawable(read);
++
++        return GL_TRUE;
++    } else {
++        return dri_make_current(ctx, dri_drawable(pdp), dri_drawable(prp));
++    }
+ }
+ 
+ /**
+@@ -732,11 +821,33 @@ static int driUnbindContext(__DRIcontext *pcp)
+     if (pcp == NULL)
+         return GL_FALSE;
+ 
+-    /*
+-    ** Call dri_unbind_context before checking for valid drawables
+-    ** to handle surfaceless contexts properly.
+-    */
+-    return dri_unbind_context(dri_context(pcp));
++    struct dri_context *ctx = dri_context(pcp);
++
++    if (ctx->screen->driver)
++    {
++        ctx->screen->driver->unbindContext(ctx);
++
++        if (!ctx->draw && !ctx->read)
++            return GL_TRUE;
++
++        assert(ctx->draw);
++
++        dri_put_drawable(ctx->draw);
++
++        if (ctx->read && ctx->read != ctx->draw)
++            dri_put_drawable(ctx->read);
++
++        ctx->draw = NULL;
++        ctx->read = NULL;
++
++        return GL_TRUE;
++    } else {
++        /*
++        ** Call dri_unbind_context before checking for valid drawables
++        ** to handle surfaceless contexts properly.
++        */
++        return dri_unbind_context(ctx);
++   }
+ }
+ 
+ /*@}*/
+@@ -749,12 +860,49 @@ driCreateNewDrawable(__DRIscreen *psp,
+     assert(data != NULL);
+ 
+     struct dri_screen *screen = dri_screen(psp);
+-    struct dri_drawable *drawable =
+-       screen->create_drawable(screen, &config->modes, GL_FALSE, data);
++    struct dri_drawable *drawable;
++
++    if (screen->driver) {
++        drawable = CALLOC_STRUCT(dri_drawable);
++        if (!drawable)
++	    return NULL;
++
++        drawable->loaderPrivate = data;
++
++        drawable->screen = screen;
++        drawable->refcount = 1;
++
++        if (!screen->driver->createBuffer(screen, drawable, &config->modes,
++                                          GL_FALSE)) {
++           FREE(drawable);
++           return NULL;
++        }
++    } else {
++        drawable = screen->create_drawable(screen, &config->modes, GL_FALSE,
++                                           data);
++    }
+ 
+     return opaque_dri_drawable(drawable);
+ }
+ 
++void
++dri_put_drawable(struct dri_drawable *drawable)
++{
++    if (drawable) {
++        int refcount = --drawable->refcount;
++        assert(refcount >= 0);
++
++        if (!refcount) {
++            if (drawable->screen->driver) {
++                drawable->screen->driver->destroyBuffer(drawable);
++                FREE(drawable);
++            } else {
++                dri_destroy_drawable(drawable);
++            }
++        }
++    }
++}
++
+ static void
+ driDestroyDrawable(__DRIdrawable *pdp)
+ {
+@@ -768,7 +916,12 @@ dri2AllocateBuffer(__DRIscreen *psp,
+ {
+    struct dri_screen *screen = dri_screen(psp);
+ 
+-   return screen->allocate_buffer(screen, attachment, format, width, height);
++   if (screen->driver)
++      return screen->driver->allocateBuffer(screen, attachment, format, width,
++                                            height);
++   else
++      return screen->allocate_buffer(screen, attachment, format, width,
++                                     height);
+ }
+ 
+ static void
+@@ -776,7 +929,10 @@ dri2ReleaseBuffer(__DRIscreen *psp, __DRIbuffer *buffer)
+ {
+    struct dri_screen *screen = dri_screen(psp);
+ 
+-   screen->release_buffer(buffer);
++   if (screen->driver)
++      screen->driver->releaseBuffer(screen, buffer);
++   else
++      screen->release_buffer(buffer);
+ }
+ 
+ 
+@@ -905,6 +1061,21 @@ const __DRIdri2Extension swkmsDRI2Extension = {
+     .createNewScreen2           = driCreateNewScreen2,
+ };
+ 
++#if defined(GALLIUM_PVR)
++const __DRIdri2Extension pvrDRI2Extension = {
++    .base = { __DRI_DRI2, 4 },
++
++    .createNewScreen            = pvrCreateNewScreen,
++    .createNewDrawable          = driCreateNewDrawable,
++    .createNewContext           = driCreateNewContext,
++    .getAPIMask                 = driGetAPIMask,
++    .createNewContextForAPI     = driCreateNewContextForAPI,
++    .allocateBuffer             = dri2AllocateBuffer,
++    .releaseBuffer              = dri2ReleaseBuffer,
++    .createContextAttribs       = driCreateContextAttribs,
++    .createNewScreen2           = driCreateNewScreen2,
++};
++#endif
+ #endif
+ 
+ const __DRIswrastExtension driSWRastExtension = {
+diff --git a/src/gallium/frontends/dri/dri_util.h b/src/gallium/frontends/dri/dri_util.h
+index a358487f006..fcf81307822 100644
+--- a/src/gallium/frontends/dri/dri_util.h
++++ b/src/gallium/frontends/dri/dri_util.h
+@@ -36,6 +36,7 @@
+ 
+ #include <GL/gl.h>
+ #include <GL/internal/dri_interface.h>
++#include <GL/internal/driver_interface.h>
+ #include "kopper_interface.h"
+ #include "main/formats.h"
+ #include "main/glconfig.h"
+@@ -61,6 +62,10 @@ extern const __DRIdri2Extension swkmsDRI2Extension;
+ extern const __DRI2configQueryExtension dri2ConfigQueryExtension;
+ extern const __DRI2flushControlExtension dri2FlushControlExtension;
+ 
++#if defined(GALLIUM_PVR)
++extern const __DRIdri2Extension pvrDRI2Extension;
++#endif
++
+ /**
+  * Description of the attributes used to create a config.
+  *
+diff --git a/src/gallium/frontends/dri/meson.build b/src/gallium/frontends/dri/meson.build
+index 0713135d7db..46a1302bb26 100644
+--- a/src/gallium/frontends/dri/meson.build
++++ b/src/gallium/frontends/dri/meson.build
+@@ -59,6 +59,10 @@ if with_gallium_softpipe
+   libdri_c_args += '-DGALLIUM_SOFTPIPE'
+ endif
+ 
++if with_gallium_pvr
++  libdri_c_args += '-DGALLIUM_PVR'
++endif
++
+ libdri = static_library(
+   'dri',
+   [ files_libdri, sha1_h ],
+diff --git a/src/gallium/frontends/pvr/dri_support.h b/src/gallium/frontends/pvr/dri_support.h
+new file mode 100644
+index 00000000000..3e8e8e039dd
+--- /dev/null
++++ b/src/gallium/frontends/pvr/dri_support.h
+@@ -0,0 +1,647 @@
++/* -*- mode: c; indent-tabs-mode: t; c-basic-offset: 8; tab-width: 8 -*- */
++/* vi: set ts=8 sw=8 sts=8: */
++/*************************************************************************/ /*!
++@File
++@Title          PVR DRI interface definition
++@Copyright      Copyright (c) Imagination Technologies Ltd. All Rights Reserved
++@License        MIT
++
++The contents of this file are subject to the MIT license as set out below.
++
++Permission is hereby granted, free of charge, to any person obtaining a copy
++of this software and associated documentation files (the "Software"), to deal
++in the Software without restriction, including without limitation the rights
++to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++copies of the Software, and to permit persons to whom the Software is
++furnished to do so, subject to the following conditions:
++
++The above copyright notice and this permission notice shall be included in
++all copies or substantial portions of the Software.
++
++THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++THE SOFTWARE.
++*/ /**************************************************************************/
++
++#if !defined(__PVRDRIIFCE_H__)
++#define __PVRDRIIFCE_H__
++
++#include <stdint.h>
++#include <stdbool.h>
++
++/* API type. */
++typedef enum
++{
++	PVRDRI_API_NONE = 0,
++	PVRDRI_API_GLES1 = 2,
++	PVRDRI_API_GLES2 = 3,
++	PVRDRI_API_CL = 4,
++	PVRDRI_API_GL_COMPAT = 5,
++	PVRDRI_API_GL_CORE = 6,
++} PVRDRIAPIType;
++
++typedef enum
++{
++	PVRDRI_CONFIG_ATTRIB_INVALID = 0,
++	PVRDRI_CONFIG_ATTRIB_RENDERABLE_TYPE = 1,
++	PVRDRI_CONFIG_ATTRIB_RGB_MODE = 2,
++	PVRDRI_CONFIG_ATTRIB_DOUBLE_BUFFER_MODE = 3,
++	PVRDRI_CONFIG_ATTRIB_RED_BITS = 4,
++	PVRDRI_CONFIG_ATTRIB_GREEN_BITS = 5,
++	PVRDRI_CONFIG_ATTRIB_BLUE_BITS = 6,
++	PVRDRI_CONFIG_ATTRIB_ALPHA_BITS = 7,
++	PVRDRI_CONFIG_ATTRIB_RGB_BITS = 8,
++	PVRDRI_CONFIG_ATTRIB_DEPTH_BITS = 9,
++	PVRDRI_CONFIG_ATTRIB_STENCIL_BITS = 10,
++	PVRDRI_CONFIG_ATTRIB_SAMPLE_BUFFERS = 11,
++	PVRDRI_CONFIG_ATTRIB_SAMPLES = 12,
++	PVRDRI_CONFIG_ATTRIB_BIND_TO_TEXTURE_RGB = 13,
++	PVRDRI_CONFIG_ATTRIB_BIND_TO_TEXTURE_RGBA = 14,
++	PVRDRI_CONFIG_ATTRIB_YUV_ORDER = 15,
++	PVRDRI_CONFIG_ATTRIB_YUV_NUM_OF_PLANES = 16,
++	PVRDRI_CONFIG_ATTRIB_YUV_SUBSAMPLE = 17,
++	PVRDRI_CONFIG_ATTRIB_YUV_DEPTH_RANGE = 18,
++	PVRDRI_CONFIG_ATTRIB_YUV_CSC_STANDARD = 19,
++	PVRDRI_CONFIG_ATTRIB_YUV_PLANE_BPP = 20,
++	PVRDRI_CONFIG_ATTRIB_RED_MASK = 21,
++	PVRDRI_CONFIG_ATTRIB_GREEN_MASK = 22,
++	PVRDRI_CONFIG_ATTRIB_BLUE_MASK = 23,
++	PVRDRI_CONFIG_ATTRIB_ALPHA_MASK = 24,
++	PVRDRI_CONFIG_ATTRIB_SRGB_CAPABLE = 25
++} PVRDRIConfigAttrib;
++
++/* EGL_RENDERABLE_TYPE mask bits */
++#define PVRDRI_API_BIT_GLES		0x0001
++#define PVRDRI_API_BIT_GLES2		0x0004
++#define PVRDRI_API_BIT_GL		0x0008
++#define PVRDRI_API_BIT_GLES3		0x0040
++
++/* Mesa config formats. These need not match their MESA_FORMAT counterparts */
++#define	PVRDRI_MESA_FORMAT_NONE			0
++#define PVRDRI_MESA_FORMAT_B8G8R8A8_UNORM	1
++#define PVRDRI_MESA_FORMAT_B8G8R8X8_UNORM	2
++#define PVRDRI_MESA_FORMAT_B5G6R5_UNORM		3
++#define PVRDRI_MESA_FORMAT_R8G8B8A8_UNORM	4
++#define PVRDRI_MESA_FORMAT_R8G8B8X8_UNORM	5
++#define PVRDRI_MESA_FORMAT_YCBCR		6
++#define PVRDRI_MESA_FORMAT_YUV420_2PLANE	7
++#define PVRDRI_MESA_FORMAT_YVU420_2PLANE	8
++#define PVRDRI_MESA_FORMAT_B8G8R8A8_SRGB	9
++#define PVRDRI_MESA_FORMAT_R8G8B8A8_SRGB	10
++
++typedef struct __DRIimageRec __DRIimage;
++
++typedef struct PVRDRIConfigRec PVRDRIConfig;
++
++/* The PVRDRI_GL defines match their EGL_GL counterparts */
++#define PVRDRI_GL_RENDERBUFFER			0x30B9
++#define PVRDRI_GL_TEXTURE_2D			0x30B1
++#define PVRDRI_GL_TEXTURE_3D			0x30B2
++#define PVRDRI_GL_TEXTURE_CUBE_MAP_POSITIVE_X	0x30B3
++#define PVRDRI_GL_TEXTURE_CUBE_MAP_NEGATIVE_X	0x30B4
++#define PVRDRI_GL_TEXTURE_CUBE_MAP_POSITIVE_Y	0x30B5
++#define PVRDRI_GL_TEXTURE_CUBE_MAP_NEGATIVE_Y	0x30B6
++#define PVRDRI_GL_TEXTURE_CUBE_MAP_POSITIVE_Z	0x30B7
++#define PVRDRI_GL_TEXTURE_CUBE_MAP_NEGATIVE_Z	0x30B8
++
++struct __DRIscreenRec;
++struct __DRIcontextRec;
++struct __DRIdrawableRec;
++
++struct __DRIconfigRec;
++
++struct DRISUPScreen;
++struct DRISUPContext;
++struct DRISUPDrawable;
++struct DRISUPBuffer;
++
++struct PVRDRIContextConfig
++{
++	unsigned int uMajorVersion;
++	unsigned int uMinorVersion;
++	uint32_t uFlags;
++
++	int iResetStrategy;
++	unsigned int uPriority;
++	int iReleaseBehavior;
++};
++
++/*
++ * PVR DRI Support interface V2.
++ * This structure may change over time, as older interfaces become obsolete.
++ * For example, the v0 interface may be removed if superseded by newer
++ * interfaces.
++ */
++struct  PVRDRISupportInterfaceV2
++{
++	struct
++	{
++		struct DRISUPScreen *(*CreateScreen)
++			(struct __DRIscreenRec *psDRIScreen,
++			 int iFD,
++			 bool bUseInvalidate,
++			 void *pvLoaderPrivate,
++			 const struct __DRIconfigRec ***pppsConfigs,
++			 int *piMaxGLES1Version,
++			 int *piMaxGLES2Version);
++
++		void (*DestroyScreen)
++			(struct DRISUPScreen *psDRISUPScreen);
++
++		unsigned int (*CreateContext)
++			(PVRDRIAPIType eAPI,
++			 PVRDRIConfig *psPVRDRIConfig,
++			 struct PVRDRIContextConfig *psCtxConfig,
++			 struct __DRIcontextRec *psDRIContext,
++			 struct DRISUPContext *psDRISUPSharedContext,
++			 struct DRISUPScreen *psDRISUPScreen,
++			 struct DRISUPContext **ppsDRISUPContext);
++
++		void (*DestroyContext)
++			(struct DRISUPContext *psDRISUPContext);
++
++		struct DRISUPDrawable *(*CreateDrawable)
++			(struct __DRIdrawableRec *psDRIDrawable,
++			 struct DRISUPScreen *psDRISUPDrawable,
++			 void *pvLoaderPrivate,
++			 PVRDRIConfig *psPVRDRIConfig);
++
++		void (*DestroyDrawable)
++			(struct DRISUPDrawable *psDRISUPDrawable);
++
++		bool (*MakeCurrent)
++			(struct DRISUPContext *psDRISUPContext,
++			 struct DRISUPDrawable *psDRISUPWrite,
++			 struct DRISUPDrawable *psDRISUPRead);
++
++		bool (*UnbindContext)
++			(struct DRISUPContext *psDRISUPContext);
++
++		struct DRISUPBuffer *(*AllocateBuffer)
++			(struct DRISUPScreen *psDRISUPScreen,
++			 unsigned int uAttachment,
++			 unsigned int uFormat,
++			 int iWidth,
++			 int iHeight,
++			 unsigned int *puName,
++			 unsigned int *puPitch,
++			 unsigned int *puCPP,
++			 unsigned int *puFlags);
++
++		void (*ReleaseBuffer)
++			(struct DRISUPScreen *psDRISUPScreen,
++			 struct DRISUPBuffer *psDRISUPBuffer);
++
++		/* Functions to support the DRI TexBuffer extension */
++		void (*SetTexBuffer2)
++			(struct DRISUPContext *psDRISUPContext,
++			 int iTarget,
++			 int iFormat,
++			 struct DRISUPDrawable *psDRISUPDrawable);
++
++		void (*ReleaseTexBuffer)
++			(struct DRISUPContext *psDRISUPContext,
++			 int iTarget,
++			 struct DRISUPDrawable *psDRISUPDrawable);
++
++		/* Functions to support the DRI Flush extension */
++		void (*Flush)
++			(struct DRISUPDrawable *psDRISUPDrawable);
++
++		void (*Invalidate)
++			(struct DRISUPDrawable *psDRISUPDrawable);
++
++		void (*FlushWithFlags)
++			(struct DRISUPContext *psDRISUPContext,
++			 struct DRISUPDrawable *psDRISUPDrawable,
++			 unsigned int uFlags,
++			 unsigned int uThrottleReason);
++
++		/* Functions to support the DRI Image extension */
++		__DRIimage *(*CreateImageFromName)
++			(struct DRISUPScreen *psDRISUPScreen,
++			 int iWidth,
++			 int iHeight,
++			 int iFourCC,
++			 int iName,
++			 int iPitch,
++			 void *pvLoaderPrivate);
++
++		__DRIimage *(*CreateImageFromRenderbuffer)
++			(struct DRISUPContext *psDRISUPContext,
++			int iRenderBuffer,
++			void *pvLoaderPrivate);
++
++		void (*DestroyImage)
++			(__DRIimage *psImage);
++
++		__DRIimage *(*CreateImage)
++			(struct DRISUPScreen *psDRISUPScreen,
++			 int iWidth,
++			 int iHeight,
++			 int iFourCC,
++			 unsigned int uUse,
++			 void *pvLoaderPrivate);
++
++		bool (*QueryImage)
++			(__DRIimage *psImage,
++			 int iAttrib,
++			 int *iValue);
++
++		__DRIimage *(*DupImage)
++			(__DRIimage *psImage,
++			 void *pvLoaderPrivate);
++
++		bool (*ValidateImageUsage)
++			(__DRIimage *psImage,
++			 unsigned int uUse);
++
++		__DRIimage *(*CreateImageFromNames)
++			(struct DRISUPScreen *psDRISUPScreen,
++			 int iWidth,
++			 int iHeight,
++			 int iFourCC,
++			 int *piNames,
++			 int iNumNames,
++			 int *piStrides,
++			 int *piOffsets,
++			 void *pvLoaderPrivate);
++			 __DRIimage *(*FromPlanar)(__DRIimage *psImage,
++			 int iPlane,
++			 void *pvLoaderPrivate);
++
++		__DRIimage *(*CreateImageFromTexture)
++			(struct DRISUPContext *psDRISUPContext,
++			 int iTarget,
++			 unsigned int uTexture,
++			 int iDepth,
++			 int iLevel,
++			 unsigned int *puError,
++			 void *pvLoaderPrivate);
++
++		__DRIimage *(*CreateImageFromFDs)
++			(struct DRISUPScreen *psDRISUPcreen,
++			 int iWidth,
++			 int iHeight,
++			 int iFourCC,
++			 int *piFDs,
++			 int iNumFDs,
++			 int *piStrides,
++			 int *piOffsets,
++			 void *pvLoaderPrivate);
++
++		__DRIimage *(*CreateImageFromDMABufs)
++			(struct DRISUPScreen *psDRISUPScreen,
++			 int iWidth,
++			 int iHeight,
++			 int iFourCC,
++			 int *piFDs,
++			 int iNumFDs,
++			 int *piStrides,
++			 int *piOffsets,
++			 unsigned int uColorSpace,
++			 unsigned int uSampleRange,
++			 unsigned int uHorizSiting,
++			 unsigned int uVertSiting,
++			 unsigned int *puError,
++			 void *pvLoaderPrivate);
++
++		int (*GetImageCapabilities)
++			(struct DRISUPScreen *psDRISUPScreen);
++
++		void (*BlitImage)
++			(struct DRISUPContext *psDRISUPContext,
++			 __DRIimage *psDst,
++			 __DRIimage *psSrc,
++			 int iDstX0,
++			 int iDstY0,
++			 int iDstWidth,
++			 int iDstHeight,
++			 int iSrcX0, int
++			 iSrcY0,
++			 int iSrcWidth,
++			 int iSrcHeight,
++			 int iFlushFlag);
++
++		void *(*MapImage)
++			(struct DRISUPContext *psDRISUPContext,
++			 __DRIimage *psImage,
++			 int iX0,
++			 int iY0,
++			 int iWidth,
++			 int iHeight,
++			 unsigned int uFlags,
++			 int *piStride,
++			 void **ppvData);
++
++		void (*UnmapImage)
++			(struct DRISUPContext *psDRISUPContext,
++			 __DRIimage *psImage,
++			 void *pvData);
++
++		__DRIimage *(*CreateImageWithModifiers)
++			(struct DRISUPScreen *psDRISUPScreen,
++			 int iWidth,
++			 int iHeight,
++			 int iFourCC,
++			 const uint64_t *puModifiers,
++			 const unsigned int uModifierCount,
++			 void *pvLoaderPrivate);
++
++		__DRIimage *(*CreateImageFromDMABufs2)
++			(struct DRISUPScreen *psDRISUPScreen,
++			 int iWidth,
++			 int iHeight,
++			 int iFourCC,
++			 uint64_t uModifier,
++			 int *piFDs,
++			 int iNumFDs,
++			 int *piStrides,
++			 int *piOffsets,
++			 unsigned int uColorSpace,
++			 unsigned int uSampleRange,
++			 unsigned int uHorizSiting,
++			 unsigned int uVertSiting,
++			 unsigned int *puError,
++			 void *pvLoaderPrivate);
++
++		bool (*QueryDMABufFormats)
++			(struct DRISUPScreen *psDRISUPScreen,
++			 int iMax,
++			 int *piFormats,
++			 int *piCount);
++
++		bool (*QueryDMABufModifiers)
++			(struct DRISUPScreen *psDRISUPScreen,
++			 int iFourCC,
++			 int iMax,
++			 uint64_t *puModifiers,
++			 unsigned int *piExternalOnly,
++			 int *piCount);
++
++		bool (*QueryDMABufFormatModifierAttribs)
++			(struct DRISUPScreen *psDRISUPScreen,
++			 uint32_t uFourcc,
++			 uint64_t uModifier,
++			 int iAttrib,
++			 uint64_t *puValue);
++
++		__DRIimage *(*CreateImageFromRenderBuffer2)
++			(struct DRISUPContext *psDRISUPContext,
++			 int iRenderBuffer,
++			 void *pvLoaderPrivate,
++			 unsigned int *puError);
++
++		__DRIimage *(*CreateImageFromBuffer)
++			(struct DRISUPContext *psDRISUPContext,
++			 int iTarget,
++			 void *pvBuffer,
++			 unsigned int *puError,
++			 void *pvLoaderPrivate);
++
++		/* Functions to support the DRI Renderer Query extension */
++		int (*QueryRendererInteger)
++			(struct DRISUPScreen *psDRISUPScreen,
++			 int iAttribute,
++			 unsigned int *puValue);
++
++		int (*QueryRendererString)
++			(struct DRISUPScreen *psDRISUPScreen,
++			 int iAttribute,
++			 const char **ppszValue);
++
++		/* Functions to support the DRI Fence extension */
++		void *(*CreateFence)
++			(struct DRISUPContext *psDRISUPContext);
++
++		void (*DestroyFence)
++			(struct DRISUPScreen *psDRISUPScreen,
++			 void *pvFence);
++
++		bool (*ClientWaitSync)
++			(struct DRISUPContext *psDRISUPContext,
++			 void *pvFence,
++			 unsigned int uFlags,
++			 uint64_t uTimeout);
++
++		void (*ServerWaitSync)
++			(struct DRISUPContext *psDRISUPContext,
++			 void *pvFence,
++			 unsigned int uFlags);
++
++		unsigned int (*GetFenceCapabilities)
++			(struct DRISUPScreen *psDRISUPScreen);
++
++		void *(*CreateFenceFD)
++			(struct DRISUPContext *psDRISUPContext,
++			 int iFD);
++
++		int (*GetFenceFD)
++			(struct DRISUPScreen *psDRISUPScreen,
++			 void *pvFence);
++
++		unsigned int (*GetNumAPIProcs)
++			(struct DRISUPScreen *psDRISUPScreen,
++			 PVRDRIAPIType eAPI);
++
++		const char *(*GetAPIProcName)
++			(struct DRISUPScreen *psDRISUPScreen,
++			 PVRDRIAPIType eAPI,
++			 unsigned int uIndex);
++
++		void *(*GetAPIProcAddress)
++			(struct DRISUPScreen *psDRISUPScreen,
++			 PVRDRIAPIType eAPI,
++			 unsigned int uIndex);
++
++		void (*SetDamageRegion)
++			(struct DRISUPDrawable *psDRISUPDrawable,
++			 unsigned int uNRects,
++			 int *piRects);
++	} v0;
++	/* The v1 interface is an extension of v0, so v0 is required as well */
++	struct {
++		void *(*GetFenceFromCLEvent)
++			(struct DRISUPScreen *psDRISUPScreen,
++			 intptr_t iCLEvent);
++	} v1;
++	/* The v2 interface is an extension of v1, so v1 is required as well */
++	struct {
++		int (*GetAPIVersion)
++			(struct DRISUPScreen *psDRISUPScreen,
++			 PVRDRIAPIType eAPI);
++	} v2;
++	/*
++	 * The v3 interface has no additional entry points. It indicates that
++	 * OpenCL event based fences are available, provided the DDK is built
++	 * with OpenCL support.
++	 */
++	/* The v4 interface is an extension of v3, so v3 is required as well */
++	struct {
++		bool (*HaveGetFenceFromCLEvent)(void);
++	} v4;
++	/* The v5 interface is an extension of v4, so v4 is required as well */
++	struct {
++		__DRIimage *(*CreateImageFromDMABufs3)
++			(struct DRISUPScreen *psDRISUPScreen,
++			 int iWidth,
++			 int iHeight,
++			 int iFourCC,
++			 uint64_t uModifier,
++			 int *piFDs,
++			 int iNumFDs,
++			 int *piStrides,
++			 int *piOffsets,
++			 unsigned int uColorSpace,
++			 unsigned int uSampleRange,
++			 unsigned int uHorizSiting,
++			 unsigned int uVertSiting,
++			 uint32_t uFlags,
++			 unsigned int *puError,
++			 void *pvLoaderPrivate);
++
++		__DRIimage *(*CreateImageWithModifiers2)
++			(struct DRISUPScreen *psDRISUPScreen,
++			 int iWidth,
++			 int iHeight,
++			 int iFourCC,
++			 const uint64_t *puModifiers,
++			 const unsigned int uModifierCount,
++			 unsigned int uUsage,
++			 void *pvLoaderPrivate);
++
++		__DRIimage *(*CreateImageFromFDs2)
++			(struct DRISUPScreen *psDRISUPcreen,
++			 int iWidth,
++			 int iHeight,
++			 int iFourCC,
++			 int *piFDs,
++			 int iNumFDs,
++			 uint32_t uFlags,
++			 int *piStrides,
++			 int *piOffsets,
++			 void *pvLoaderPrivate);
++
++		void (*SetInFenceFD)
++			(__DRIimage *psImage,
++			 int iFD);
++	} v5;
++	/* The v6 interface is an extension of v5, so v5 is required as well */
++	struct {
++		struct DRISUPDrawable *(*CreateDrawableType)
++			(struct __DRIdrawableRec *psDRIDrawable,
++			 struct DRISUPScreen *psDRISUPDrawable,
++			 void *pvLoaderPrivate,
++			 PVRDRIConfig *psPVRDRIConfig,
++			 bool bIsPixmap);
++	} v6;
++	/* The v7 interface is an extension of v6, so v6 is required as well */
++	struct {
++		int (*QueryCompatibleRenderOnlyDeviceFD)
++			(int iFD);
++	} v7;
++};
++
++struct PVRDRIImageList {
++	uint32_t uImageMask;
++	__DRIimage *psBack;
++	__DRIimage *psFront;
++	__DRIimage *psPrev;
++};
++
++/*
++ * PVR DRI Support callback interface V2.
++ * This structure may change over time, as older interfaces become obsolete.
++ * For example, the v0 interface may be removed if superseded by newer
++ * interfaces.
++ */
++struct PVRDRICallbacksV2
++{
++	struct {
++		bool (*RegisterSupportInterface)
++			(const void *psInterface,
++			 unsigned int uVersion,
++			 unsigned int uMinVersion);
++
++		int (*GetBuffers)
++			(struct __DRIdrawableRec *psDRIDrawable,
++			 unsigned int uFourCC,
++			 uint32_t *puStamp,
++			 void *pvLoaderPrivate,
++			 uint32_t uBufferMask,
++			 struct PVRDRIImageList *psImageList);
++
++		bool (*CreateConfigs)
++			(struct __DRIconfigRec ***pppsConfigs,
++			 struct __DRIscreenRec *psDRIScreen,
++			 int iPVRDRIMesaFormat,
++			 const uint8_t *puDepthBits,
++			 const uint8_t *puStencilBits,
++			 unsigned int uNumDepthStencilBits,
++			 const unsigned int *puDBModes,
++			 unsigned int uNumDBModes,
++			 const uint8_t *puMSAASamples,
++			 unsigned int uNumMSAAModes,
++			 bool bEnableAccum,
++			 bool bColorDepthMatch,
++			 bool bMutableRenderBuffer,
++			 int iYUVDepthRange,
++			 int iYUVCSCStandard,
++			 uint32_t uMaxPbufferWidth,
++			 uint32_t uMaxPbufferHeight);
++
++		struct __DRIconfigRec **(*ConcatConfigs)
++			(struct __DRIscreenRec *psDRIScreen,
++			 struct __DRIconfigRec **ppsConfigA,
++			 struct __DRIconfigRec **ppsConfigB);
++
++		bool (*ConfigQuery)
++			(const PVRDRIConfig *psConfig,
++			 PVRDRIConfigAttrib eConfigAttrib,
++			 unsigned int *puValueOut);
++
++		__DRIimage *(*LookupEGLImage)
++			(struct __DRIscreenRec *psDRIScreen,
++			 void *pvImage,
++			 void *pvLoaderPrivate);
++
++		unsigned int (*GetCapability)
++			(struct __DRIscreenRec *psDRIScreen,
++			 unsigned int uCapability);
++	} v0;
++	/* The v1 interface is an extension of v0, so v0 is required as well */
++	struct {
++		void (*FlushFrontBuffer)
++			(struct __DRIdrawableRec *psDRIDrawable,
++			 void *pvLoaderPrivate);
++	} v1;
++	/* The v2 interface is an extension of v1, so v1 is required as well */
++	struct {
++		int (*GetDisplayFD)
++			(struct __DRIscreenRec *psDRIScreen,
++			 void *pvLoaderPrivate);
++	} v2;
++	/* The v3 interface is an extension of v2, so v2 is required as well */
++	struct {
++		void *(*DrawableGetReferenceHandle)
++			(struct __DRIdrawableRec *psDRIDrawable);
++
++		void (*DrawableAddReference)
++			(void *pvReferenceHandle);
++
++		void (*DrawableRemoveReference)
++			(void *pvReferenceHandle);
++	} v3;
++	/* The v4 interface is an extension of v3, so v3 is required as well */
++	struct {
++		void (*DestroyLoaderImageState)
++			(const struct __DRIscreenRec *psDRIScreen,
++			 void *pvLoaderPrivate);
++	} v4;
++};
++
++#endif /* defined(__PVRDRIIFCE_H__) */
+diff --git a/src/gallium/frontends/pvr/mesa_context.c b/src/gallium/frontends/pvr/mesa_context.c
+new file mode 100644
+index 00000000000..6443e56a862
+--- /dev/null
++++ b/src/gallium/frontends/pvr/mesa_context.c
+@@ -0,0 +1,206 @@
++/**
++ * \file context.c
++ * Mesa context/visual/framebuffer management functions.
++ * \author Brian Paul
++ */
++
++/*
++ * Mesa 3-D graphics library
++ * Version:  7.1
++ *
++ * Copyright (C) 1999-2007  Brian Paul   All Rights Reserved.
++ *
++ * The contents of this file are subject to the MIT license as set out below.
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
++ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ */
++
++#include <stdlib.h>
++#include <assert.h>
++
++#include "main/version.h"
++#include "main/errors.h"
++
++#include "dri_support.h"
++#include "dri_util.h"
++#include "glapi.h"
++#include "dispatch.h"
++#include "pvrmesa.h"
++
++/**
++ * This is the default function we plug into all dispatch table slots This
++ * helps prevents a segfault when someone calls a GL function without first
++ * checking if the extension is supported.
++ */
++static int
++generic_nop(void)
++{
++   _mesa_warning(NULL, "User called no-op dispatch function (an unsupported extension function?)");
++
++   return 0;
++}
++
++/**
++ * Allocate and initialise a new dispatch table.
++ */
++static struct _glapi_table *
++pvrdri_alloc_dispatch_table(void)
++{
++   unsigned int numEntries = _glapi_get_dispatch_table_size();
++   _glapi_proc *table;
++
++   table = malloc(numEntries * sizeof(_glapi_proc));
++   if (table)
++      for (unsigned int i = 0; i < numEntries; i++)
++         table[i] = (_glapi_proc) generic_nop;
++
++   return (struct _glapi_table *) table;
++}
++
++/**
++ * Return a pointer to the pointer to the dispatch table of an API in
++ * PVRDRIScreen.
++ */
++static struct _glapi_table **
++pvrdri_get_dispatch_table_ptr(PVRDRIScreen *psPVRScreen, PVRDRIAPIType eAPI)
++{
++   switch (eAPI) {
++   case PVRDRI_API_GLES1:
++      return &psPVRScreen->psOGLES1Dispatch;
++   case PVRDRI_API_GLES2:
++      return &psPVRScreen->psOGLES2Dispatch;
++   case PVRDRI_API_GL_COMPAT:
++   case PVRDRI_API_GL_CORE:
++      return &psPVRScreen->psOGLDispatch;
++   default:
++      return NULL;
++   }
++}
++
++/**
++ * Return a pointer to the dispatch table of an API.
++ */
++static struct _glapi_table *
++pvrdri_get_dispatch_table(PVRDRIScreen *psPVRScreen, PVRDRIAPIType eAPI)
++{
++   struct _glapi_table **ppsTable =
++      pvrdri_get_dispatch_table_ptr(psPVRScreen, eAPI);
++
++   return ppsTable ? *ppsTable : NULL;
++}
++
++/**
++ * Free all dispatch tables.
++ */
++void
++pvrdri_free_dispatch_tables(PVRDRIScreen *psPVRScreen)
++{
++   if (psPVRScreen->psOGLES1Dispatch != NULL) {
++      free(psPVRScreen->psOGLES1Dispatch);
++      psPVRScreen->psOGLES1Dispatch = NULL;
++   }
++
++   if (psPVRScreen->psOGLES2Dispatch != NULL) {
++      free(psPVRScreen->psOGLES2Dispatch);
++      psPVRScreen->psOGLES2Dispatch = NULL;
++   }
++
++   if (psPVRScreen->psOGLDispatch != NULL) {
++      free(psPVRScreen->psOGLDispatch);
++      psPVRScreen->psOGLDispatch = NULL;
++   }
++}
++
++static void
++pvrdri_add_mesa_dispatch(struct _glapi_table *psTable, PVRDRIAPIType eAPI,
++                         struct DRISUPScreen *psDRISUPScreen,
++                         unsigned int uIdx)
++{
++   int iOffset;
++   const char *psFunc;
++   _glapi_proc pfFunc;
++
++   pfFunc = DRISUPGetAPIProcAddress(psDRISUPScreen, eAPI, uIdx);
++   if (pfFunc == NULL)
++      return;
++
++   psFunc = DRISUPGetAPIProcName(psDRISUPScreen, eAPI, uIdx);
++   assert(psFunc != NULL);
++
++   iOffset = _glapi_add_dispatch(psFunc);
++   if (iOffset == -1) {
++      _mesa_warning(NULL, "Couldn't add %s to the Mesa dispatch table",
++                    psFunc);
++   } else {
++      SET_by_offset(psTable, iOffset, pfFunc);
++   }
++}
++
++static void
++pvrdri_set_mesa_dispatch(struct _glapi_table *psTable, PVRDRIAPIType eAPI,
++                         struct DRISUPScreen *psDRISUPScreen,
++                         unsigned int uNumFuncs)
++{
++   for (unsigned int i = 0; i < uNumFuncs; i++)
++      pvrdri_add_mesa_dispatch(psTable, eAPI, psDRISUPScreen, i);
++}
++
++bool
++pvrdri_create_dispatch_table(PVRDRIScreen *psPVRScreen, PVRDRIAPIType eAPI)
++{
++   struct DRISUPScreen *psDRISUPScreen = psPVRScreen->psDRISUPScreen;
++   struct _glapi_table **ppsTable;
++   unsigned int uNumFuncs;
++
++   ppsTable = pvrdri_get_dispatch_table_ptr(psPVRScreen, eAPI);
++   if (ppsTable == NULL)
++      return false;
++
++   if (*ppsTable != NULL)
++      return true;
++
++   uNumFuncs = DRISUPGetNumAPIProcs(psDRISUPScreen, eAPI);
++   if (!uNumFuncs)
++      return false;
++
++   *ppsTable = pvrdri_alloc_dispatch_table();
++   if (*ppsTable == NULL)
++      return false;
++
++   pvrdri_set_mesa_dispatch(*ppsTable, eAPI, psDRISUPScreen, uNumFuncs);
++
++   return true;
++}
++
++void
++pvrdri_set_null_dispatch_table(void)
++{
++   _glapi_set_dispatch(NULL);
++}
++
++void
++pvrdri_set_dispatch_table(PVRDRIContext *psPVRContext)
++{
++   struct _glapi_table *psTable;
++
++   psTable = pvrdri_get_dispatch_table(psPVRContext->psPVRScreen,
++                                       psPVRContext->eAPI);
++
++   _glapi_set_dispatch(psTable);
++}
+diff --git a/src/gallium/frontends/pvr/meson.build b/src/gallium/frontends/pvr/meson.build
+new file mode 100644
+index 00000000000..65bee0a8a10
+--- /dev/null
++++ b/src/gallium/frontends/pvr/meson.build
+@@ -0,0 +1,49 @@
++# Copyright (c) Imagination Technologies Ltd.
++#
++# The contents of this file are subject to the MIT license as set out below.
++#
++# Permission is hereby granted, free of charge, to any person obtaining a copy
++# of this software and associated documentation files (the "Software"), to deal
++# in the Software without restriction, including without limitation the rights
++# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++# copies of the Software, and to permit persons to whom the Software is
++# furnished to do so, subject to the following conditions:
++#
++# The above copyright notice and this permission notice shall be included in
++# all copies or substantial portions of the Software.
++#
++# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
++# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++# THE SOFTWARE.
++
++files_libpvr = files(
++  'mesa_context.c',
++  'pvrcb.c',
++  'pvrcompat.c',
++  'pvrdri.c',
++  'pvrext.c',
++  'pvrutil.c',
++)
++
++libpvr_c_args = ['-DGALLIUM_PVR']
++if with_gallium_pvr_alias
++  libpvr_c_args += '-DPVR_DRIVER_ALIAS=@0@'.format(gallium_pvr_alias)
++endif
++
++libpvr_dep = [dep_libdrm]
++
++libpvr = static_library(
++  'pvr',
++  [files_libpvr, main_dispatch_h],
++  include_directories : [
++    inc_include, inc_util, inc_mesa, inc_mapi, inc_src, inc_gallium,
++    inc_gallium_aux, inc_pvr,
++  ],
++  c_args : [libpvr_c_args],
++  gnu_symbol_visibility : 'hidden',
++  dependencies : [libpvr_dep],
++)
+diff --git a/src/gallium/frontends/pvr/pvrcb.c b/src/gallium/frontends/pvr/pvrcb.c
+new file mode 100644
+index 00000000000..401ffd238ee
+--- /dev/null
++++ b/src/gallium/frontends/pvr/pvrcb.c
+@@ -0,0 +1,354 @@
++/*
++ * Copyright (c) Imagination Technologies Ltd.
++ *
++ * The contents of this file are subject to the MIT license as set out below.
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ */
++
++#include <alloca.h>
++#include <assert.h>
++
++#include "dri_screen.h"
++#include "dri_drawable.h"
++
++#include "pvrdri.h"
++
++int
++MODSUPGetBuffers(__DRIdrawable *psDRIDrawable, unsigned int uFourCC,
++                 uint32_t *puStamp, void *pvLoaderPrivate,
++                 uint32_t uBufferMask, struct PVRDRIImageList *psImageList)
++{
++   PVRDRIDrawable *psPVRDrawable = dri_drawable(psDRIDrawable)->driverPrivate;
++   struct dri_screen *dri_screen = dri_drawable(psDRIDrawable)->screen;
++   struct __DRIimageList sDRIList;
++   int res;
++
++#if !defined(DRI_IMAGE_HAS_BUFFER_PREV)
++   uBufferMask &= ~PVRDRI_IMAGE_BUFFER_PREV;
++#endif
++
++   if (psPVRDrawable->uFourCC != uFourCC) {
++      psPVRDrawable->uDRIFormat = PVRDRIFourCCToDRIFormat(uFourCC);
++      psPVRDrawable->uFourCC = uFourCC;
++   }
++
++   res = dri_screen->image.loader->getBuffers(psDRIDrawable,
++                                              psPVRDrawable->uDRIFormat,
++                                              puStamp,
++                                              pvLoaderPrivate,
++                                              uBufferMask, &sDRIList);
++
++   if (res) {
++      psImageList->uImageMask = sDRIList.image_mask;
++      psImageList->psBack = sDRIList.back;
++      psImageList->psFront = sDRIList.front;
++      psImageList->psPrev = sDRIList.prev;
++   }
++
++   return res;
++}
++
++bool
++MODSUPCreateConfigs(__DRIconfig ***pppsConfigs, __DRIscreen *psDRIScreen,
++                    int iPVRDRIMesaFormat, const uint8_t *puDepthBits,
++                    const uint8_t *puStencilBits,
++                    unsigned int uNumDepthStencilBits,
++                    const unsigned int *puDBModes, unsigned int uNumDBModes,
++                    const uint8_t *puMSAASamples, unsigned int uNumMSAAModes,
++                    bool bEnableAccum, bool bColorDepthMatch,
++                    UNUSED bool bMutableRenderBuffer,
++                    int iYUVDepthRange, int iYUVCSCStandard,
++                    uint32_t uMaxPbufferWidth, uint32_t uMaxPbufferHeight)
++{
++   __DRIconfig **ppsConfigs;
++   mesa_format eFormat = PVRDRIMesaFormatToMesaFormat(iPVRDRIMesaFormat);
++   bool *pbDBModes = alloca(sizeof(*pbDBModes) * uNumDBModes);
++   unsigned int i;
++
++   (void) psDRIScreen;
++
++   for (i = 0; i < uNumDBModes; i++)
++      pbDBModes[i] = (puDBModes[i] != 0);
++
++   switch (eFormat) {
++   case MESA_FORMAT_NONE:
++      __driUtilMessage("%s: Unknown PVR DRI format: %u",
++                       __func__, iPVRDRIMesaFormat);
++      return false;
++   default:
++      break;
++   }
++
++   /*
++    * The double buffered modes array argument for driCreateConfigs has
++    * entries of type GLenum.
++    */
++   static_assert(sizeof(GLenum) == sizeof(unsigned int),
++                 "Size mismatch between GLenum and unsigned int");
++
++   ppsConfigs = driCreateConfigs(eFormat, puDepthBits, puStencilBits,
++                                 uNumDepthStencilBits, pbDBModes,
++                                 uNumDBModes, puMSAASamples, uNumMSAAModes,
++                                 bEnableAccum, bColorDepthMatch,
++                                 iYUVDepthRange, iYUVCSCStandard);
++   if (!ppsConfigs)
++      return false;
++
++   for (i = 0; ppsConfigs[i]; i++) {
++      ppsConfigs[i]->modes.maxPbufferWidth = uMaxPbufferWidth;
++      ppsConfigs[i]->modes.maxPbufferHeight = uMaxPbufferHeight;
++      ppsConfigs[i]->modes.maxPbufferPixels =
++         uMaxPbufferWidth * uMaxPbufferHeight;
++   }
++
++   *pppsConfigs = ppsConfigs;
++
++   return true;
++}
++
++__DRIconfig **
++MODSUPConcatConfigs(__DRIscreen *psDRIScreen,
++                    __DRIconfig **ppsConfigA, __DRIconfig **ppsConfigB)
++{
++   (void) psDRIScreen;
++
++   return driConcatConfigs(ppsConfigA, ppsConfigB);
++}
++
++struct __DRIimageRec *
++MODSUPLookupEGLImage(__DRIscreen *psDRIScreen, void *pvImage,
++                     void *pvLoaderPrivate)
++{
++   return dri_screen(psDRIScreen)->dri2.image->lookupEGLImage(psDRIScreen,
++                                                              pvImage,
++                                                              pvLoaderPrivate);
++}
++
++
++unsigned int
++MODSUPGetCapability(__DRIscreen *psDRIScreen, unsigned int uCapability)
++{
++   struct dri_screen *screen = dri_screen(psDRIScreen);
++
++   if (screen->image.loader->base.version >= 2 &&
++       screen->image.loader->getCapability) {
++      enum dri_loader_cap eCapability = (enum dri_loader_cap) uCapability;
++
++      return screen->image.loader->getCapability(screen->loaderPrivate,
++                                                 eCapability);
++   }
++
++   return 0;
++}
++
++int
++MODSUPGetDisplayFD(__DRIscreen *psDRIScreen, void *pvLoaderPrivate)
++{
++#if __DRI_IMAGE_LOADER_VERSION >= 5
++   struct dri_screen *screen = dri_screen(psDRIScreen);
++
++   if (screen->image.loader->base.version >= 5 &&
++       screen->image.loader->getDisplayFD)
++      return screen->image.loader->getDisplayFD(pvLoaderPrivate);
++#else
++   (void) psDRIScreen;
++   (void) pvLoaderPrivate;
++#endif
++
++   return -1;
++}
++
++static bool
++PVRDRIConfigQueryUnsigned(const PVRDRIConfig *psConfig,
++                          PVRDRIConfigAttrib eConfigAttrib,
++                          unsigned int *puValueOut)
++{
++   if (!psConfig || !puValueOut)
++      return false;
++
++   switch (eConfigAttrib) {
++   case PVRDRI_CONFIG_ATTRIB_RENDERABLE_TYPE:
++      *puValueOut = psConfig->iSupportedAPIs;
++      return true;
++   case PVRDRI_CONFIG_ATTRIB_RGB_MODE:
++      *puValueOut = psConfig->sGLMode.rgbMode;
++      return true;
++   case PVRDRI_CONFIG_ATTRIB_DOUBLE_BUFFER_MODE:
++      *puValueOut = psConfig->sGLMode.doubleBufferMode;
++      return true;
++   case PVRDRI_CONFIG_ATTRIB_RED_BITS:
++      *puValueOut = psConfig->sGLMode.redBits;
++      return true;
++   case PVRDRI_CONFIG_ATTRIB_GREEN_BITS:
++      *puValueOut = psConfig->sGLMode.greenBits;
++      return true;
++   case PVRDRI_CONFIG_ATTRIB_BLUE_BITS:
++      *puValueOut = psConfig->sGLMode.blueBits;
++      return true;
++   case PVRDRI_CONFIG_ATTRIB_ALPHA_BITS:
++      *puValueOut = psConfig->sGLMode.alphaBits;
++      return true;
++   case PVRDRI_CONFIG_ATTRIB_RGB_BITS:
++      *puValueOut = psConfig->sGLMode.rgbBits;
++      return true;
++   case PVRDRI_CONFIG_ATTRIB_DEPTH_BITS:
++      *puValueOut = psConfig->sGLMode.depthBits;
++      return true;
++   case PVRDRI_CONFIG_ATTRIB_STENCIL_BITS:
++      *puValueOut = psConfig->sGLMode.stencilBits;
++      return true;
++   case PVRDRI_CONFIG_ATTRIB_SAMPLE_BUFFERS:
++      *puValueOut = !!psConfig->sGLMode.samples;
++      return true;
++   case PVRDRI_CONFIG_ATTRIB_SAMPLES:
++      *puValueOut = psConfig->sGLMode.samples;
++      return true;
++   case PVRDRI_CONFIG_ATTRIB_BIND_TO_TEXTURE_RGB:
++      *puValueOut = GL_TRUE;
++      return true;
++   case PVRDRI_CONFIG_ATTRIB_BIND_TO_TEXTURE_RGBA:
++      *puValueOut = GL_TRUE;
++      return true;
++#if defined(__DRI_ATTRIB_YUV_BIT)
++   case PVRDRI_CONFIG_ATTRIB_YUV_ORDER:
++      *puValueOut = psConfig->sGLMode.YUVOrder;
++      return true;
++   case PVRDRI_CONFIG_ATTRIB_YUV_NUM_OF_PLANES:
++      *puValueOut = psConfig->sGLMode.YUVNumberOfPlanes;
++      return true;
++   case PVRDRI_CONFIG_ATTRIB_YUV_SUBSAMPLE:
++      *puValueOut = psConfig->sGLMode.YUVSubsample;
++      return true;
++   case PVRDRI_CONFIG_ATTRIB_YUV_DEPTH_RANGE:
++      *puValueOut = psConfig->sGLMode.YUVDepthRange;
++      return true;
++   case PVRDRI_CONFIG_ATTRIB_YUV_CSC_STANDARD:
++      *puValueOut = psConfig->sGLMode.YUVCSCStandard;
++      return true;
++   case PVRDRI_CONFIG_ATTRIB_YUV_PLANE_BPP:
++      *puValueOut = psConfig->sGLMode.YUVPlaneBPP;
++      return true;
++#endif
++#if !defined(__DRI_ATTRIB_YUV_BIT)
++   case PVRDRI_CONFIG_ATTRIB_YUV_ORDER:
++   case PVRDRI_CONFIG_ATTRIB_YUV_NUM_OF_PLANES:
++   case PVRDRI_CONFIG_ATTRIB_YUV_SUBSAMPLE:
++   case PVRDRI_CONFIG_ATTRIB_YUV_DEPTH_RANGE:
++   case PVRDRI_CONFIG_ATTRIB_YUV_CSC_STANDARD:
++   case PVRDRI_CONFIG_ATTRIB_YUV_PLANE_BPP:
++      return false;
++#endif
++   case PVRDRI_CONFIG_ATTRIB_RED_MASK:
++      *puValueOut = psConfig->sGLMode.redMask;
++      return true;
++   case PVRDRI_CONFIG_ATTRIB_GREEN_MASK:
++      *puValueOut = psConfig->sGLMode.greenMask;
++      return true;
++   case PVRDRI_CONFIG_ATTRIB_BLUE_MASK:
++      *puValueOut = psConfig->sGLMode.blueMask;
++      return true;
++   case PVRDRI_CONFIG_ATTRIB_ALPHA_MASK:
++      *puValueOut = psConfig->sGLMode.alphaMask;
++      return true;
++   case PVRDRI_CONFIG_ATTRIB_SRGB_CAPABLE:
++      *puValueOut = psConfig->sGLMode.sRGBCapable;
++      return true;
++   case PVRDRI_CONFIG_ATTRIB_INVALID:
++      errorMessage("%s: Invalid attribute", __func__);
++      assert(0);
++      return false;
++   default:
++      return false;
++   }
++}
++
++bool
++PVRDRIConfigQuery(const PVRDRIConfig *psConfig,
++                  PVRDRIConfigAttrib eConfigAttrib, int *piValueOut)
++{
++   bool bRes;
++   unsigned int uValue;
++
++   bRes = PVRDRIConfigQueryUnsigned(psConfig, eConfigAttrib, &uValue);
++   if (bRes)
++      *piValueOut = (int) uValue;
++
++   return bRes;
++}
++
++bool
++MODSUPConfigQuery(const PVRDRIConfig *psConfig,
++                  PVRDRIConfigAttrib eConfigAttrib, unsigned int *puValueOut)
++{
++   return PVRDRIConfigQueryUnsigned(psConfig, eConfigAttrib, puValueOut);
++}
++
++void
++MODSUPFlushFrontBuffer(struct __DRIdrawableRec *psDRIDrawable,
++                       void *pvLoaderPrivate)
++{
++   PVRDRIDrawable *psPVRDrawable = dri_drawable(psDRIDrawable)->driverPrivate;
++   struct dri_screen *dri_screen = dri_drawable(psDRIDrawable)->screen;
++
++   if (!psPVRDrawable->sConfig.sGLMode.doubleBufferMode)
++      dri_screen->image.loader->flushFrontBuffer(psDRIDrawable,
++                                                 pvLoaderPrivate);
++}
++
++void *
++MODSUPDrawableGetReferenceHandle(struct __DRIdrawableRec *psDRIDrawable)
++{
++   PVRDRIDrawable *psPVRDrawable = dri_drawable(psDRIDrawable)->driverPrivate;
++
++   return psPVRDrawable;
++}
++
++void
++MODSUPDrawableAddReference(void *pvReferenceHandle)
++{
++   PVRDRIDrawable *psPVRDrawable = pvReferenceHandle;
++
++   PVRDRIDrawableAddReference(psPVRDrawable);
++}
++
++void
++MODSUPDrawableRemoveReference(void *pvReferenceHandle)
++{
++   PVRDRIDrawable *psPVRDrawable = pvReferenceHandle;
++
++   PVRDRIDrawableRemoveReference(psPVRDrawable);
++}
++
++void
++MODSUPDestroyLoaderImageState(const struct __DRIscreenRec *psDRIScreen,
++                              void *pvLoaderPrivate)
++{
++   const struct dri_screen *screen = dri_screen((struct __DRIscreenRec *)psDRIScreen);
++   const __DRIimageLoaderExtension *psImageLoader = screen->image.loader;
++   const __DRIdri2LoaderExtension *psDRI2Loader = screen->dri2.loader;
++
++   if (psImageLoader && psImageLoader->base.version >= 4 &&
++       psImageLoader->destroyLoaderImageState) {
++      psImageLoader->destroyLoaderImageState(pvLoaderPrivate);
++   } else if (psDRI2Loader && psDRI2Loader->base.version >= 5 &&
++       psDRI2Loader->destroyLoaderImageState) {
++      psDRI2Loader->destroyLoaderImageState(pvLoaderPrivate);
++   }
++}
+diff --git a/src/gallium/frontends/pvr/pvrcompat.c b/src/gallium/frontends/pvr/pvrcompat.c
+new file mode 100644
+index 00000000000..2fd218e9378
+--- /dev/null
++++ b/src/gallium/frontends/pvr/pvrcompat.c
+@@ -0,0 +1,951 @@
++/*
++ * Copyright (c) Imagination Technologies Ltd.
++ *
++ * The contents of this file are subject to the MIT license as set out below.
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ */
++
++#include <stddef.h>
++#include <stdlib.h>
++#include <string.h>
++#include <dlfcn.h>
++#include <pthread.h>
++#include <assert.h>
++
++#include <drm_fourcc.h>
++
++#include "pvrdri.h"
++
++#ifndef DRM_FORMAT_MOD_INVALID
++#define DRM_FORMAT_MOD_INVALID ((1ULL << 56) - 1)
++#endif
++
++#define _MAKESTRING(x) # x
++#define MAKESTRING(x) _MAKESTRING(x)
++
++#define PVRDRI_SUPPORT_LIB "libpvr_dri_support.so"
++
++static void *gpvSupLib;
++static int giSupLibRef;
++
++static struct PVRDRISupportInterfaceV2 gsSupV2;
++
++static pthread_mutex_t gsCompatLock = PTHREAD_MUTEX_INITIALIZER;
++
++/* Lookup a function, and set the pointer to the function address */
++#define LookupFunc(func, ptr)                   \
++   do {                                         \
++      ptr = dlsym(gpvSupLib, MAKESTRING(func)); \
++   } while(0)
++
++/* Check if a function exists in the DRI Support interface structure */
++#define HaveFuncV2(field)                       \
++      ((gsSupV2.field) != NULL)                 \
++
++/* Call a function via the DRI Support interface structure */
++#define CallFuncV2(field, ...)                  \
++   do {                                         \
++      if (gsSupV2.field)                        \
++         return gsSupV2.field(__VA_ARGS__);     \
++   } while(0)
++
++/* Calculate the start of the PVRDRISupportInterfaceV2 structure */
++#define PVRDRIInterfaceV2Start(field)                   \
++   (offsetof(struct PVRDRISupportInterfaceV2, field))
++
++/* Calculate the end of the PVRDRISupportInterfaceV2 structure */
++#define PVRDRIInterfaceV2End(field)                             \
++   (offsetof(struct PVRDRISupportInterfaceV2, field) +          \
++    sizeof((struct PVRDRISupportInterfaceV2 *)0)->field)
++
++static void
++CompatLock(void)
++{
++   int ret;
++
++   ret = pthread_mutex_lock(&gsCompatLock);
++   if (ret) {
++      errorMessage("%s: Failed to lock mutex (%d)", __func__, ret);
++      abort();
++   }
++}
++
++static void
++CompatUnlock(void)
++{
++   int ret;
++
++   ret = pthread_mutex_unlock(&gsCompatLock);
++   if (ret) {
++      errorMessage("%s: Failed to unlock mutex (%d)", __func__, ret);
++      abort();
++   }
++}
++
++static void *
++LoadLib(const char *path)
++{
++   void *handle;
++
++   /* Clear the error */
++   (void) dlerror();
++
++   handle = dlopen(path, RTLD_NOW);
++   if (handle) {
++      __driUtilMessage("Loaded %s", path);
++   } else {
++      const char *error;
++
++      error = dlerror();
++      if (!error)
++         error = "unknown error";
++
++      errorMessage("%s: Couldn't load %s: %s", __func__, path, error);
++   }
++
++   return handle;
++}
++
++static void
++UnloadLib(void *handle, const char *name)
++{
++   if (!handle)
++      return;
++
++   /* Clear the error */
++   (void) dlerror();
++
++   if (dlclose(handle)) {
++      const char *error;
++
++      error = dlerror();
++      if (!error)
++         error = "unknown error";
++
++      errorMessage("%s: Couldn't unload %s: %s", __func__, name, error);
++   } else {
++      __driUtilMessage("Unloaded %s", name);
++   }
++}
++
++static bool
++LoadSupportLib(void)
++{
++   gpvSupLib = LoadLib(PVRDRI_SUPPORT_LIB);
++
++   return gpvSupLib != NULL;
++}
++
++static void
++UnloadSupportLib(void)
++{
++   UnloadLib(gpvSupLib, PVRDRI_SUPPORT_LIB);
++   gpvSupLib = NULL;
++}
++
++static void
++CompatDeinit(void)
++{
++   UnloadSupportLib();
++   memset(&gsSupV2, 0, sizeof(gsSupV2));
++}
++
++bool
++PVRDRICompatInit(const struct PVRDRICallbacksV2 *psCallbacksV2,
++                 unsigned int uVersionV2, unsigned int uMinVersionV2)
++{
++   bool (*pfRegisterVersionedCallbacksV2)(const void *pvCallbacks,
++                                          unsigned int uVersion,
++                                          unsigned int uMinVersion);
++   bool res;
++
++   CompatLock();
++   res = (giSupLibRef++ != 0);
++   if (res)
++      goto Exit;
++
++   res = LoadSupportLib();
++   if (!res)
++      goto Exit;
++
++   LookupFunc(PVRDRIRegisterVersionedCallbacksV2,
++              pfRegisterVersionedCallbacksV2);
++
++   res = (pfRegisterVersionedCallbacksV2 != NULL);
++   if (!res)
++      goto Exit;
++
++   res = pfRegisterVersionedCallbacksV2(psCallbacksV2,
++                                        uVersionV2, uMinVersionV2);
++
++Exit:
++   if (!res) {
++      CompatDeinit();
++      giSupLibRef--;
++   }
++   CompatUnlock();
++
++   return res;
++}
++
++void
++PVRDRICompatDeinit(void)
++{
++   CompatLock();
++   if (--giSupLibRef == 0)
++      CompatDeinit();
++   CompatUnlock();
++}
++
++bool
++MODSUPRegisterSupportInterfaceV2(const void *pvInterface,
++                                 unsigned int uVersion,
++                                 unsigned int uMinVersion)
++{
++   size_t uStart, uEnd;
++
++   memset(&gsSupV2, 0, sizeof(gsSupV2));
++
++   if (uVersion < uMinVersion)
++      return false;
++
++   /*
++    * Minimum versions we support. To prevent the accumulation of old unused
++    * interfaces in the PVRDRIInterfaceV2 structure, the caller specifies the
++    * minimum version it supports. This will be pointed to be the psInterface
++    * argument. Assuming we support that version, we must copy the structure
++    * passed to us into the correct place in our version of the interface
++    * structure.
++    */
++   switch (uMinVersion) {
++   case 0:
++      uStart = PVRDRIInterfaceV2Start(v0);
++      break;
++   case 1:
++   case 2:
++   case 3:
++   case 4:
++   case 5:
++   case 6:
++   case 7:
++      /* These versions require version 0 */
++      return false;
++   default:
++      return false;
++   }
++
++   /* The "default" case should be associated with the latest version */
++   switch (uVersion) {
++   default:
++   case 7:
++      /* This version is an extension of versions 0 to 6 */
++      if (uMinVersion > 0)
++         return false;
++
++      uEnd = PVRDRIInterfaceV2End(v7);
++      break;
++   case 6:
++      /* This version is an extension of versions 0 to 5 */
++      if (uMinVersion > 0)
++         return false;
++
++      uEnd = PVRDRIInterfaceV2End(v6);
++      break;
++   case 5:
++      /* This version is an extension of versions 0 to 4 */
++      if (uMinVersion > 0)
++         return false;
++
++      uEnd = PVRDRIInterfaceV2End(v5);
++      break;
++   case 4:
++      /* This version is an extension of versions 0 to 3 */
++      if (uMinVersion > 0)
++         return false;
++
++      uEnd = PVRDRIInterfaceV2End(v4);
++      break;
++   case 3:
++      /*
++       * This version is an extension of version 2, with no new
++       * entry points.
++       */
++   case 2:
++      /* This version is an extension of versions 0 and 1 */
++      if (uMinVersion > 0)
++         return false;
++
++      uEnd = PVRDRIInterfaceV2End(v2);
++      break;
++   case 1:
++      /* This version is an extension of version 0 */
++      if (uMinVersion > 0)
++         return false;
++
++      uEnd = PVRDRIInterfaceV2End(v1);
++      break;
++   case 0:
++      uEnd = PVRDRIInterfaceV2End(v0);
++      break;
++   }
++
++   memcpy(((char *) &gsSupV2) + uStart, pvInterface, uEnd - uStart);
++
++   PVRDRIAdjustExtensions(uVersion, uMinVersion);
++
++   return true;
++}
++
++struct DRISUPScreen *
++DRISUPCreateScreen(struct __DRIscreenRec *psDRIScreen, int iFD,
++                   bool bUseInvalidate, void *pvLoaderPrivate,
++                   const struct __DRIconfigRec ***pppsConfigs,
++                   int *piMaxGLES1Version, int *piMaxGLES2Version)
++{
++   CallFuncV2(v0.CreateScreen,
++              psDRIScreen, iFD, bUseInvalidate, pvLoaderPrivate, pppsConfigs,
++              piMaxGLES1Version, piMaxGLES2Version);
++
++   return NULL;
++}
++
++void
++DRISUPDestroyScreen(struct DRISUPScreen *psDRISUPScreen)
++{
++   CallFuncV2(v0.DestroyScreen,
++              psDRISUPScreen);
++}
++
++unsigned int
++DRISUPCreateContext(PVRDRIAPIType eAPI, PVRDRIConfig *psPVRDRIConfig,
++                    struct PVRDRIContextConfig *psCtxConfig,
++                    struct __DRIcontextRec *psDRIContext,
++                    struct DRISUPContext *psDRISUPSharedContext,
++                    struct DRISUPScreen *psDRISUPScreen,
++                    struct DRISUPContext **ppsDRISUPContext)
++{
++   CallFuncV2(v0.CreateContext,
++              eAPI, psPVRDRIConfig, psCtxConfig, psDRIContext,
++              psDRISUPSharedContext, psDRISUPScreen, ppsDRISUPContext);
++
++   return __DRI_CTX_ERROR_BAD_API;
++}
++
++void
++DRISUPDestroyContext(struct DRISUPContext *psDRISUPContext)
++{
++   CallFuncV2(v0.DestroyContext,
++              psDRISUPContext);
++}
++
++struct DRISUPDrawable *
++DRISUPCreateDrawable(struct __DRIdrawableRec *psDRIDrawable,
++                     struct DRISUPScreen *psDRISUPScreen,
++                     void *pvLoaderPrivate, PVRDRIConfig *psPVRDRIConfig)
++{
++   CallFuncV2(v0.CreateDrawable,
++              psDRIDrawable, psDRISUPScreen, pvLoaderPrivate, psPVRDRIConfig);
++
++   return NULL;
++}
++
++void
++DRISUPDestroyDrawable(struct DRISUPDrawable *psDRISUPDrawable)
++{
++   CallFuncV2(v0.DestroyDrawable,
++              psDRISUPDrawable);
++}
++
++bool
++DRISUPMakeCurrent(struct DRISUPContext *psDRISUPContext,
++                  struct DRISUPDrawable *psDRISUPWrite,
++                  struct DRISUPDrawable *psDRISUPRead)
++{
++   CallFuncV2(v0.MakeCurrent,
++              psDRISUPContext, psDRISUPWrite, psDRISUPRead);
++
++   return false;
++}
++
++bool
++DRISUPUnbindContext(struct DRISUPContext *psDRISUPContext)
++{
++   CallFuncV2(v0.UnbindContext,
++              psDRISUPContext);
++
++   return false;
++}
++
++struct DRISUPBuffer *
++DRISUPAllocateBuffer(struct DRISUPScreen *psDRISUPScreen,
++                     unsigned int uAttachment, unsigned int uFormat,
++                     int iWidth, int iHeight, unsigned int *puName,
++                     unsigned int *puPitch, unsigned int *puCPP,
++                     unsigned int *puFlags)
++{
++   CallFuncV2(v0.AllocateBuffer,
++              psDRISUPScreen, uAttachment, uFormat, iWidth, iHeight, puName,
++              puPitch, puCPP, puFlags);
++
++   return NULL;
++}
++
++void
++DRISUPReleaseBuffer(struct DRISUPScreen *psDRISUPScreen,
++                    struct DRISUPBuffer *psDRISUPBuffer)
++{
++   CallFuncV2(v0.ReleaseBuffer,
++              psDRISUPScreen, psDRISUPBuffer);
++}
++
++void
++DRISUPSetTexBuffer2(struct DRISUPContext *psDRISUPContext, int iTarget,
++                    int iFormat, struct DRISUPDrawable *psDRISUPDrawable)
++{
++   CallFuncV2(v0.SetTexBuffer2,
++              psDRISUPContext, iTarget, iFormat, psDRISUPDrawable);
++}
++
++void
++DRISUPReleaseTexBuffer(struct DRISUPContext *psDRISUPContext, int iTarget,
++                       struct DRISUPDrawable *psDRISUPDrawable)
++{
++   CallFuncV2(v0.ReleaseTexBuffer,
++              psDRISUPContext, iTarget, psDRISUPDrawable);
++}
++
++void
++DRISUPFlush(struct DRISUPDrawable *psDRISUPDrawable)
++{
++   CallFuncV2(v0.Flush,
++              psDRISUPDrawable);
++}
++
++void
++DRISUPInvalidate(struct DRISUPDrawable *psDRISUPDrawable)
++{
++   CallFuncV2(v0.Invalidate,
++              psDRISUPDrawable);
++}
++
++void
++DRISUPFlushWithFlags(struct DRISUPContext *psDRISUPContext,
++                     struct DRISUPDrawable *psDRISUPDrawable,
++                     unsigned int uFlags, unsigned int uThrottleReason)
++{
++   CallFuncV2(v0.FlushWithFlags,
++              psDRISUPContext, psDRISUPDrawable, uFlags, uThrottleReason);
++}
++
++__DRIimage *
++DRISUPCreateImageFromName(struct DRISUPScreen *psDRISUPScreen,
++                          int iWidth, int iHeight, int iFourCC, int iName,
++                          int iPitch, void *pvLoaderPrivate)
++{
++   CallFuncV2(v0.CreateImageFromName,
++              psDRISUPScreen, iWidth, iHeight, iFourCC, iName, iPitch,
++              pvLoaderPrivate);
++
++   return NULL;
++}
++
++__DRIimage *
++DRISUPCreateImageFromRenderbuffer(struct DRISUPContext *psDRISUPContext,
++                                  int iRenderBuffer, void *pvLoaderPrivate)
++{
++   CallFuncV2(v0.CreateImageFromRenderbuffer,
++              psDRISUPContext, iRenderBuffer, pvLoaderPrivate);
++
++   return NULL;
++}
++
++void
++DRISUPDestroyImage(__DRIimage *psImage)
++{
++   CallFuncV2(v0.DestroyImage, psImage);
++}
++
++__DRIimage *
++DRISUPCreateImage(struct DRISUPScreen *psDRISUPScreen,
++                  int iWidth, int iHeight, int iFourCC, unsigned int uUse,
++                  void *pvLoaderPrivate)
++{
++   CallFuncV2(v0.CreateImage,
++              psDRISUPScreen, iWidth, iHeight, iFourCC, uUse, pvLoaderPrivate);
++
++   return NULL;
++}
++
++bool
++DRISUPQueryImage(__DRIimage *psImage, int iAttrib, int *piValue)
++{
++   CallFuncV2(v0.QueryImage,
++              psImage, iAttrib, piValue);
++
++   return false;
++}
++
++__DRIimage *
++DRISUPDupImage(__DRIimage *psImage, void *pvLoaderPrivate)
++{
++   CallFuncV2(v0.DupImage,
++              psImage, pvLoaderPrivate);
++
++   return NULL;
++}
++
++bool
++DRISUPValidateImageUsage(__DRIimage *psImage, unsigned int uUse)
++{
++   CallFuncV2(v0.ValidateImageUsage,
++              psImage, uUse);
++
++   return false;
++}
++
++__DRIimage *
++DRISUPCreateImageFromNames(struct DRISUPScreen *psDRISUPScreen,
++                           int iWidth, int iHeight, int iFourCC,
++                           int *piNames, int iNumNames,
++                           int *piStrides, int *piOffsets,
++                           void *pvLoaderPrivate)
++{
++   CallFuncV2(v0.CreateImageFromNames,
++              psDRISUPScreen, iWidth, iHeight, iFourCC, piNames, iNumNames,
++              piStrides, piOffsets, pvLoaderPrivate);
++
++   return NULL;
++}
++
++__DRIimage *
++DRISUPFromPlanar(__DRIimage *psImage, int iPlane, void *pvLoaderPrivate)
++{
++   CallFuncV2(v0.FromPlanar,
++              psImage, iPlane, pvLoaderPrivate);
++
++   return NULL;
++}
++
++__DRIimage *
++DRISUPCreateImageFromTexture(struct DRISUPContext *psDRISUPContext,
++                             int iTarget, unsigned int uTexture, int iDepth,
++                             int iLevel, unsigned int *puError,
++                             void *pvLoaderPrivate)
++{
++   CallFuncV2(v0.CreateImageFromTexture,
++              psDRISUPContext, iTarget, uTexture, iDepth, iLevel, puError,
++              pvLoaderPrivate);
++
++   return NULL;
++}
++
++__DRIimage *
++DRISUPCreateImageFromFDs(struct DRISUPScreen *psDRISUPcreen,
++                         int iWidth, int iHeight, int iFourCC,
++                         int *piFDs, int iNumFDs, int *piStrides,
++                         int *piOffsets, void *pvLoaderPrivate)
++{
++   CallFuncV2(v0.CreateImageFromFDs,
++              psDRISUPcreen, iWidth, iHeight, iFourCC, piFDs, iNumFDs,
++              piStrides, piOffsets, pvLoaderPrivate);
++
++   return NULL;
++}
++
++__DRIimage *
++DRISUPCreateImageFromDmaBufs(struct DRISUPScreen *psDRISUPScreen,
++                             int iWidth, int iHeight, int iFourCC,
++                             int *piFDs, int iNumFDs,
++                             int *piStrides, int *piOffsets,
++                             unsigned int uColorSpace,
++                             unsigned int uSampleRange,
++                             unsigned int uHorizSiting,
++                             unsigned int uVertSiting,
++                             unsigned int *puError,
++                             void *pvLoaderPrivate)
++{
++   CallFuncV2(v0.CreateImageFromDMABufs,
++              psDRISUPScreen, iWidth, iHeight, iFourCC, piFDs, iNumFDs,
++              piStrides, piOffsets, uColorSpace, uSampleRange,
++              uHorizSiting, uVertSiting, puError, pvLoaderPrivate);
++
++   return NULL;
++}
++
++int
++DRISUPGetImageCapabilities(struct DRISUPScreen *psDRISUPScreen)
++{
++   CallFuncV2(v0.GetImageCapabilities,
++              psDRISUPScreen);
++
++   return 0;
++}
++
++void
++DRISUPBlitImage(struct DRISUPContext *psDRISUPContext,
++                __DRIimage *psDst, __DRIimage *psSrc, int iDstX0, int iDstY0,
++                int iDstWidth, int iDstHeight, int iSrcX0, int iSrcY0,
++                int iSrcWidth, int iSrcHeight, int iFlushFlag)
++{
++   CallFuncV2(v0.BlitImage,
++              psDRISUPContext, psDst, psSrc, iDstX0, iDstY0,
++              iDstWidth, iDstHeight, iSrcX0, iSrcY0,
++              iSrcWidth, iSrcHeight, iFlushFlag);
++}
++
++void *
++DRISUPMapImage(struct DRISUPContext *psDRISUPContext, __DRIimage* psImage,
++               int iX0, int iY0, int iWidth, int iHeight, unsigned int uFlags,
++               int *piStride, void **ppvData)
++{
++   CallFuncV2(v0.MapImage,
++              psDRISUPContext, psImage, iX0, iY0, iWidth, iHeight, uFlags,
++              piStride, ppvData);
++
++   return NULL;
++}
++
++void
++DRISUPUnmapImage(struct DRISUPContext *psDRISUPContext, __DRIimage *psImage,
++                 void *pvData)
++{
++   CallFuncV2(v0.UnmapImage,
++              psDRISUPContext, psImage, pvData);
++}
++
++__DRIimage *
++DRISUPCreateImageWithModifiers(struct DRISUPScreen *psDRISUPScreen,
++                               int iWidth, int iHeight, int iFourCC,
++                               const uint64_t *puModifiers,
++                               const unsigned int uModifierCount,
++                               void *pvLoaderPrivate)
++{
++   CallFuncV2(v0.CreateImageWithModifiers,
++              psDRISUPScreen, iWidth, iHeight, iFourCC, puModifiers,
++              uModifierCount, pvLoaderPrivate);
++
++   return NULL;
++}
++
++__DRIimage *
++DRISUPCreateImageFromDMABufs2(struct DRISUPScreen *psDRISUPScreen,
++                              int iWidth, int iHeight, int iFourCC,
++                              uint64_t uModifier, int *piFDs, int iNumFDs,
++                              int *piStrides, int *piOffsets,
++                              unsigned int uColorSpace,
++                              unsigned int uSampleRange,
++                              unsigned int uHorizSiting,
++                              unsigned int uVertSiting,
++                              unsigned int *puError, void *pvLoaderPrivate)
++{
++   CallFuncV2(v0.CreateImageFromDMABufs2,
++              psDRISUPScreen, iWidth, iHeight, iFourCC, uModifier,
++              piFDs, iNumFDs, piStrides, piOffsets, uColorSpace, uSampleRange,
++              uHorizSiting, uVertSiting, puError, pvLoaderPrivate);
++
++   return NULL;
++}
++
++bool
++DRISUPQueryDMABufFormats(struct DRISUPScreen *psDRISUPScreen, int iMax,
++                         int *piFormats, int *piCount)
++{
++   CallFuncV2(v0.QueryDMABufFormats,
++              psDRISUPScreen, iMax, piFormats, piCount);
++
++   return false;
++}
++
++bool
++DRISUPQueryDMABufModifiers(struct DRISUPScreen *psDRISUPScreen, int iFourCC,
++                           int iMax, uint64_t *puModifiers,
++                           unsigned int *piExternalOnly, int *piCount)
++{
++   CallFuncV2(v0.QueryDMABufModifiers,
++              psDRISUPScreen, iFourCC, iMax, puModifiers, piExternalOnly,
++              piCount);
++
++   return false;
++}
++
++bool
++DRISUPQueryDMABufFormatModifierAttribs(struct DRISUPScreen *psDRISUPScreen,
++                                       uint32_t iFourCC, uint64_t uModifier,
++                                       int iAttrib, uint64_t *puValue)
++{
++   CallFuncV2(v0.QueryDMABufFormatModifierAttribs,
++              psDRISUPScreen, iFourCC, uModifier, iAttrib, puValue);
++
++   return false;
++}
++
++__DRIimage *
++DRISUPCreateImageFromRenderBuffer2(struct DRISUPContext *psDRISUPContext,
++                                   int iRenderBuffer, void *pvLoaderPrivate,
++                                   unsigned int *puError)
++{
++   CallFuncV2(v0.CreateImageFromRenderBuffer2,
++              psDRISUPContext, iRenderBuffer, pvLoaderPrivate, puError);
++
++   return NULL;
++}
++
++__DRIimage *
++DRISUPCreateImageFromBuffer(struct DRISUPContext *psDRISUPContext,
++                            int iTarget, void *pvBuffer,
++                            unsigned int *puError, void *pvLoaderPrivate)
++{
++   CallFuncV2(v0.CreateImageFromBuffer,
++              psDRISUPContext, iTarget, pvBuffer, puError, pvLoaderPrivate);
++
++   return NULL;
++}
++
++int
++DRISUPQueryRendererInteger(struct DRISUPScreen *psDRISUPScreen,
++                           int iAttribute, unsigned int *puValue)
++{
++   CallFuncV2(v0.QueryRendererInteger,
++              psDRISUPScreen, iAttribute, puValue);
++
++   return -1;
++}
++
++int
++DRISUPQueryRendererString(struct DRISUPScreen *psDRISUPScreen,
++                          int iAttribute, const char **ppszValue)
++{
++   CallFuncV2(v0.QueryRendererString,
++              psDRISUPScreen, iAttribute, ppszValue);
++
++   return -1;
++}
++
++void *
++DRISUPCreateFence(struct DRISUPContext *psDRISUPContext)
++{
++   CallFuncV2(v0.CreateFence,
++              psDRISUPContext);
++
++   return NULL;
++}
++
++void
++DRISUPDestroyFence(struct DRISUPScreen *psDRISUPScreen, void *pvFence)
++{
++   CallFuncV2(v0.DestroyFence,
++              psDRISUPScreen, pvFence);
++}
++
++bool
++DRISUPClientWaitSync(struct DRISUPContext *psDRISUPContext, void *pvFence,
++                     unsigned int uFlags, uint64_t uTimeout)
++{
++   CallFuncV2(v0.ClientWaitSync,
++              psDRISUPContext, pvFence, uFlags, uTimeout);
++
++   return false;
++}
++
++void
++DRISUPServerWaitSync(struct DRISUPContext *psDRISUPContext, void *pvFence,
++                     unsigned int uFlags)
++{
++   CallFuncV2(v0.ServerWaitSync,
++              psDRISUPContext, pvFence, uFlags);
++}
++
++unsigned int
++DRISUPGetFenceCapabilities(struct DRISUPScreen *psDRISUPScreen)
++{
++   CallFuncV2(v0.GetFenceCapabilities,
++              psDRISUPScreen);
++
++   return 0;
++}
++
++void *
++DRISUPCreateFenceFD(struct DRISUPContext *psDRISUPContext, int iFD)
++{
++   CallFuncV2(v0.CreateFenceFD,
++              psDRISUPContext, iFD);
++
++   return NULL;
++}
++
++int
++DRISUPGetFenceFD(struct DRISUPScreen *psDRISUPScreen, void *pvFence)
++{
++   CallFuncV2(v0.GetFenceFD,
++              psDRISUPScreen, pvFence);
++
++   return -1;
++}
++
++void *
++DRISUPGetFenceFromCLEvent(struct DRISUPScreen *psDRISUPScreen,
++                          intptr_t iCLEvent)
++{
++   CallFuncV2(v1.GetFenceFromCLEvent,
++              psDRISUPScreen, iCLEvent);
++
++   return NULL;
++}
++
++int
++DRISUPGetAPIVersion(struct DRISUPScreen *psDRISUPScreen,
++                    PVRDRIAPIType eAPI)
++{
++   CallFuncV2(v2.GetAPIVersion,
++              psDRISUPScreen, eAPI);
++
++   return 0;
++}
++
++unsigned int
++DRISUPGetNumAPIProcs(struct DRISUPScreen *psDRISUPScreen,
++                     PVRDRIAPIType eAPI)
++{
++   CallFuncV2(v0.GetNumAPIProcs,
++              psDRISUPScreen, eAPI);
++
++   return 0;
++}
++
++const char *
++DRISUPGetAPIProcName(struct DRISUPScreen *psDRISUPScreen, PVRDRIAPIType eAPI,
++                     unsigned int uIndex)
++{
++   CallFuncV2(v0.GetAPIProcName,
++              psDRISUPScreen, eAPI, uIndex);
++
++   return NULL;
++}
++
++void *
++DRISUPGetAPIProcAddress(struct DRISUPScreen *psDRISUPScreen,
++                        PVRDRIAPIType eAPI, unsigned int uIndex)
++{
++   CallFuncV2(v0.GetAPIProcAddress,
++              psDRISUPScreen, eAPI, uIndex);
++
++   return NULL;
++}
++
++void
++DRISUPSetDamageRegion(struct DRISUPDrawable *psDRISUPDrawable,
++                      unsigned int uNRects, int *piRects)
++{
++   CallFuncV2(v0.SetDamageRegion,
++              psDRISUPDrawable, uNRects, piRects);
++}
++
++bool
++DRISUPHaveGetFenceFromCLEvent(void)
++{
++   CallFuncV2(v4.HaveGetFenceFromCLEvent);
++
++   return true;
++}
++
++__DRIimage *
++DRISUPCreateImageFromDMABufs3(struct DRISUPScreen *psDRISUPScreen,
++                              int iWidth, int iHeight, int iFourCC,
++                              uint64_t uModifier, int *piFDs, int iNumFDs,
++                              int *piStrides, int *piOffsets,
++                              unsigned int uColorSpace,
++                              unsigned int uSampleRange,
++                              unsigned int uHorizSiting,
++                              unsigned int uVertSiting,
++                              uint32_t uFlags,
++                              unsigned int *puError, void *pvLoaderPrivate)
++{
++   CallFuncV2(v5.CreateImageFromDMABufs3,
++              psDRISUPScreen, iWidth, iHeight, iFourCC, uModifier,
++              piFDs, iNumFDs, piStrides, piOffsets, uColorSpace, uSampleRange,
++              uHorizSiting, uVertSiting, uFlags, puError, pvLoaderPrivate);
++
++   return NULL;
++}
++
++__DRIimage *
++DRISUPCreateImageWithModifiers2(struct DRISUPScreen *psDRISUPScreen,
++                                int iWidth, int iHeight, int iFourCC,
++                                const uint64_t *puModifiers,
++                                const unsigned int uModifierCount,
++                                unsigned int uUse,
++                                void *pvLoaderPrivate)
++{
++   CallFuncV2(v5.CreateImageWithModifiers2,
++              psDRISUPScreen, iWidth, iHeight, iFourCC, puModifiers,
++              uModifierCount, uUse, pvLoaderPrivate);
++
++   return NULL;
++}
++
++__DRIimage *
++DRISUPCreateImageFromFDs2(struct DRISUPScreen *psDRISUPcreen,
++                          int iWidth, int iHeight, int iFourCC,
++                          int *piFDs, int iNumFDs, uint32_t uFlags,
++                          int *piStrides, int *piOffsets,
++                          void *pvLoaderPrivate)
++{
++   CallFuncV2(v5.CreateImageFromFDs2,
++              psDRISUPcreen, iWidth, iHeight, iFourCC, piFDs, iNumFDs,
++              uFlags, piStrides, piOffsets, pvLoaderPrivate);
++
++   return NULL;
++}
++
++bool
++DRISUPHaveSetInFenceFd(void)
++{
++	return HaveFuncV2(v5.SetInFenceFD);
++}
++
++void
++DRISUPSetInFenceFd(__DRIimage *psImage, int iFd)
++{
++   CallFuncV2(v5.SetInFenceFD,
++              psImage, iFd);
++}
++
++struct DRISUPDrawable *
++DRISUPCreateDrawableType(struct __DRIdrawableRec *psDRIDrawable,
++                     struct DRISUPScreen *psDRISUPScreen,
++                     void *pvLoaderPrivate, PVRDRIConfig *psPVRDRIConfig,
++                     bool bIsPixmap)
++{
++   CallFuncV2(v6.CreateDrawableType,
++              psDRIDrawable, psDRISUPScreen, pvLoaderPrivate, psPVRDRIConfig,
++              bIsPixmap);
++
++   return DRISUPCreateDrawable(psDRIDrawable, psDRISUPScreen,
++                               pvLoaderPrivate, psPVRDRIConfig);
++}
++
++int
++DRISUPQueryCompatibleRenderOnlyDeviceFd(int iKmsOnlyFd)
++{
++   CallFuncV2(v7.QueryCompatibleRenderOnlyDeviceFD,
++              iKmsOnlyFd);
++
++   return -1;
++}
+diff --git a/src/gallium/frontends/pvr/pvrdri.c b/src/gallium/frontends/pvr/pvrdri.c
+new file mode 100644
+index 00000000000..cbb0a8880c1
+--- /dev/null
++++ b/src/gallium/frontends/pvr/pvrdri.c
+@@ -0,0 +1,695 @@
++/*
++ * Copyright (c) Imagination Technologies Ltd.
++ *
++ * The contents of this file are subject to the MIT license as set out below.
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ */
++
++#include <string.h>
++#include <assert.h>
++
++#include "git_sha1.h"
++#include "util/u_atomic.h"
++#include <util/xmlconfig.h>
++#include <util/driconf.h>
++
++#include "dri_screen.h"
++#include "dri_context.h"
++#include "dri_drawable.h"
++#include "GL/internal/mesa_interface.h"
++
++#include "pvrdri.h"
++#include "pvrmesa.h"
++
++#define PVR_IMAGE_LOADER_VER_MIN 1
++
++#if defined(PVR_DRIVER_ALIAS)
++#define PVR_DRIVER_ALIAS_STRING PVRDRI_STRINGIFY(PVR_DRIVER_ALIAS)
++#endif
++
++struct PVRBuffer {
++   __DRIbuffer sDRIBuffer;
++   struct DRISUPBuffer *psDRISUPBuffer;
++};
++
++/*************************************************************************//*!
++ Local functions
++ *//**************************************************************************/
++
++static bool
++PVRLoaderIsSupported(struct dri_screen *psDRIScreen)
++{
++   if (psDRIScreen->image.loader) {
++      if (psDRIScreen->image.loader->base.version < PVR_IMAGE_LOADER_VER_MIN) {
++         __driUtilMessage("%s: Image loader extension version %d but need %d",
++                          __func__, psDRIScreen->image.loader->base.version,
++                          PVR_IMAGE_LOADER_VER_MIN);
++         return false;
++      } else if (!psDRIScreen->image.loader->getBuffers) {
++         __driUtilMessage("%s: Image loader extension missing support for getBuffers",
++                          __func__);
++         return false;
++      }
++   } else {
++      __driUtilMessage("%s: Image loader extension required", __func__);
++      return false;
++   }
++
++   return true;
++}
++
++static inline struct DRISUPContext *
++getSharedContextImpl(struct dri_context *psSharedContext)
++{
++   if (psSharedContext == NULL) {
++      return NULL;
++   } else {
++      PVRDRIContext *psPVRContext = psSharedContext->driverPrivate;
++
++      return psPVRContext->psDRISUPContext;
++   }
++}
++
++static void
++PVRDRIScreenAddReference(PVRDRIScreen *psPVRScreen)
++{
++   int iRefCount = p_atomic_inc_return(&psPVRScreen->iRefCount);
++
++   (void) iRefCount;
++   assert(iRefCount > 1);
++}
++
++static void
++PVRDRIScreenRemoveReference(PVRDRIScreen *psPVRScreen)
++{
++   int iRefCount = p_atomic_dec_return(&psPVRScreen->iRefCount);
++
++   assert(iRefCount >= 0);
++
++   if (iRefCount != 0)
++      return;
++
++   pvrdri_free_dispatch_tables(psPVRScreen);
++   DRISUPDestroyScreen(psPVRScreen->psDRISUPScreen);
++   PVRDRICompatDeinit();
++   free(psPVRScreen);
++}
++
++void
++PVRDRIDrawableAddReference(PVRDRIDrawable *psPVRDrawable)
++{
++   int iRefCount = p_atomic_inc_return(&psPVRDrawable->iRefCount);
++
++   (void) iRefCount;
++   assert(iRefCount > 1);
++}
++
++void
++PVRDRIDrawableRemoveReference(PVRDRIDrawable *psPVRDrawable)
++{
++   int iRefCount = p_atomic_dec_return(&psPVRDrawable->iRefCount);
++
++   assert(iRefCount >= 0);
++
++   if (iRefCount != 0)
++      return;
++
++   DRISUPDestroyDrawable(psPVRDrawable->psDRISUPDrawable);
++
++#if defined(DEBUG)
++   p_atomic_dec(&psPVRDrawable->psPVRScreen->iDrawableAlloc);
++#endif
++
++   PVRDRIScreenRemoveReference(psPVRDrawable->psPVRScreen);
++   free(psPVRDrawable);
++}
++
++static void
++PVRScreenPrintExtensions(struct dri_screen *psDRIScreen)
++{
++   /* Don't attempt to print anything if LIBGL_DEBUG isn't in the environment */
++   if (getenv("LIBGL_DEBUG") == NULL)
++      return;
++
++   if (psDRIScreen->extensions) {
++      const __DRIextension *psScreenExtensionVersionInfo =
++         PVRDRIScreenExtensionVersionInfo();
++      int i;
++      int j;
++
++      __driUtilMessage("Supported screen extensions:");
++
++      for (i = 0; psDRIScreen->extensions[i]; i++) {
++         for (j = 0; psScreenExtensionVersionInfo[j].name; j++) {
++            if (strcmp(psDRIScreen->extensions[i]->name,
++                       psScreenExtensionVersionInfo[j].name) == 0) {
++               __driUtilMessage("\t%s (supported version: %u - max version: %u)",
++                                psDRIScreen->extensions[i]->name,
++                                psDRIScreen->extensions[i]->version,
++                                psScreenExtensionVersionInfo[j].version);
++               break;
++            }
++         }
++
++         if (psScreenExtensionVersionInfo[j].name == NULL) {
++            __driUtilMessage("\t%s (supported version: %u - max version: unknown)",
++                             psDRIScreen->extensions[i]->name,
++                             psDRIScreen->extensions[i]->version);
++         }
++      }
++   } else {
++      __driUtilMessage("No screen extensions found");
++   }
++}
++
++/*************************************************************************//*!
++ Mesa driver API functions
++ *//**************************************************************************/
++
++static const __DRIconfig **
++PVRDRIInitScreen(struct dri_screen *psDRIScreen)
++{
++   PVRDRIScreen *psPVRScreen;
++   const __DRIconfig **ppsConfigs;
++   int iMaxGLES1Version, iMaxGLES2Version;
++   const struct PVRDRICallbacksV2 sDRICallbacksV2 = {
++      /* Version 0 callbacks */
++      .v0.RegisterSupportInterface = MODSUPRegisterSupportInterfaceV2,
++      .v0.GetBuffers = MODSUPGetBuffers,
++      .v0.CreateConfigs = MODSUPCreateConfigs,
++      .v0.ConcatConfigs = MODSUPConcatConfigs,
++      .v0.ConfigQuery = MODSUPConfigQuery,
++      .v0.LookupEGLImage = MODSUPLookupEGLImage,
++      .v0.GetCapability = MODSUPGetCapability,
++      /* Version 1 callbacks */
++      .v1.FlushFrontBuffer = MODSUPFlushFrontBuffer,
++      /* Version 2 callbacks */
++      .v2.GetDisplayFD = MODSUPGetDisplayFD,
++      /* Version 3 callbacks */
++      .v3.DrawableGetReferenceHandle = MODSUPDrawableGetReferenceHandle,
++      .v3.DrawableAddReference = MODSUPDrawableAddReference,
++      .v3.DrawableRemoveReference = MODSUPDrawableRemoveReference,
++      /* Version 4 callbacks */
++      .v4.DestroyLoaderImageState = MODSUPDestroyLoaderImageState,
++   };
++
++   if (!PVRLoaderIsSupported(psDRIScreen))
++      return NULL;
++
++   if (!PVRDRICompatInit(&sDRICallbacksV2, 4, 0))
++      return NULL;
++
++   psPVRScreen = calloc(1, sizeof(*psPVRScreen));
++   if (psPVRScreen == NULL) {
++      __driUtilMessage("%s: Couldn't allocate PVRDRIScreen", __func__);
++      goto ErrorCompatDeinit;
++   }
++
++   psDRIScreen->driverPrivate = psPVRScreen;
++   psPVRScreen->psDRIScreen = opaque_dri_screen(psDRIScreen);
++   psPVRScreen->iRefCount = 1;
++
++   psPVRScreen->psDRISUPScreen =
++      DRISUPCreateScreen(opaque_dri_screen(psDRIScreen), psDRIScreen->fd,
++                         psDRIScreen->dri2.useInvalidate != NULL,
++                         psDRIScreen->loaderPrivate,
++                         &ppsConfigs, &iMaxGLES1Version, &iMaxGLES2Version);
++   if (!psPVRScreen->psDRISUPScreen)
++      goto ErrorScreenFree;
++
++   psDRIScreen->max_gl_es1_version = iMaxGLES1Version;
++   psDRIScreen->max_gl_es2_version = iMaxGLES2Version;
++
++   psDRIScreen->max_gl_compat_version =
++      DRISUPGetAPIVersion(psPVRScreen->psDRISUPScreen, PVRDRI_API_GL_COMPAT);
++   psDRIScreen->max_gl_core_version =
++      DRISUPGetAPIVersion(psPVRScreen->psDRISUPScreen, PVRDRI_API_GL_CORE);
++
++   psDRIScreen->extensions = PVRDRIScreenExtensions();
++
++   PVRScreenPrintExtensions(psDRIScreen);
++
++   return ppsConfigs;
++
++ErrorScreenFree:
++   psDRIScreen->driverPrivate = NULL;
++   free(psPVRScreen);
++
++ErrorCompatDeinit:
++   PVRDRICompatDeinit();
++
++   return NULL;
++}
++
++static void
++PVRDRIDestroyScreen(struct dri_screen *psDRIScreen)
++{
++   PVRDRIScreen *psPVRScreen = psDRIScreen->driverPrivate;
++
++#if defined(DEBUG)
++   if (psPVRScreen->iBufferAlloc != 0 ||
++       psPVRScreen->iDrawableAlloc != 0 ||
++       psPVRScreen->iContextAlloc != 0) {
++      errorMessage("%s: Outstanding allocations: Contexts: %d Drawables: %d Buffers: %d",
++                   __func__, psPVRScreen->iContextAlloc,
++                   psPVRScreen->iDrawableAlloc, psPVRScreen->iBufferAlloc);
++
++      if (psPVRScreen->iRefCount > 1) {
++         errorMessage("%s: PVRDRIScreen resources will not be freed until its %d references are removed",
++                      __func__, psPVRScreen->iRefCount - 1);
++      }
++   }
++#endif
++
++   PVRDRIScreenRemoveReference(psPVRScreen);
++}
++
++static int
++PVRDRIScreenSupportedAPIs(PVRDRIScreen *psPVRScreen)
++{
++   unsigned int api_mask = dri_screen(psPVRScreen->psDRIScreen)->api_mask;
++   int supported = 0;
++
++   if ((api_mask & (1 << __DRI_API_GLES)) != 0)
++      supported |= PVRDRI_API_BIT_GLES;
++
++   if ((api_mask & (1 << __DRI_API_GLES2)) != 0)
++      supported |= PVRDRI_API_BIT_GLES2;
++
++   if ((api_mask & (1 << __DRI_API_GLES3)) != 0)
++      supported |= PVRDRI_API_BIT_GLES3;
++
++   if ((api_mask & (1 << __DRI_API_OPENGL)) != 0)
++      supported |= PVRDRI_API_BIT_GL;
++
++   if ((api_mask & (1 << __DRI_API_OPENGL_CORE)) != 0)
++      supported |= PVRDRI_API_BIT_GL;
++
++   return supported;
++}
++
++static GLboolean
++PVRDRICreateContext(gl_api eMesaAPI, const struct gl_config *psGLMode,
++                    struct dri_context *psDRIContext,
++                    const struct __DriverContextConfig *psCtxConfig,
++                    unsigned int *puError,
++                    struct dri_context *psSharedContext)
++{
++   struct dri_screen *psDRIScreen = psDRIContext->screen;
++   PVRDRIScreen *psPVRScreen = psDRIScreen->driverPrivate;
++   PVRDRIContext *psPVRContext;
++   struct DRISUPContext *psDRISUPContext;
++   struct DRISUPContext *psDRISUPSharedContext;
++   struct PVRDRIContextConfig sCtxConfig;
++   PVRDRIAPIType eAPI;
++
++   psDRISUPSharedContext = getSharedContextImpl(psSharedContext);
++
++   sCtxConfig.uMajorVersion = psCtxConfig->major_version;
++   sCtxConfig.uMinorVersion = psCtxConfig->minor_version;
++   sCtxConfig.uFlags = psCtxConfig->flags;
++   sCtxConfig.iResetStrategy = __DRI_CTX_RESET_NO_NOTIFICATION;
++   sCtxConfig.uPriority = __DRI_CTX_PRIORITY_MEDIUM;
++   sCtxConfig.iReleaseBehavior = __DRI_CTX_RELEASE_BEHAVIOR_FLUSH;
++
++   psPVRContext = calloc(1, sizeof(*psPVRContext));
++   if (psPVRContext == NULL) {
++      __driUtilMessage("%s: Couldn't allocate PVRDRIContext", __func__);
++      *puError = __DRI_CTX_ERROR_NO_MEMORY;
++      return GL_FALSE;
++   }
++
++   psPVRContext->psDRIContext = opaque_dri_context(psDRIContext);
++   psPVRContext->psPVRScreen = psPVRScreen;
++
++   if (psGLMode)
++      psPVRContext->sConfig.sGLMode = *psGLMode;
++
++   switch (eMesaAPI) {
++   case API_OPENGLES:
++      eAPI = PVRDRI_API_GLES1;
++      break;
++   case API_OPENGLES2:
++      eAPI = PVRDRI_API_GLES2;
++      break;
++   case API_OPENGL_COMPAT:
++      eAPI = PVRDRI_API_GL_COMPAT;
++      break;
++   case API_OPENGL_CORE:
++      eAPI = PVRDRI_API_GL_CORE;
++      break;
++   default:
++      __driUtilMessage("%s: Unsupported API: %d",
++                       __func__, (int) eMesaAPI);
++      *puError = __DRI_CTX_ERROR_BAD_API;
++      goto ErrorContextFree;
++   }
++   psPVRContext->eAPI = eAPI;
++
++   if ((psCtxConfig->attribute_mask &
++        __DRIVER_CONTEXT_ATTRIB_RESET_STRATEGY) != 0) {
++      sCtxConfig.iResetStrategy = psCtxConfig->reset_strategy;
++   }
++
++   if ((psCtxConfig->attribute_mask &
++        __DRIVER_CONTEXT_ATTRIB_RELEASE_BEHAVIOR) != 0) {
++      sCtxConfig.iReleaseBehavior = psCtxConfig->release_behavior;
++   }
++
++   if ((psCtxConfig->attribute_mask &
++        __DRIVER_CONTEXT_ATTRIB_PRIORITY) != 0) {
++      sCtxConfig.uPriority = psCtxConfig->priority;
++   }
++
++   *puError = DRISUPCreateContext(eAPI, &psPVRContext->sConfig, &sCtxConfig,
++                                  opaque_dri_context(psDRIContext),
++                                  psDRISUPSharedContext,
++                                  psPVRScreen->psDRISUPScreen,
++                                  &psDRISUPContext);
++   if (*puError != __DRI_CTX_ERROR_SUCCESS)
++      goto ErrorContextFree;
++
++   psPVRContext->psDRISUPContext = psDRISUPContext;
++
++   if (!pvrdri_create_dispatch_table(psPVRScreen, eAPI)) {
++      __driUtilMessage("%s: Couldn't create dispatch table", __func__);
++      *puError = __DRI_CTX_ERROR_BAD_API;
++      goto ErrorContextDestroy;
++   }
++#if defined(DEBUG)
++   p_atomic_inc(&psPVRScreen->iContextAlloc);
++#endif
++
++   psDRIContext->driverPrivate = (void *) psPVRContext;
++   PVRDRIScreenAddReference(psPVRScreen);
++
++   *puError = __DRI_CTX_ERROR_SUCCESS;
++
++   return GL_TRUE;
++
++ErrorContextDestroy:
++   DRISUPDestroyContext(psPVRContext->psDRISUPContext);
++
++ErrorContextFree:
++   free(psPVRContext);
++
++   return GL_FALSE;
++}
++
++static void
++PVRDRIDestroyContext(struct dri_context *psDRIContext)
++{
++   PVRDRIContext *psPVRContext = psDRIContext->driverPrivate;
++   PVRDRIScreen *psPVRScreen = psPVRContext->psPVRScreen;
++
++   DRISUPDestroyContext(psPVRContext->psDRISUPContext);
++
++#if defined(DEBUG)
++   p_atomic_dec(&psPVRScreen->iContextAlloc);
++#endif
++
++   PVRDRIScreenRemoveReference(psPVRScreen);
++   free(psPVRContext);
++}
++
++static GLboolean
++PVRDRICreateBuffer(struct dri_screen *psDRIScreen,
++                   struct dri_drawable *psDRIDrawable,
++                   const struct gl_config *psGLMode, GLboolean bIsPixmap)
++{
++   PVRDRIScreen *psPVRScreen = psDRIScreen->driverPrivate;
++   PVRDRIDrawable *psPVRDrawable = NULL;
++
++   if (!psGLMode) {
++      __driUtilMessage("%s: Invalid GL config", __func__);
++      return GL_FALSE;
++   }
++
++   psPVRDrawable = calloc(1, sizeof(*psPVRDrawable));
++   if (!psPVRDrawable) {
++      __driUtilMessage("%s: Couldn't allocate PVR drawable", __func__);
++      goto ErrorDrawableFree;
++   }
++
++   psDRIDrawable->driverPrivate = (void *) psPVRDrawable;
++   psPVRDrawable->iRefCount = 1;
++   psPVRDrawable->psDRIDrawable = opaque_dri_drawable(psDRIDrawable);
++   psPVRDrawable->psPVRScreen = psPVRScreen;
++   psPVRDrawable->sConfig.sGLMode = *psGLMode;
++   psPVRDrawable->sConfig.iSupportedAPIs =
++      PVRDRIScreenSupportedAPIs(psPVRScreen);
++
++   psPVRDrawable->psDRISUPDrawable =
++      DRISUPCreateDrawableType(opaque_dri_drawable(psDRIDrawable),
++                               psPVRScreen->psDRISUPScreen,
++                               psDRIDrawable->loaderPrivate,
++                               &psPVRDrawable->sConfig,
++                               (bool)bIsPixmap);
++   if (!psPVRDrawable->psDRISUPDrawable) {
++      __driUtilMessage("%s: Couldn't create DRI Support drawable",
++                       __func__);
++      goto ErrorDrawableFree;
++   }
++
++   /* Initialisation is completed in MakeCurrent */
++#if defined(DEBUG)
++   p_atomic_inc(&psPVRScreen->iDrawableAlloc);
++#endif
++   PVRDRIScreenAddReference(psPVRScreen);
++   return GL_TRUE;
++
++ErrorDrawableFree:
++   DRISUPDestroyDrawable(psPVRDrawable->psDRISUPDrawable);
++   free(psPVRDrawable);
++   psDRIDrawable->driverPrivate = NULL;
++
++   return GL_FALSE;
++}
++
++static void
++PVRDRIDestroyBuffer(struct dri_drawable *psDRIDrawable)
++{
++   PVRDRIDrawable *psPVRDrawable = psDRIDrawable->driverPrivate;
++
++   PVRDRIDrawableRemoveReference(psPVRDrawable);
++}
++
++static GLboolean
++PVRDRIMakeCurrent(struct dri_context *psDRIContext,
++                  struct dri_drawable *psDRIWrite,
++                  struct dri_drawable *psDRIRead)
++{
++   PVRDRIContext *psPVRContext = psDRIContext->driverPrivate;
++   struct DRISUPDrawable *psDRISUPWrite;
++   struct DRISUPDrawable *psDRISUPRead;
++
++   if (psDRIWrite) {
++      PVRDRIDrawable *psPVRWrite = psDRIWrite->driverPrivate;
++
++      psDRISUPWrite = psPVRWrite->psDRISUPDrawable;
++   } else {
++      psDRISUPWrite = NULL;
++   }
++
++   if (psDRIRead) {
++      PVRDRIDrawable *psPVRRead = psDRIRead->driverPrivate;
++
++      psDRISUPRead = psPVRRead->psDRISUPDrawable;
++   } else {
++      psDRISUPRead = NULL;
++   }
++
++   if (!DRISUPMakeCurrent(psPVRContext->psDRISUPContext,
++                          psDRISUPWrite, psDRISUPRead))
++      goto ErrorUnlock;
++
++   pvrdri_set_dispatch_table(psPVRContext);
++
++   return GL_TRUE;
++
++ErrorUnlock:
++   return GL_FALSE;
++}
++
++static void
++PVRDRIUnbindContext(struct dri_context *psDRIContext)
++{
++   PVRDRIContext *psPVRContext = psDRIContext->driverPrivate;
++
++   pvrdri_set_null_dispatch_table();
++   DRISUPUnbindContext(psPVRContext->psDRISUPContext);
++}
++
++static __DRIbuffer *
++PVRDRIAllocateBuffer(struct dri_screen *psDRIScreen, unsigned int uAttachment,
++                     unsigned int uFormat, int iWidth, int iHeight)
++{
++   PVRDRIScreen *psPVRScreen = psDRIScreen->driverPrivate;
++   struct PVRBuffer *psBuffer;
++
++   psBuffer = calloc(1, sizeof(*psBuffer));
++   if (psBuffer == NULL) {
++      __driUtilMessage("%s: Failed to allocate buffer", __func__);
++      return NULL;
++   }
++
++   psBuffer->psDRISUPBuffer =
++      DRISUPAllocateBuffer(psPVRScreen->psDRISUPScreen, uAttachment, uFormat,
++                           iWidth, iHeight, &psBuffer->sDRIBuffer.name,
++                           &psBuffer->sDRIBuffer.pitch,
++                           &psBuffer->sDRIBuffer.cpp,
++                           &psBuffer->sDRIBuffer.flags);
++   if (!psBuffer->psDRISUPBuffer) {
++      __driUtilMessage("%s: Failed to create DRI Support buffer", __func__);
++      goto ErrorFreeDRIBuffer;
++   }
++
++   psBuffer->sDRIBuffer.attachment = uAttachment;
++
++#if defined(DEBUG)
++   p_atomic_inc(&psPVRScreen->iBufferAlloc);
++#endif
++
++   return &psBuffer->sDRIBuffer;
++
++ErrorFreeDRIBuffer:
++   free(psBuffer);
++
++   return NULL;
++}
++
++static void
++PVRDRIReleaseBuffer(struct dri_screen *psDRIScreen, __DRIbuffer *psDRIBuffer)
++{
++   struct PVRBuffer *psPVRBuffer = (struct PVRBuffer *) psDRIBuffer;
++   PVRDRIScreen *psPVRScreen = psDRIScreen->driverPrivate;
++
++   DRISUPReleaseBuffer(psPVRScreen->psDRISUPScreen,
++                       psPVRBuffer->psDRISUPBuffer);
++
++#if defined(DEBUG)
++   p_atomic_dec(&psPVRScreen->iBufferAlloc);
++#endif
++
++   free(psPVRBuffer);
++}
++
++static char *
++PVRDRIGetXMLConfigOptions(const char *pszDriverName)
++{
++   const driOptionDescription asConfigOptions[] =
++   {
++      DRI_CONF_SECTION_MISCELLANEOUS
++      DRI_CONF_OPT_B("pvr_driconf_not_used", true,
++                     "The PowerVR driver does not use DRIConf")
++      DRI_CONF_SECTION_END
++   };
++
++   (void) pszDriverName;
++
++   return driGetOptionsXml(&asConfigOptions[0], ARRAY_SIZE(asConfigOptions));
++}
++
++static bool
++PVRDRICheckDriverCompatibility(int iFdRenderGPU,
++                               const char *psDriverNameRenderGPU,
++                               int iFdDisplayGPU,
++                               const char *psDriverNameDisplayGPU)
++{
++   bool bCompat;
++
++   __driUtilMessage("%s: Render driver name: %s FD: %d", __func__,
++                    psDriverNameRenderGPU, iFdRenderGPU);
++   __driUtilMessage("%s: Display driver name: %s FD: %d", __func__,
++                    psDriverNameDisplayGPU ? psDriverNameDisplayGPU : "",
++                    iFdDisplayGPU);
++#if defined(PVR_DRIVER_ALIAS_STRING)
++   __driUtilMessage("%s: PVR driver alias: %s", __func__,
++                    PVR_DRIVER_ALIAS_STRING);
++#endif
++
++   if (!psDriverNameDisplayGPU)
++      bCompat = false;
++   else if (!strcmp(psDriverNameDisplayGPU, psDriverNameRenderGPU))
++      bCompat = true;
++   else if (!strcmp(psDriverNameDisplayGPU, "pvr"))
++      bCompat = true;
++#if defined(PVR_DRIVER_ALIAS_STRING)
++   else if (!strcmp(psDriverNameDisplayGPU, PVR_DRIVER_ALIAS_STRING))
++      bCompat = true;
++#endif
++   else
++      bCompat = false;
++
++   __driUtilMessage("%s: Render and display drivers are %s", __func__,
++   bCompat ? "compatible" : "incompatible");
++
++   return bCompat;
++}
++
++static int
++PVRDRIQueryCompatibleRenderOnlyDeviceFd(int iKmsOnlyFd)
++{
++   return DRISUPQueryCompatibleRenderOnlyDeviceFd(iKmsOnlyFd);
++}
++
++static const __DRIDriverAPIExtension pvr_driver_api_extension = {
++   .base = {__DRI_DRIVER_API, 2},
++   .initScreen = PVRDRIInitScreen,
++   .destroyScreen = PVRDRIDestroyScreen,
++   .createContext = PVRDRICreateContext,
++   .destroyContext = PVRDRIDestroyContext,
++   .createBuffer = PVRDRICreateBuffer,
++   .destroyBuffer = PVRDRIDestroyBuffer,
++   .makeCurrent = PVRDRIMakeCurrent,
++   .unbindContext = PVRDRIUnbindContext,
++   .allocateBuffer = PVRDRIAllocateBuffer,
++   .releaseBuffer = PVRDRIReleaseBuffer,
++};
++
++static const __DRImesaCoreExtension pvr_mesa_core_extension = {
++   .base = {__DRI_MESA, 1},
++   .version_string = MESA_INTERFACE_VERSION_STRING,
++   .createNewScreen = driCreateNewScreen2,
++   .createContext = driCreateContextAttribs,
++   .initScreen = NULL,
++   .queryCompatibleRenderOnlyDeviceFd = PVRDRIQueryCompatibleRenderOnlyDeviceFd,
++};
++
++static const __DRIconfigOptionsExtension pvr_config_options = {
++   .base = { __DRI_CONFIG_OPTIONS, 2 },
++   .getXml = PVRDRIGetXMLConfigOptions,
++};
++
++static const __DRIdriverCompatibilityExtension pvr_driver_compatibility = {
++   .base = { __DRI_DRIVER_COMPATIBILITY, 1 },
++   .checkDriverCompatibility = PVRDRICheckDriverCompatibility,
++};
++
++const __DRIextension *pvr_driver_extensions[] = {
++   &driCoreExtension.base,
++   &pvr_mesa_core_extension.base,
++   &driImageDriverExtension.base,
++   &pvrDRI2Extension.base,
++   &pvr_config_options.base,
++   &pvr_driver_compatibility.base,
++   &pvr_driver_api_extension.base,
++   NULL
++};
+diff --git a/src/gallium/frontends/pvr/pvrdri.h b/src/gallium/frontends/pvr/pvrdri.h
+new file mode 100644
+index 00000000000..322aa458856
+--- /dev/null
++++ b/src/gallium/frontends/pvr/pvrdri.h
+@@ -0,0 +1,193 @@
++/*
++ * Copyright (c) Imagination Technologies Ltd.
++ *
++ * The contents of this file are subject to the MIT license as set out below.
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ */
++
++#if !defined(__PVRDRI_H__)
++#define __PVRDRI_H__
++
++#include <stdbool.h>
++#include <stdint.h>
++#include <inttypes.h>
++
++#include <glapi/glapi.h>
++
++#include "main/mtypes.h"
++#include "util/macros.h"
++#include "dri_util.h"
++#include "pvrdri_support.h"
++
++#define PVRDRI_STRINGIFY_HELPER(x) # x
++#define PVRDRI_STRINGIFY(x) PVRDRI_STRINGIFY_HELPER(x)
++
++struct PVRDRIConfigRec {
++   struct gl_config sGLMode;
++   int iSupportedAPIs;
++};
++
++/* PVR screen data */
++typedef struct PVRDRIScreen_TAG {
++   /* DRI screen structure pointer */
++   __DRIscreen *psDRIScreen;
++
++   /* Opaque PVR DRI Support screen structure pointer */
++   struct DRISUPScreen *psDRISUPScreen;
++
++   /* Reference count */
++   int iRefCount;
++
++#if defined(DEBUG)
++   /* Counters of outstanding allocations */
++   int iContextAlloc;
++   int iDrawableAlloc;
++   int iBufferAlloc;
++#endif
++
++   /* PVR OGLES 1 dispatch table */
++   struct _glapi_table *psOGLES1Dispatch;
++   /* PVR OGLES 2/3 dispatch table */
++   struct _glapi_table *psOGLES2Dispatch;
++   /* PVR OGL dispatch table */
++   struct _glapi_table *psOGLDispatch;
++} PVRDRIScreen;
++
++/* PVR context data */
++typedef struct PVRDRIContext_TAG {
++   /* Pointer to DRI context */
++   __DRIcontext *psDRIContext;
++
++   /* Opaque PVR DRI Support context structure pointer */
++   struct DRISUPContext *psDRISUPContext;
++
++   /* Pointer to PVRDRIScreen structure */
++   PVRDRIScreen *psPVRScreen;
++
++   /* GL config */
++   PVRDRIConfig sConfig;
++
++   /* API */
++   PVRDRIAPIType eAPI;
++} PVRDRIContext;
++
++/* PVR drawable data */
++typedef struct PVRDRIDrawable_TAG {
++   PVRDRIScreen *psPVRScreen;
++   __DRIdrawable *psDRIDrawable;
++   int iRefCount;
++   PVRDRIConfig sConfig;
++   struct DRISUPDrawable *psDRISUPDrawable;
++   unsigned int uFourCC;
++   unsigned int uDRIFormat;
++} PVRDRIDrawable;
++
++/*************************************************************************//*!
++ pvrdri.c
++ *//**************************************************************************/
++void PVRDRIDrawableAddReference(PVRDRIDrawable *psPVRDrawable);
++void PVRDRIDrawableRemoveReference(PVRDRIDrawable *psPVRDrawable);
++
++/*************************************************************************//*!
++ pvrutil.c
++ *//**************************************************************************/
++
++void PRINTFLIKE(1, 2) __driUtilMessage(const char *f, ...);
++void PRINTFLIKE(1, 2) errorMessage(const char *f, ...);
++
++mesa_format PVRDRIMesaFormatToMesaFormat(int pvrdri_mesa_format);
++int PVRDRIFormatToFourCC(int dri_format);
++int PVRDRIFourCCToDRIFormat(int iFourCC);
++
++/*************************************************************************//*!
++ pvrext.c
++ *//**************************************************************************/
++
++const __DRIextension **PVRDRIScreenExtensions(void);
++const __DRIextension *PVRDRIScreenExtensionVersionInfo(void);
++
++void PVRDRIAdjustExtensions(unsigned int uVersion, unsigned int uMinVersion);
++
++/*************************************************************************//*!
++ pvrcompat.c
++ *//**************************************************************************/
++
++bool PVRDRICompatInit(const struct PVRDRICallbacksV2 *psCallbacksV2,
++                      unsigned int uVersionV2, unsigned int uMinVersionV2);
++void PVRDRICompatDeinit(void);
++
++bool MODSUPRegisterSupportInterfaceV2(const void *pvInterface,
++                                      unsigned int uVersion,
++                                      unsigned int uMinVersion);
++
++/*************************************************************************//*!
++ pvrcb.c
++ *//**************************************************************************/
++
++int MODSUPGetBuffers(struct __DRIdrawableRec *psDRIDrawable,
++                     unsigned int uFourCC, uint32_t *puStamp,
++                     void *pvLoaderPrivate, uint32_t uBufferMask,
++                     struct PVRDRIImageList *psImageList);
++
++bool MODSUPCreateConfigs(struct __DRIconfigRec ***psConfigs,
++                         struct __DRIscreenRec *psDRIScreen,
++                         int iPVRDRIMesaFormat, const uint8_t *puDepthBits,
++                         const uint8_t *puStencilBits,
++                         unsigned int uNumDepthStencilBits,
++                         const unsigned int *puDBModes,
++                         unsigned int uNumDBModes,
++                         const uint8_t *puMSAASamples,
++                         unsigned int uNumMSAAModes, bool bEnableAccum,
++                         bool bColorDepthMatch, bool bMutableRenderBuffer,
++                         int iYUVDepthRange, int iYUVCSCStandard,
++                         uint32_t uMaxPbufferWidth, uint32_t uMaxPbufferHeight);
++
++struct __DRIconfigRec **MODSUPConcatConfigs(struct __DRIscreenRec *psDRIScreen,
++                                            struct __DRIconfigRec **ppsConfigA,
++                                            struct __DRIconfigRec **ppsConfigB);
++
++__DRIimage *MODSUPLookupEGLImage(struct __DRIscreenRec *psDRIScreen,
++                                 void *pvImage, void *pvLoaderPrivate);
++
++unsigned int MODSUPGetCapability(struct __DRIscreenRec *psDRIScreen,
++                                 unsigned int uCapability);
++
++int MODSUPGetDisplayFD(struct __DRIscreenRec *psDRIScreen,
++                       void *pvLoaderPrivate);
++
++bool PVRDRIConfigQuery(const PVRDRIConfig *psConfig,
++                       PVRDRIConfigAttrib eConfigAttrib, int *piValueOut);
++
++bool MODSUPConfigQuery(const PVRDRIConfig *psConfig,
++                       PVRDRIConfigAttrib eConfigAttrib,
++                       unsigned int *puValueOut);
++
++void MODSUPFlushFrontBuffer(struct __DRIdrawableRec *psDRIDrawable,
++                            void *pvLoaderPrivate);
++
++void *MODSUPDrawableGetReferenceHandle(struct __DRIdrawableRec *psDRIDrawable);
++
++void MODSUPDrawableAddReference(void *pvReferenceHandle);
++
++void MODSUPDrawableRemoveReference(void *pvReferenceHandle);
++
++void MODSUPDestroyLoaderImageState(const struct __DRIscreenRec *psDRIScreen,
++                                   void *pvLoaderPrivate);
++#endif /* defined(__PVRDRI_H__) */
+diff --git a/src/gallium/frontends/pvr/pvrdri_support.h b/src/gallium/frontends/pvr/pvrdri_support.h
+new file mode 100644
+index 00000000000..dac83cc38b4
+--- /dev/null
++++ b/src/gallium/frontends/pvr/pvrdri_support.h
+@@ -0,0 +1,239 @@
++/*
++ * Copyright (c) Imagination Technologies Ltd.
++ *
++ * The contents of this file are subject to the MIT license as set out below.
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ */
++
++#if !defined(__PVRDRI_SUPPORT_H__)
++#define __PVRDRI_SUPPORT_H__
++
++#include <stdint.h>
++#include <stdbool.h>
++
++#include "dri_support.h"
++
++struct DRISUPScreen *DRISUPCreateScreen(struct __DRIscreenRec *psDRIScreen,
++                                        int iFD, bool bUseInvalidate,
++                                        void *pvLoaderPrivate,
++                                        const struct __DRIconfigRec ***pppsConfigs,
++                                        int *piMaxGLES1Version,
++                                        int *piMaxGLES2Version);
++void DRISUPDestroyScreen(struct DRISUPScreen *psDRISUPScreen);
++
++unsigned int DRISUPCreateContext(PVRDRIAPIType eAPI,
++                                 PVRDRIConfig *psPVRDRIConfig,
++                                 struct PVRDRIContextConfig *psCtxConfig,
++                                 struct __DRIcontextRec *psDRIContext,
++                                 struct DRISUPContext *psDRISUPSharedContext,
++                                 struct DRISUPScreen *psDRISUPScreen,
++                                 struct DRISUPContext **ppsDRISUPContext);
++void DRISUPDestroyContext(struct DRISUPContext *psDRISUPContext);
++
++struct DRISUPDrawable *DRISUPCreateDrawable(struct __DRIdrawableRec *psDRIDrawable,
++                                            struct DRISUPScreen *psDRISUPScreen,
++                                            void *pvLoaderPrivate,
++                                            PVRDRIConfig *psPVRDRIConfig);
++struct DRISUPDrawable *DRISUPCreateDrawableType(struct __DRIdrawableRec *psDRIDrawable,
++                                                struct DRISUPScreen *psDRISUPScreen,
++                                                void *pvLoaderPrivate,
++                                                PVRDRIConfig *psPVRDRIConfig,
++                                                bool bIsPixmap);
++void DRISUPDestroyDrawable(struct DRISUPDrawable *psDRISUPDrawable);
++
++bool DRISUPMakeCurrent(struct DRISUPContext *psDRISUPContext,
++                       struct DRISUPDrawable *psDRISUPWrite,
++                       struct DRISUPDrawable *psDRISUPRead);
++bool DRISUPUnbindContext(struct DRISUPContext *psDRISUPContext);
++
++struct DRISUPBuffer *DRISUPAllocateBuffer(struct DRISUPScreen *psDRISUPScreen,
++                                          unsigned int uAttchment,
++                                          unsigned int uFormat,
++                                          int iWidth, int iHeight,
++                                          unsigned int *puName,
++                                          unsigned int *puPitch,
++                                          unsigned int *puCPP,
++                                          unsigned int *puFlags);
++void DRISUPReleaseBuffer(struct DRISUPScreen *psDRISUPScreen,
++                         struct DRISUPBuffer *psDRISUPBuffer);
++void DRISUPSetTexBuffer2(struct DRISUPContext *psDRISUPContext,
++                         int iTarget, int iFormat,
++                         struct DRISUPDrawable *psDRISUPDrawable);
++void DRISUPReleaseTexBuffer(struct DRISUPContext *psDRISUPContext,
++                            int iTarget,
++                            struct DRISUPDrawable *psDRISUPDrawable);
++
++void DRISUPFlush(struct DRISUPDrawable *psDRISUPDrawable);
++void DRISUPInvalidate(struct DRISUPDrawable *psDRISUPDrawable);
++void DRISUPFlushWithFlags(struct DRISUPContext *psDRISUPContext,
++                          struct DRISUPDrawable *psDRISUPDrawable,
++                          unsigned int uFlags, unsigned int uThrottleReason);
++
++__DRIimage *DRISUPCreateImageFromName(struct DRISUPScreen *psDRISUPScreen,
++                                      int iWidth, int iHeight, int iFourCC,
++                                      int iName, int iPitch,
++                                      void *pvLoaderPrivate);
++__DRIimage *DRISUPCreateImageFromRenderbuffer(struct DRISUPContext *psDRISUPContext,
++                                              int iRenderBuffer,
++                                              void *pvLoaderPrivate);
++void DRISUPDestroyImage(__DRIimage *psImage);
++__DRIimage *DRISUPCreateImage(struct DRISUPScreen *psDRISUPScreen,
++                              int iWidth, int iHeight, int iFourCC,
++                              unsigned int uUse, void *pvLoaderPrivate);
++bool DRISUPQueryImage(__DRIimage *psImage, int iAttrib, int *piValue);
++__DRIimage *DRISUPDupImage(__DRIimage *psImage, void *pvLoaderPrivate);
++bool DRISUPValidateImageUsage(__DRIimage *psImage, unsigned int uUse);
++__DRIimage *DRISUPCreateImageFromNames(struct DRISUPScreen *psDRISUPScreen,
++                                       int iWidth, int iHeight, int iFourCC,
++                                       int *piNames, int iNumNames,
++                                       int *piStrides, int *piOffsets,
++                                       void *pvLoaderPrivate);
++__DRIimage *DRISUPFromPlanar(__DRIimage *psImage, int iPlane,
++                             void *pvLoaderPrivate);
++__DRIimage *DRISUPCreateImageFromTexture(struct DRISUPContext *psDRISUPContext,
++                                         int iTarget, unsigned int uTexture,
++                                         int iDepth, int iLevel,
++                                         unsigned int *puError,
++                                         void *pvLoaderPrivate);
++__DRIimage *DRISUPCreateImageFromFDs(struct DRISUPScreen *psDRISUPcreen,
++                                     int iWidth, int iHeight, int iFourCC,
++                                     int *piFDs, int iNumFDs,
++                                     int *piStrides, int *piOffsets,
++                                     void *pvLoaderPrivate);
++__DRIimage *DRISUPCreateImageFromDmaBufs(struct DRISUPScreen *psDRISUPScreen,
++                                         int iWidth, int iHeight, int iFourCC,
++                                         int *piFDs, int iNumFDs,
++                                         int *piStrides, int *piOffsets,
++                                         unsigned int uColorSpace,
++                                         unsigned int uSampleRange,
++                                         unsigned int uHorizSiting,
++                                         unsigned int uVertSiting,
++                                         unsigned int *puError,
++                                         void *pvLoaderPrivate);
++int DRISUPGetImageCapabilities(struct DRISUPScreen *psDRISUPScreen);
++void DRISUPBlitImage(struct DRISUPContext *psDRISUPContext,
++                     __DRIimage *psDst, __DRIimage *psSrc,
++                     int iDstX0, int iDstY0, int iDstWidth, int iDstHeight,
++                     int iSrcX0, int iSrcY0, int iSrcWidth, int iSrcHeight,
++                     int iFlushFlag);
++void *DRISUPMapImage(struct DRISUPContext *psDRISUPContext,
++                     __DRIimage *psImage,
++                     int iX0, int iY0, int iWidth, int iHeight,
++                     unsigned int uFlags, int *piStride, void **ppvData);
++void DRISUPUnmapImage(struct DRISUPContext *psDRISUPContext,
++                      __DRIimage *psImage, void *pvData);
++__DRIimage *DRISUPCreateImageWithModifiers(struct DRISUPScreen *psDRISUPScreen,
++                                           int iWidth, int iHeight, int iFourCC,
++                                           const uint64_t *puModifiers,
++                                           const unsigned int uModifierCount,
++                                           void *pvLoaderPrivate);
++__DRIimage *DRISUPCreateImageFromDMABufs2(struct DRISUPScreen *psDRISUPScreen,
++                                          int iWidth, int iHeight,
++                                          int iFourCC, uint64_t uModifier,
++                                          int *piFDs, int iNumFDs,
++                                          int *piStrides, int *piOffsets,
++                                          unsigned int uColorSpace,
++                                          unsigned int uSampleRange,
++                                          unsigned int uHorizSiting,
++                                          unsigned int uVertSiting,
++                                          unsigned int *puError,
++                                          void *pvLoaderPrivate);
++
++bool DRISUPQueryDMABufFormats(struct DRISUPScreen *psDRISUPScreen, int iMax,
++                              int *piFormats, int *piCount);
++bool DRISUPQueryDMABufModifiers(struct DRISUPScreen *psDRISUPScreen,
++                                int iFourCC, int iMax, uint64_t *puModifiers,
++                                unsigned int *piExternalOnly, int *piCount);
++bool DRISUPQueryDMABufFormatModifierAttribs(struct DRISUPScreen *psDRISUPScreen,
++                                            uint32_t uFourcc,
++                                            uint64_t uModifier,
++                                            int iAttrib, uint64_t *puValue);
++
++__DRIimage *DRISUPCreateImageFromRenderBuffer2(struct DRISUPContext *psDRISUPContext,
++                                               int iRenderBuffer,
++                                               void *pvLoaderPrivate,
++                                               unsigned int *puError);
++
++__DRIimage *DRISUPCreateImageFromBuffer(struct DRISUPContext *psDRISUPContext,
++                                        int iTarget, void *pvBuffer,
++                                        unsigned int *puError,
++                                        void *pvLoaderPrivate);
++
++int DRISUPQueryRendererInteger(struct DRISUPScreen *psDRISUPScreen,
++                               int iAttribute, unsigned int *puValue);
++int DRISUPQueryRendererString(struct DRISUPScreen *psDRISUPScreen,
++                              int iAttribute, const char **ppszValue);
++
++void *DRISUPCreateFence(struct DRISUPContext *psDRISUPContext);
++void DRISUPDestroyFence(struct DRISUPScreen *psDRISUPScreen, void *pvFence);
++bool DRISUPClientWaitSync(struct DRISUPContext *psDRISUPContext,
++                          void *pvFence, unsigned int uFlags,
++                          uint64_t uTimeout);
++void DRISUPServerWaitSync(struct DRISUPContext *psDRISUPContext,
++                          void *pvFence, unsigned int uFlags);
++unsigned int DRISUPGetFenceCapabilities(struct DRISUPScreen *psDRISUPScreen);
++void *DRISUPCreateFenceFD(struct DRISUPContext *psDRISUPContext, int iFD);
++int DRISUPGetFenceFD(struct DRISUPScreen *psDRISUPScreen, void *pvFence);
++void *DRISUPGetFenceFromCLEvent(struct DRISUPScreen *psDRISUPScreen,
++                                intptr_t iCLEvent);
++int DRISUPGetAPIVersion(struct DRISUPScreen *psDRISUPScreen,
++                        PVRDRIAPIType eAPI);
++
++unsigned int DRISUPGetNumAPIProcs(struct DRISUPScreen *psDRISUPScreen,
++                                  PVRDRIAPIType eAPI);
++const char *DRISUPGetAPIProcName(struct DRISUPScreen *psDRISUPScreen,
++                                 PVRDRIAPIType eAPI, unsigned int uIndex);
++void *DRISUPGetAPIProcAddress(struct DRISUPScreen *psDRISUPScreen,
++                              PVRDRIAPIType eAPI, unsigned int uIndex);
++
++void DRISUPSetDamageRegion(struct DRISUPDrawable *psDRISUPDrawable,
++                           unsigned int uNRects, int *piRects);
++
++bool DRISUPHaveGetFenceFromCLEvent(void);
++
++__DRIimage *DRISUPCreateImageFromDMABufs3(struct DRISUPScreen *psDRISUPScreen,
++                                          int iWidth, int iHeight,
++                                          int iFourCC, uint64_t uModifier,
++                                          int *piFDs, int iNumFDs,
++                                          int *piStrides, int *piOffsets,
++                                          unsigned int uColorSpace,
++                                          unsigned int uSampleRange,
++                                          unsigned int uHorizSiting,
++                                          unsigned int uVertSiting,
++                                          uint32_t uFlags,
++                                          unsigned int *puError,
++                                          void *pvLoaderPrivate);
++__DRIimage *DRISUPCreateImageWithModifiers2(struct DRISUPScreen *psDRISUPScreen,
++                                            int iWidth, int iHeight,
++                                            int iFourCC,
++                                            const uint64_t *puModifiers,
++                                            const unsigned int uModifierCount,
++                                            unsigned int uUse,
++                                            void *pvLoaderPrivate);
++__DRIimage *DRISUPCreateImageFromFDs2(struct DRISUPScreen *psDRISUPcreen,
++                                      int iWidth, int iHeight, int iFourCC,
++                                      int *piFDs, int iNumFDs, uint32_t uFlags,
++                                      int *piStrides, int *piOffsets,
++                                      void *pvLoaderPrivate);
++
++bool DRISUPHaveSetInFenceFd(void);
++void DRISUPSetInFenceFd(__DRIimage *psImage, int iFd);
++int DRISUPQueryCompatibleRenderOnlyDeviceFd(int iKmsOnlyFd);
++#endif /* defined(__PVRDRI_SUPPORT_H__) */
+diff --git a/src/gallium/frontends/pvr/pvrext.c b/src/gallium/frontends/pvr/pvrext.c
+new file mode 100644
+index 00000000000..dd1b5a1216d
+--- /dev/null
++++ b/src/gallium/frontends/pvr/pvrext.c
+@@ -0,0 +1,805 @@
++/*
++ * Copyright (c) Imagination Technologies Ltd.
++ *
++ * The contents of this file are subject to the MIT license as set out below.
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ */
++
++/*
++ * EXTENSION SUPPORT
++ *
++ * As the driver supports a range of Mesa versions it can be the case that it
++ * needs to support different extensions and extension versions depending on
++ * the version of Mesa that it's built against. As a guide the following rules
++ * should be followed:
++ *
++ * 1) If an extension appears in some supported versions of Mesa but not others
++ *    then it should be protected by the extension define, e.g.:
++ *    #if defined(__DRI_IMAGE)
++ *    <code>
++ *    #endif
++ *
++ *    However, if it appears in all versions then there's no need for it to
++ *    be protected.
++ *
++ * 2) Each driver supported extension should have a define for the maximum
++ *    version supported by the driver. This should be used when initialising
++ *    the corresponding extension structure. The Mesa extension version define
++ *    should *NOT* be used.
++ *
++ * 3) If the driver supports a range of versions for a given extension then
++ *    it should protect the extension code based on the Mesa extension version
++ *    define. For example, if the driver has to support versions 7 to 8 of the
++ *    __DRI_IMAGE extension then any fields, in the __DRIimageExtension
++ *    structure, that appear in version 8 but not 7 should be protected as
++ *    follows:
++ *    #if (__DRI_IMAGE_VERSION >= 8)
++ *    .createImageFromDmaBufs = PVRDRICreateImageFromDmaBufs,
++ *    #endif
++ *
++ *    Obviously any other associated code should also be protected in the same
++ *    way.
++ */
++
++#include "dri_util.h"
++#include "dri_query_renderer.h"
++
++#include "dri_screen.h"
++#include "dri_context.h"
++#include "dri_drawable.h"
++
++#include "dri_support.h"
++#include "pvrdri.h"
++
++#include "EGL/egl.h"
++#include "EGL/eglext.h"
++#include "EGL/eglmesaext.h"
++
++/* Maximum version numbers for each supported extension */
++#define PVR_DRI_TEX_BUFFER_VERSION      3
++#define PVR_DRI2_FLUSH_VERSION          4
++#define PVR_DRI_IMAGE_VERSION           21
++#define PVR_DRI2_ROBUSTNESS_VERSION     1
++#define PVR_DRI2_FENCE_VERSION          2
++#define PVR_DRI2_RENDERER_QUERY_VERSION 1
++#define PVR_DRI2_BUFFER_DAMAGE_VERSION  1
++
++static void
++PVRDRIExtSetTexBuffer(__DRIcontext *psDRIContext, GLint iTarget,
++                      GLint iFormat, __DRIdrawable *psDRIDrawable)
++{
++   PVRDRIDrawable *psPVRDrawable = dri_drawable(psDRIDrawable)->driverPrivate;
++   PVRDRIContext *psPVRContext = dri_context(psDRIContext)->driverPrivate;
++
++   DRISUPSetTexBuffer2(psPVRContext->psDRISUPContext,
++                       iTarget, iFormat, psPVRDrawable->psDRISUPDrawable);
++}
++
++static void
++PVRDRIExtReleaseTexBuffer(__DRIcontext *psDRIContext, GLint iTarget,
++                          __DRIdrawable *psDRIDrawable)
++{
++   PVRDRIDrawable *psPVRDrawable = dri_drawable(psDRIDrawable)->driverPrivate;
++   PVRDRIContext *psPVRContext = dri_context(psDRIContext)->driverPrivate;
++
++   DRISUPReleaseTexBuffer(psPVRContext->psDRISUPContext,
++                          iTarget, psPVRDrawable->psDRISUPDrawable);
++
++}
++
++static __DRItexBufferExtension pvrDRITexBufferExtension = {
++   .base = {
++      .name = __DRI_TEX_BUFFER,
++      .version = PVR_DRI_TEX_BUFFER_VERSION,
++   },
++   .setTexBuffer = NULL,
++   .setTexBuffer2 = PVRDRIExtSetTexBuffer,
++   .releaseTexBuffer = PVRDRIExtReleaseTexBuffer,
++};
++
++static void
++PVRDRI2Flush(__DRIdrawable *psDRIDrawable)
++{
++   PVRDRIDrawable *psPVRDrawable = dri_drawable(psDRIDrawable)->driverPrivate;
++
++   DRISUPFlush(psPVRDrawable->psDRISUPDrawable);
++}
++
++static void
++PVRDRI2Invalidate(__DRIdrawable *psDRIDrawable)
++{
++   PVRDRIDrawable *psPVRDrawable = dri_drawable(psDRIDrawable)->driverPrivate;
++
++   DRISUPInvalidate(psPVRDrawable->psDRISUPDrawable);
++}
++
++static void
++PVRDRI2FlushWithFlags(__DRIcontext *psDRIContext,
++                      __DRIdrawable *psDRIDrawable,
++                      unsigned int uFlags,
++                      enum __DRI2throttleReason eThrottleReason)
++{
++   PVRDRIContext *psPVRContext = dri_context(psDRIContext)->driverPrivate;
++   struct DRISUPDrawable *psDRISUPDrawable;
++
++   if ((uFlags & __DRI2_FLUSH_DRAWABLE) != 0) {
++      PVRDRIDrawable *psPVRDrawable = dri_drawable(psDRIDrawable)->driverPrivate;
++
++      psDRISUPDrawable = psPVRDrawable->psDRISUPDrawable;
++   } else {
++      psDRISUPDrawable = NULL;
++   }
++
++   DRISUPFlushWithFlags(psPVRContext->psDRISUPContext, psDRISUPDrawable,
++                        uFlags, (unsigned int) eThrottleReason);
++}
++
++static __DRI2flushExtension pvrDRI2FlushExtension = {
++   .base = {
++      .name = __DRI2_FLUSH,
++      .version = PVR_DRI2_FLUSH_VERSION,
++   },
++   .flush = PVRDRI2Flush,
++   .invalidate = PVRDRI2Invalidate,
++   .flush_with_flags = PVRDRI2FlushWithFlags,
++};
++
++static __DRIimage *
++PVRDRICreateImageFromName(__DRIscreen *psDRIScreen, int iWidth, int iHeight,
++                          int iFormat, int iName, int iPitch,
++                          void *pvLoaderPrivate)
++{
++   PVRDRIScreen *psPVRScreen = dri_screen(psDRIScreen)->driverPrivate;
++   int iFourCC = PVRDRIFormatToFourCC(iFormat);
++
++   return DRISUPCreateImageFromName(psPVRScreen->psDRISUPScreen,
++                                    iWidth, iHeight, iFourCC, iName, iPitch,
++                                    pvLoaderPrivate);
++}
++
++static __DRIimage *
++PVRDRICreateImageFromRenderbuffer(__DRIcontext *psDRIContext,
++                                  int iRenderBuffer, void *pvLoaderPrivate)
++{
++   PVRDRIContext *psPVRContext = dri_context(psDRIContext)->driverPrivate;
++
++   return DRISUPCreateImageFromRenderbuffer(psPVRContext->psDRISUPContext,
++                                            iRenderBuffer, pvLoaderPrivate);
++}
++
++static void
++PVRDRIDestroyImage(__DRIimage *psImage)
++{
++   DRISUPDestroyImage(psImage);
++}
++
++static __DRIimage *
++PVRDRICreateImage(__DRIscreen *psDRIScreen, int iWidth, int iHeight,
++                  int iFormat, unsigned int uUse, void *pvLoaderPrivate)
++{
++   PVRDRIScreen *psPVRScreen = dri_screen(psDRIScreen)->driverPrivate;
++   int iFourCC = PVRDRIFormatToFourCC(iFormat);
++
++   return DRISUPCreateImage(psPVRScreen->psDRISUPScreen, iWidth, iHeight,
++                            iFourCC, uUse, pvLoaderPrivate);
++}
++
++static GLboolean
++PVRDRIQueryImage(__DRIimage *psImage, int iAttrib, int *piValue)
++{
++   int iFourCC;
++
++   switch (iAttrib) {
++   case __DRI_IMAGE_ATTRIB_FORMAT:
++      if (DRISUPQueryImage(psImage,
++                           __DRI_IMAGE_ATTRIB_FOURCC, &iFourCC)) {
++         *piValue = PVRDRIFourCCToDRIFormat(iFourCC);
++         return GL_TRUE;
++      }
++      return GL_FALSE;
++   default:
++      return DRISUPQueryImage(psImage, iAttrib, piValue);
++   }
++
++}
++
++static __DRIimage *
++PVRDRIDupImage(__DRIimage *psImage, void *pvLoaderPrivate)
++{
++   return DRISUPDupImage(psImage, pvLoaderPrivate);
++}
++
++static GLboolean
++PVRDRIValidateImageUsage(__DRIimage *psImage, unsigned int uUse)
++{
++   return DRISUPValidateImageUsage(psImage, uUse);
++}
++
++static __DRIimage *
++PVRDRICreateImageFromNames(__DRIscreen *psDRIScreen, int iWidth, int iHeight,
++                           int iFourCC, int *piNames, int iNumNames,
++                           int *piStrides, int *piOffsets,
++                           void *pvLoaderPrivate)
++{
++   PVRDRIScreen *psPVRScreen = dri_screen(psDRIScreen)->driverPrivate;
++
++   return DRISUPCreateImageFromNames(psPVRScreen->psDRISUPScreen,
++                                     iWidth, iHeight, iFourCC,
++                                     piNames, iNumNames,
++                                     piStrides, piOffsets, pvLoaderPrivate);
++}
++
++static __DRIimage *
++PVRDRIFromPlanar(__DRIimage *psImage, int iPlane, void *pvLoaderPrivate)
++{
++   return DRISUPFromPlanar(psImage, iPlane, pvLoaderPrivate);
++}
++
++static __DRIimage *
++PVRDRICreateImageFromTexture(__DRIcontext *psDRIContext, int iTarget,
++                             unsigned int uTexture, int iDepth, int iLevel,
++                             unsigned int *puError, void *pvLoaderPrivate)
++{
++   PVRDRIContext *psPVRContext = dri_context(psDRIContext)->driverPrivate;
++   int iEGLTarget;
++
++   switch (iTarget) {
++   case GL_TEXTURE_2D:
++      iEGLTarget = PVRDRI_GL_TEXTURE_2D;
++      break;
++   case GL_TEXTURE_3D:
++      iEGLTarget = PVRDRI_GL_TEXTURE_3D;
++      break;
++   case GL_TEXTURE_CUBE_MAP:
++      iEGLTarget = PVRDRI_GL_TEXTURE_CUBE_MAP_POSITIVE_X;
++      break;
++   default:
++      errorMessage("%s: GL Target %d is not supported",
++                   __func__, iTarget);
++      *puError = __DRI_IMAGE_ERROR_BAD_PARAMETER;
++      return NULL;
++   }
++
++   return DRISUPCreateImageFromTexture(psPVRContext->psDRISUPContext,
++                                       iEGLTarget, uTexture, iDepth, iLevel,
++                                       puError, pvLoaderPrivate);
++}
++
++static __DRIimage *
++PVRDRICreateImageFromFds(__DRIscreen *psDRIScreen, int iWidth, int iHeight,
++                         int iFourCC, int *piFDs, int iNumFDs,
++                         int *piStrides, int *piOffsets,
++                         void *pvLoaderPrivate)
++{
++   PVRDRIScreen *psPVRScreen = dri_screen(psDRIScreen)->driverPrivate;
++
++   return DRISUPCreateImageFromFDs(psPVRScreen->psDRISUPScreen,
++                                   iWidth, iHeight, iFourCC, piFDs, iNumFDs,
++                                   piStrides, piOffsets, pvLoaderPrivate);
++}
++
++static __DRIimage *
++PVRDRICreateImageFromDmaBufs(__DRIscreen *psDRIScreen,
++                             int iWidth, int iHeight, int iFourCC,
++                             int *piFDs, int iNumFDs,
++                             int *piStrides, int *piOffsets,
++                             enum __DRIYUVColorSpace eColorSpace,
++                             enum __DRISampleRange eSampleRange,
++                             enum __DRIChromaSiting eHorizSiting,
++                             enum __DRIChromaSiting eVertSiting,
++                             unsigned int *puError, void *pvLoaderPrivate)
++{
++   PVRDRIScreen *psPVRScreen = dri_screen(psDRIScreen)->driverPrivate;
++
++   return DRISUPCreateImageFromDmaBufs(psPVRScreen->psDRISUPScreen,
++                                       iWidth, iHeight, iFourCC,
++                                       piFDs, iNumFDs, piStrides, piOffsets,
++                                       (unsigned int) eColorSpace,
++                                       (unsigned int) eSampleRange,
++                                       (unsigned int) eHorizSiting,
++                                       (unsigned int) eVertSiting,
++                                       puError, pvLoaderPrivate);
++}
++
++static void
++PVRDRIBlitImage(__DRIcontext *psDRIContext,
++                __DRIimage *psDst, __DRIimage *psSrc,
++                int iDstX0, int iDstY0, int iDstWidth, int iDstHeight,
++                int iSrcX0, int iSrcY0, int iSrcWidth, int iSrcHeight,
++                int iFlushFlag)
++{
++   PVRDRIContext *psPVRContext = dri_context(psDRIContext)->driverPrivate;
++
++   return DRISUPBlitImage(psPVRContext->psDRISUPContext,
++                          psDst, psSrc,
++                          iDstX0, iDstY0, iDstWidth, iDstHeight,
++                          iSrcX0, iSrcY0, iSrcWidth, iSrcHeight,
++                          iFlushFlag);
++}
++
++static int
++PVRDRIGetCapabilities(__DRIscreen *psDRIScreen)
++{
++   PVRDRIScreen *psPVRScreen = dri_screen(psDRIScreen)->driverPrivate;
++
++   return DRISUPGetImageCapabilities(psPVRScreen->psDRISUPScreen);
++}
++
++static void *
++PVRDRIMapImage(__DRIcontext *psDRIContext, __DRIimage *psImage,
++               int iX0, int iY0, int iWidth, int iHeight,
++               unsigned int iFlags, int *piStride, void **ppvData)
++{
++   PVRDRIContext *psPVRContext = dri_context(psDRIContext)->driverPrivate;
++
++   return DRISUPMapImage(psPVRContext->psDRISUPContext, psImage,
++                         iX0, iY0, iWidth, iHeight, iFlags, piStride,
++                         ppvData);
++}
++
++static void
++PVRDRIUnmapImage(__DRIcontext *psDRIContext, __DRIimage *psImage,
++                 void *pvData)
++{
++   PVRDRIContext *psPVRContext = dri_context(psDRIContext)->driverPrivate;
++
++   return DRISUPUnmapImage(psPVRContext->psDRISUPContext, psImage, pvData);
++}
++
++static __DRIimage *
++PVRDRICreateImageWithModifiers(__DRIscreen *psDRIScreen,
++                               int iWidth, int iHeight, int iFormat,
++                               const uint64_t *puModifiers,
++                               const unsigned int uModifierCount,
++                               void *pvLoaderPrivate)
++{
++   PVRDRIScreen *psPVRScreen = dri_screen(psDRIScreen)->driverPrivate;
++   int iFourCC = PVRDRIFormatToFourCC(iFormat);
++
++   return DRISUPCreateImageWithModifiers(psPVRScreen->psDRISUPScreen,
++                                         iWidth, iHeight, iFourCC,
++                                         puModifiers, uModifierCount,
++                                         pvLoaderPrivate);
++}
++
++static __DRIimage *
++PVRDRICreateImageFromDmaBufs2(__DRIscreen *psDRIScreen,
++                              int iWidth, int iHeight,
++                              int iFourCC, uint64_t uModifier,
++                              int *piFDs, int iNumFDs,
++                              int *piStrides, int *piOffsets,
++                              enum __DRIYUVColorSpace eColorSpace,
++                              enum __DRISampleRange eSampleRange,
++                              enum __DRIChromaSiting eHorizSiting,
++                              enum __DRIChromaSiting eVertSiting,
++                              unsigned int *puError, void *pvLoaderPrivate)
++{
++   PVRDRIScreen *psPVRScreen = dri_screen(psDRIScreen)->driverPrivate;
++
++   return DRISUPCreateImageFromDMABufs2(psPVRScreen->psDRISUPScreen,
++                                        iWidth, iHeight, iFourCC, uModifier,
++                                        piFDs, iNumFDs, piStrides, piOffsets,
++                                        (unsigned int) eColorSpace,
++                                        (unsigned int) eSampleRange,
++                                        (unsigned int) eHorizSiting,
++                                        (unsigned int) eVertSiting,
++                                        puError, pvLoaderPrivate);
++}
++
++static bool
++PVRDRIQueryDmaBufFormats(__DRIscreen *psDRIScreen, int iMax,
++                         int *piFormats, int *piCount)
++{
++   PVRDRIScreen *psPVRScreen = dri_screen(psDRIScreen)->driverPrivate;
++
++   return DRISUPQueryDMABufFormats(psPVRScreen->psDRISUPScreen, iMax,
++                                   piFormats, piCount);
++}
++
++static bool
++PVRDRIQueryDmaBufModifiers(__DRIscreen *psDRIScreen, int iFourCC, int iMax,
++                           uint64_t *puModifiers,
++                           unsigned int *puExternalOnly, int *piCount)
++{
++   PVRDRIScreen *psPVRScreen = dri_screen(psDRIScreen)->driverPrivate;
++
++   return DRISUPQueryDMABufModifiers(psPVRScreen->psDRISUPScreen, iFourCC,
++                                     iMax,
++                                     puModifiers, puExternalOnly, piCount);
++}
++
++static bool
++PVRDRIQueryDmaBufFormatModifierAttribs(__DRIscreen *psDRIScreen,
++                                       uint32_t uFourCC, uint64_t uModifier,
++                                       int iAttrib, uint64_t *puValue)
++{
++   PVRDRIScreen *psPVRScreen = dri_screen(psDRIScreen)->driverPrivate;
++   struct DRISUPScreen *psDRISUPScreen = psPVRScreen->psDRISUPScreen;
++
++   return DRISUPQueryDMABufFormatModifierAttribs(psDRISUPScreen, uFourCC,
++                                                 uModifier, iAttrib, puValue);
++}
++
++static __DRIimage *
++PVRDRICreateImageFromRenderbuffer2(__DRIcontext *psDRIContext,
++                                   int iRenderBuffer, void *pvLoaderPrivate,
++                                   unsigned int *puError)
++{
++   PVRDRIContext *psPVRContext = dri_context(psDRIContext)->driverPrivate;
++   struct DRISUPContext *psDRISUPContext = psPVRContext->psDRISUPContext;
++
++   return DRISUPCreateImageFromRenderBuffer2(psDRISUPContext, iRenderBuffer,
++                                             pvLoaderPrivate, puError);
++}
++
++static __DRIimage *
++PVRDRICreateImageFromDmaBufs3(__DRIscreen *psDRIScreen,
++                              int iWidth, int iHeight,
++                              int iFourCC, uint64_t uModifier,
++                              int *piFDs, int iNumFDs,
++                              int *piStrides, int *piOffsets,
++                              enum __DRIYUVColorSpace eColorSpace,
++                              enum __DRISampleRange eSampleRange,
++                              enum __DRIChromaSiting eHorizSiting,
++                              enum __DRIChromaSiting eVertSiting,
++                              uint32_t uFlags, unsigned int *puError,
++                              void *pvLoaderPrivate)
++{
++   PVRDRIScreen *psPVRScreen = dri_screen(psDRIScreen)->driverPrivate;
++
++   return DRISUPCreateImageFromDMABufs3(psPVRScreen->psDRISUPScreen,
++                                        iWidth, iHeight, iFourCC, uModifier,
++                                        piFDs, iNumFDs, piStrides, piOffsets,
++                                        (unsigned int) eColorSpace,
++                                        (unsigned int) eSampleRange,
++                                        (unsigned int) eHorizSiting,
++                                        (unsigned int) eVertSiting,
++                                        uFlags, puError, pvLoaderPrivate);
++}
++
++static __DRIimage *
++PVRDRICreateImageWithModifiers2(__DRIscreen *psDRIScreen,
++                                int iWidth, int iHeight, int iFormat,
++                                const uint64_t *puModifiers,
++                                const unsigned int uModifierCount,
++                                unsigned int uUse,
++                                void *pvLoaderPrivate)
++{
++   PVRDRIScreen *psPVRScreen = dri_screen(psDRIScreen)->driverPrivate;
++   int iFourCC = PVRDRIFormatToFourCC(iFormat);
++
++   return DRISUPCreateImageWithModifiers2(psPVRScreen->psDRISUPScreen,
++                                          iWidth, iHeight, iFourCC,
++                                          puModifiers, uModifierCount,
++                                          uUse, pvLoaderPrivate);
++}
++
++static __DRIimage *
++PVRDRICreateImageFromFds2(__DRIscreen *psDRIScreen, int iWidth, int iHeight,
++                          int iFourCC, int *piFDs, int iNumFDs,
++                          uint32_t uFlags, int *piStrides, int *piOffsets,
++                          void *pvLoaderPrivate)
++{
++   PVRDRIScreen *psPVRScreen = dri_screen(psDRIScreen)->driverPrivate;
++
++   return DRISUPCreateImageFromFDs2(psPVRScreen->psDRISUPScreen,
++                                    iWidth, iHeight, iFourCC, piFDs, iNumFDs,
++                                    uFlags, piStrides, piOffsets,
++                                    pvLoaderPrivate);
++}
++
++static void
++PVRDRISetInFenceFd(__DRIimage *psImage, int iFd)
++{
++   return DRISUPSetInFenceFd(psImage, iFd);
++}
++
++#if defined(EGL_IMG_cl_image)
++static __DRIimage *
++PVRDRICreateImageFromBuffer(__DRIcontext *psDRIContext, int iTarget,
++                            void *pvBuffer, unsigned int *puError,
++                            void *pvLoaderPrivate)
++{
++   PVRDRIContext *psPVRContext = dri_context(psDRIContext)->driverPrivate;
++
++   return DRISUPCreateImageFromBuffer(psPVRContext->psDRISUPContext, iTarget,
++                                      pvBuffer, puError, pvLoaderPrivate);
++}
++#endif
++
++static __DRIimageExtension pvrDRIImage = {
++   .base = {
++      .name = __DRI_IMAGE,
++      .version = PVR_DRI_IMAGE_VERSION,
++   },
++   .createImageFromName = PVRDRICreateImageFromName,
++   .createImageFromRenderbuffer = PVRDRICreateImageFromRenderbuffer,
++   .destroyImage = PVRDRIDestroyImage,
++   .createImage = PVRDRICreateImage,
++   .queryImage = PVRDRIQueryImage,
++   .dupImage = PVRDRIDupImage,
++   .validateUsage = PVRDRIValidateImageUsage,
++   .createImageFromNames = PVRDRICreateImageFromNames,
++   .fromPlanar = PVRDRIFromPlanar,
++   .createImageFromTexture = PVRDRICreateImageFromTexture,
++   .createImageFromFds = PVRDRICreateImageFromFds,
++   .createImageFromDmaBufs = PVRDRICreateImageFromDmaBufs,
++   .blitImage = PVRDRIBlitImage,
++   .getCapabilities = PVRDRIGetCapabilities,
++   .mapImage = PVRDRIMapImage,
++   .unmapImage = PVRDRIUnmapImage,
++   .createImageWithModifiers = PVRDRICreateImageWithModifiers,
++   .createImageFromDmaBufs2 = PVRDRICreateImageFromDmaBufs2,
++   .queryDmaBufFormats = PVRDRIQueryDmaBufFormats,
++   .queryDmaBufModifiers = PVRDRIQueryDmaBufModifiers,
++   .queryDmaBufFormatModifierAttribs =
++   PVRDRIQueryDmaBufFormatModifierAttribs,
++   .createImageFromRenderbuffer2 = PVRDRICreateImageFromRenderbuffer2,
++   .createImageFromDmaBufs3 = PVRDRICreateImageFromDmaBufs3,
++   .createImageWithModifiers2 = PVRDRICreateImageWithModifiers2,
++   .createImageFromFds2 = PVRDRICreateImageFromFds2,
++   .setInFenceFd = PVRDRISetInFenceFd,
++#if defined(EGL_IMG_cl_image)
++   .createImageFromBuffer = PVRDRICreateImageFromBuffer,
++#endif
++};
++
++static __DRIrobustnessExtension pvrDRIRobustness = {
++   .base = {
++      .name = __DRI2_ROBUSTNESS,
++      .version = PVR_DRI2_ROBUSTNESS_VERSION,
++   }
++};
++
++static int
++PVRDRIQueryRendererInteger(__DRIscreen *psDRIScreen, int iAttribute,
++                           unsigned int *puValue)
++{
++   PVRDRIScreen *psPVRScreen = dri_screen(psDRIScreen)->driverPrivate;
++   int res;
++
++   res = DRISUPQueryRendererInteger(psPVRScreen->psDRISUPScreen,
++                                    iAttribute, puValue);
++   if (res == -1)
++      return dri2_query_renderer_integer_common(psDRIScreen, iAttribute,
++                                                puValue);
++
++   return res;
++}
++
++static int
++PVRDRIQueryRendererString(__DRIscreen *psDRIScreen, int iAttribute,
++                          const char **ppszValue)
++{
++   PVRDRIScreen *psPVRScreen = dri_screen(psDRIScreen)->driverPrivate;
++
++   return DRISUPQueryRendererString(psPVRScreen->psDRISUPScreen, iAttribute,
++                                    ppszValue);
++}
++
++static const __DRI2rendererQueryExtension pvrDRIRendererQueryExtension = {
++   .base = {
++      .name = __DRI2_RENDERER_QUERY,
++      .version = PVR_DRI2_RENDERER_QUERY_VERSION,
++   },
++   .queryInteger = PVRDRIQueryRendererInteger,
++   .queryString = PVRDRIQueryRendererString,
++};
++
++
++static void *
++PVRDRICreateFenceEXT(__DRIcontext *psDRIContext)
++{
++   PVRDRIContext *psPVRContext = dri_context(psDRIContext)->driverPrivate;
++
++   return DRISUPCreateFence(psPVRContext->psDRISUPContext);
++}
++
++static void
++PVRDRIDestroyFenceEXT(__DRIscreen *psDRIScreen, void *pvFence)
++{
++   PVRDRIScreen *psPVRScreen = dri_screen(psDRIScreen)->driverPrivate;
++
++   return DRISUPDestroyFence(psPVRScreen->psDRISUPScreen, pvFence);
++}
++
++static GLboolean
++PVRDRIClientWaitSyncEXT(__DRIcontext *psDRIContext, void *pvFence,
++                        unsigned int uFlags, uint64_t uTimeout)
++{
++   struct DRISUPContext *psDRISUPContext;
++
++   if (psDRIContext) {
++      PVRDRIContext *psPVRContext = dri_context(psDRIContext)->driverPrivate;
++
++      psDRISUPContext = psPVRContext->psDRISUPContext;
++   } else {
++      psDRISUPContext = NULL;
++   }
++
++   return DRISUPClientWaitSync(psDRISUPContext, pvFence, uFlags, uTimeout);
++}
++
++static void
++PVRDRIServerWaitSyncEXT(__DRIcontext *psDRIContext, void *pvFence,
++                        unsigned int uFlags)
++{
++   PVRDRIContext *psPVRContext = dri_context(psDRIContext)->driverPrivate;
++
++   return DRISUPServerWaitSync(psPVRContext->psDRISUPContext, pvFence, uFlags);
++}
++
++static unsigned int
++PVRDRIGetFenceCapabilitiesEXT(__DRIscreen *psDRIScreen)
++{
++   PVRDRIScreen *psPVRScreen = dri_screen(psDRIScreen)->driverPrivate;
++
++   return DRISUPGetFenceCapabilities(psPVRScreen->psDRISUPScreen);
++}
++
++static void *
++PVRDRICreateFenceFdEXT(__DRIcontext *psDRIContext, int iFD)
++{
++   PVRDRIContext *psPVRContext = dri_context(psDRIContext)->driverPrivate;
++
++   return DRISUPCreateFenceFD(psPVRContext->psDRISUPContext, iFD);
++}
++
++static int
++PVRDRIGetFenceFdEXT(__DRIscreen *psDRIScreen, void *pvFence)
++{
++   PVRDRIScreen *psPVRScreen = dri_screen(psDRIScreen)->driverPrivate;
++
++   return DRISUPGetFenceFD(psPVRScreen->psDRISUPScreen, pvFence);
++}
++
++static void *
++PVRDRIGetFenceFromClEventEXT(__DRIscreen *psDRIScreen, intptr_t iClEvent)
++{
++   PVRDRIScreen *psPVRScreen = dri_screen(psDRIScreen)->driverPrivate;
++
++   return DRISUPGetFenceFromCLEvent(psPVRScreen->psDRISUPScreen, iClEvent);
++}
++
++__DRI2fenceExtension pvrDRIFenceExtension = {
++   .base = {
++      .name = __DRI2_FENCE,
++      .version = PVR_DRI2_FENCE_VERSION,
++   },
++   .create_fence = PVRDRICreateFenceEXT,
++   .get_fence_from_cl_event = PVRDRIGetFenceFromClEventEXT,
++   .destroy_fence = PVRDRIDestroyFenceEXT,
++   .client_wait_sync = PVRDRIClientWaitSyncEXT,
++   .server_wait_sync = PVRDRIServerWaitSyncEXT,
++   .get_capabilities = PVRDRIGetFenceCapabilitiesEXT,
++   .create_fence_fd = PVRDRICreateFenceFdEXT,
++   .get_fence_fd = PVRDRIGetFenceFdEXT,
++};
++
++static void
++PVRDRISetDamageRegion(__DRIdrawable *psDRIDrawable,
++                      unsigned int uNRects, int *piRects)
++{
++   PVRDRIDrawable *psPVRDrawable = dri_drawable(psDRIDrawable)->driverPrivate;
++
++   DRISUPSetDamageRegion(psPVRDrawable->psDRISUPDrawable, uNRects, piRects);
++}
++
++const __DRI2bufferDamageExtension pvrDRIbufferDamageExtension = {
++   .base = {
++      .name = __DRI2_BUFFER_DAMAGE,
++      .version = PVR_DRI2_BUFFER_DAMAGE_VERSION,
++   },
++   .set_damage_region = PVRDRISetDamageRegion,
++};
++
++/*
++ * Extension lists
++ *
++ * NOTE: When adding a new screen extension asScreenExtensionVersionInfo
++ *       should also be updated accordingly.
++ */
++static const __DRIextension *apsScreenExtensions[] = {
++   &pvrDRITexBufferExtension.base,
++   &pvrDRI2FlushExtension.base,
++   &pvrDRIImage.base,
++   &pvrDRIRobustness.base,
++   &pvrDRIRendererQueryExtension.base,
++   &pvrDRIFenceExtension.base,
++   &pvrDRIbufferDamageExtension.base,
++   &dri2ConfigQueryExtension.base,
++   NULL
++};
++
++static const __DRIextension asScreenExtensionVersionInfo[] = {
++   {.name = __DRI_TEX_BUFFER,.version = __DRI_TEX_BUFFER_VERSION},
++   {.name = __DRI2_FLUSH,.version = __DRI2_FLUSH_VERSION},
++   {.name = __DRI_IMAGE,.version = __DRI_IMAGE_VERSION},
++   {.name = __DRI2_ROBUSTNESS,.version = __DRI2_ROBUSTNESS_VERSION},
++   {.name = __DRI2_RENDERER_QUERY,.version = __DRI2_RENDERER_QUERY_VERSION},
++   {.name = __DRI2_FENCE,.version = __DRI2_FENCE_VERSION},
++   {.name = __DRI2_BUFFER_DAMAGE,.version = __DRI2_BUFFER_DAMAGE_VERSION},
++   {.name = __DRI2_CONFIG_QUERY,.version = __DRI2_CONFIG_QUERY_VERSION},
++   {.name = NULL,.version = 0},
++};
++
++const __DRIextension **
++PVRDRIScreenExtensions(void)
++{
++   return apsScreenExtensions;
++}
++
++const __DRIextension *
++PVRDRIScreenExtensionVersionInfo(void)
++{
++   return asScreenExtensionVersionInfo;
++}
++
++void
++PVRDRIAdjustExtensions(unsigned int uVersion, unsigned int uMinVersion)
++{
++   /* __DRI2fenceExtension adjustment */
++   switch (uVersion) {
++   default:
++   case 7:
++   case 6:
++   case 5:
++   case 4:
++      /* Is the KHR_cl_event2 EGL extension supported? */
++      if (!DRISUPHaveGetFenceFromCLEvent())
++         pvrDRIFenceExtension.get_fence_from_cl_event = NULL;
++
++      break;
++   case 3:
++      break;
++   case 2:
++   case 1:
++   case 0:
++      /* The KHR_cl_event2 EGL extension is not supported */
++      pvrDRIFenceExtension.get_fence_from_cl_event = NULL;
++      break;
++   }
++
++   /* __DRIimageExtension adjustment */
++   switch (uVersion) {
++   default:
++   case 7:
++   case 6:
++   case 5:
++      if (!DRISUPHaveSetInFenceFd())
++         pvrDRIImage.setInFenceFd = NULL;
++
++      break;
++   case 4:
++   case 3:
++   case 2:
++   case 1:
++   case 0:
++      /*
++       * The following are not supported:
++       *    createImageFromDmaBufs3
++       *    createImageWithModifiers2
++       *    createImageFromFds2
++       *    setInFenceFd
++       */
++      pvrDRIImage.base.version = 17;
++      break;
++   }
++}
+diff --git a/src/gallium/frontends/pvr/pvrmesa.h b/src/gallium/frontends/pvr/pvrmesa.h
+new file mode 100644
+index 00000000000..5e1c9c1b2e6
+--- /dev/null
++++ b/src/gallium/frontends/pvr/pvrmesa.h
+@@ -0,0 +1,36 @@
++/*
++ * Copyright (c) Imagination Technologies Ltd.
++ *
++ * The contents of this file are subject to the MIT license as set out below.
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ */
++
++#if !defined(__PVRMESA_H__)
++#define __PVRMESA_H__
++
++#include "pvrdri.h"
++
++void pvrdri_free_dispatch_tables(PVRDRIScreen *psPVRScreen);
++bool pvrdri_create_dispatch_table(PVRDRIScreen *psPVRScreen,
++                                  PVRDRIAPIType eAPI);
++void pvrdri_set_null_dispatch_table(void);
++void pvrdri_set_dispatch_table(PVRDRIContext *psPVRContext);
++
++#endif /* !defined(__PVRMESA_H__) */
+diff --git a/src/gallium/frontends/pvr/pvrutil.c b/src/gallium/frontends/pvr/pvrutil.c
+new file mode 100644
+index 00000000000..53a7fac0704
+--- /dev/null
++++ b/src/gallium/frontends/pvr/pvrutil.c
+@@ -0,0 +1,242 @@
++/*
++ * Copyright (c) Imagination Technologies Ltd.
++ *
++ * The contents of this file are subject to the MIT license as set out below.
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ */
++
++#include <stdarg.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <assert.h>
++
++#include "drm-uapi/drm_fourcc.h"
++
++#include "dri_util.h"
++#include "pvrdri.h"
++
++#define MESSAGE_LENGTH_MAX 1024
++
++/*
++ * Define before including android/log.h and dlog.h as this is used by these
++ * headers.
++ */
++#define LOG_TAG "PVR-MESA"
++
++#if defined(HAVE_ANDROID_PLATFORM)
++#include <android/log.h>
++#define err_printf(f, args...) ((void)__android_log_print(ANDROID_LOG_ERROR, LOG_TAG, f, ##args))
++#define dbg_printf(f, args...) ((void)__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, f, ##args))
++#else
++#define err_printf(f, args...) fprintf(stderr, f "\n", ##args)
++#define dbg_printf(f, args...) fprintf(stderr, "LibGL: " f "\n", ##args)
++#endif /* HAVE_ANDROID_PLATFORM */
++
++/* Standard error message */
++void PRINTFLIKE(1, 2)
++errorMessage(const char *f, ...)
++{
++   char message[MESSAGE_LENGTH_MAX];
++   va_list args;
++
++   va_start(args, f);
++   vsnprintf(message, sizeof message, f, args);
++   va_end(args);
++
++   err_printf("%s", message);
++}
++
++void PRINTFLIKE(1, 2)
++__driUtilMessage(const char *f, ...)
++{
++   char message[MESSAGE_LENGTH_MAX];
++   va_list args;
++
++   /*
++    * On Android, always print messages; otherwise, only print if
++    * the environment variable LIBGL_DEBUG=verbose.
++    */
++#if !defined(HAVE_ANDROID_PLATFORM)
++   char *ev = getenv("LIBGL_DEBUG");
++
++   if (!ev || strcmp(ev, "verbose") != 0)
++      return;
++#endif
++
++   va_start(args, f);
++   vsnprintf(message, sizeof message, f, args);
++   va_end(args);
++
++   dbg_printf("%s", message);
++}
++
++mesa_format
++PVRDRIMesaFormatToMesaFormat(int pvrdri_mesa_format)
++{
++   switch (pvrdri_mesa_format) {
++   case PVRDRI_MESA_FORMAT_NONE:
++      return MESA_FORMAT_NONE;
++   case PVRDRI_MESA_FORMAT_B8G8R8A8_UNORM:
++      return MESA_FORMAT_B8G8R8A8_UNORM;
++   case PVRDRI_MESA_FORMAT_B8G8R8X8_UNORM:
++      return MESA_FORMAT_B8G8R8X8_UNORM;
++   case PVRDRI_MESA_FORMAT_B5G6R5_UNORM:
++      return MESA_FORMAT_B5G6R5_UNORM;
++   case PVRDRI_MESA_FORMAT_R8G8B8A8_UNORM:
++      return MESA_FORMAT_R8G8B8A8_UNORM;
++   case PVRDRI_MESA_FORMAT_R8G8B8X8_UNORM:
++      return MESA_FORMAT_R8G8B8X8_UNORM;
++   case PVRDRI_MESA_FORMAT_YCBCR:
++      return MESA_FORMAT_YCBCR;
++   case PVRDRI_MESA_FORMAT_YUV420_2PLANE:
++      return MESA_FORMAT_YUV420_2PLANE;
++   case PVRDRI_MESA_FORMAT_YVU420_2PLANE:
++      return MESA_FORMAT_YVU420_2PLANE;
++   case PVRDRI_MESA_FORMAT_B8G8R8A8_SRGB:
++      return MESA_FORMAT_B8G8R8A8_SRGB;
++   case PVRDRI_MESA_FORMAT_R8G8B8A8_SRGB:
++      return MESA_FORMAT_R8G8B8A8_SRGB;
++   default:
++      __driUtilMessage("%s: Unknown format: %d", __func__, pvrdri_mesa_format);
++      break;
++   }
++
++   return MESA_FORMAT_NONE;
++}
++
++int
++PVRDRIFormatToFourCC(int dri_format)
++{
++   switch (dri_format) {
++   case __DRI_IMAGE_FORMAT_RGB565:
++      return DRM_FORMAT_RGB565;
++   case __DRI_IMAGE_FORMAT_XRGB8888:
++      return DRM_FORMAT_XRGB8888;
++   case __DRI_IMAGE_FORMAT_ARGB8888:
++      return DRM_FORMAT_ARGB8888;
++   case __DRI_IMAGE_FORMAT_ABGR8888:
++      return DRM_FORMAT_ABGR8888;
++   case __DRI_IMAGE_FORMAT_XBGR8888:
++      return DRM_FORMAT_XBGR8888;
++   case __DRI_IMAGE_FORMAT_R8:
++      return DRM_FORMAT_R8;
++   case __DRI_IMAGE_FORMAT_GR88:
++      return DRM_FORMAT_GR88;
++   case __DRI_IMAGE_FORMAT_NONE:
++      return 0;
++   case __DRI_IMAGE_FORMAT_XRGB2101010:
++      return DRM_FORMAT_XRGB2101010;
++   case __DRI_IMAGE_FORMAT_ARGB2101010:
++      return DRM_FORMAT_ARGB2101010;
++   case __DRI_IMAGE_FORMAT_SARGB8:
++      return __DRI_IMAGE_FOURCC_SARGB8888;
++   case __DRI_IMAGE_FORMAT_ARGB1555:
++      return DRM_FORMAT_ARGB1555;
++   case __DRI_IMAGE_FORMAT_R16:
++      return DRM_FORMAT_R16;
++   case __DRI_IMAGE_FORMAT_GR1616:
++      return DRM_FORMAT_GR1616;
++   case __DRI_IMAGE_FORMAT_YUYV:
++      return DRM_FORMAT_YUYV;
++   case __DRI_IMAGE_FORMAT_XBGR2101010:
++      return DRM_FORMAT_XBGR2101010;
++   case __DRI_IMAGE_FORMAT_ABGR2101010:
++      return DRM_FORMAT_ABGR2101010;
++   case __DRI_IMAGE_FORMAT_SABGR8:
++      return __DRI_IMAGE_FOURCC_SABGR8888;
++   case __DRI_IMAGE_FORMAT_UYVY:
++      return DRM_FORMAT_UYVY;
++   case __DRI_IMAGE_FORMAT_ARGB4444:
++      return DRM_FORMAT_ARGB4444;
++   case __DRI_IMAGE_FORMAT_YVU444_PACK10_IMG:
++      return DRM_FORMAT_YVU444_PACK10_IMG;
++   case __DRI_IMAGE_FORMAT_BGR888:
++      return DRM_FORMAT_BGR888;
++   case __DRI_IMAGE_FORMAT_RGB888:
++      return DRM_FORMAT_RGB888;
++   case __DRI_IMAGE_FORMAT_AXBXGXRX106106106106:
++      return DRM_FORMAT_AXBXGXRX106106106106;
++   default:
++      __driUtilMessage("%s: Unknown format: %d", __func__, dri_format);
++      break;
++   }
++
++   return 0;
++}
++
++int
++PVRDRIFourCCToDRIFormat(int iFourCC)
++{
++   switch (iFourCC) {
++   case 0:
++      return __DRI_IMAGE_FORMAT_NONE;
++   case DRM_FORMAT_RGB565:
++      return __DRI_IMAGE_FORMAT_RGB565;
++   case DRM_FORMAT_XRGB8888:
++      return __DRI_IMAGE_FORMAT_XRGB8888;
++   case DRM_FORMAT_ARGB8888:
++      return __DRI_IMAGE_FORMAT_ARGB8888;
++   case DRM_FORMAT_ABGR8888:
++      return __DRI_IMAGE_FORMAT_ABGR8888;
++   case DRM_FORMAT_XBGR8888:
++      return __DRI_IMAGE_FORMAT_XBGR8888;
++   case DRM_FORMAT_R8:
++      return __DRI_IMAGE_FORMAT_R8;
++   case DRM_FORMAT_GR88:
++      return __DRI_IMAGE_FORMAT_GR88;
++   case DRM_FORMAT_XRGB2101010:
++      return __DRI_IMAGE_FORMAT_XRGB2101010;
++   case DRM_FORMAT_ARGB2101010:
++      return __DRI_IMAGE_FORMAT_ARGB2101010;
++   case __DRI_IMAGE_FOURCC_SARGB8888:
++      return __DRI_IMAGE_FORMAT_SARGB8;
++   case DRM_FORMAT_ARGB1555:
++      return __DRI_IMAGE_FORMAT_ARGB1555;
++   case DRM_FORMAT_R16:
++      return __DRI_IMAGE_FORMAT_R16;
++   case DRM_FORMAT_GR1616:
++      return __DRI_IMAGE_FORMAT_GR1616;
++   case DRM_FORMAT_YUYV:
++      return __DRI_IMAGE_FORMAT_YUYV;
++   case DRM_FORMAT_XBGR2101010:
++      return __DRI_IMAGE_FORMAT_XBGR2101010;
++   case DRM_FORMAT_ABGR2101010:
++      return __DRI_IMAGE_FORMAT_ABGR2101010;
++   case __DRI_IMAGE_FOURCC_SABGR8888:
++      return __DRI_IMAGE_FORMAT_SABGR8;
++   case DRM_FORMAT_UYVY:
++      return __DRI_IMAGE_FORMAT_UYVY;
++   case DRM_FORMAT_ARGB4444:
++      return __DRI_IMAGE_FORMAT_ARGB4444;
++   case DRM_FORMAT_YVU444_PACK10_IMG:
++      return __DRI_IMAGE_FORMAT_YVU444_PACK10_IMG;
++   case DRM_FORMAT_BGR888:
++      return __DRI_IMAGE_FORMAT_BGR888;
++   case DRM_FORMAT_RGB888:
++      return __DRI_IMAGE_FORMAT_RGB888;
++   case DRM_FORMAT_AXBXGXRX106106106106:
++      return __DRI_IMAGE_FORMAT_AXBXGXRX106106106106;
++   default:
++      __driUtilMessage("%s: Unknown format: %d", __func__, iFourCC);
++      break;
++   }
++
++   return 0;
++}
+diff --git a/src/gallium/meson.build b/src/gallium/meson.build
+index 42b93365d1f..3105a551864 100644
+--- a/src/gallium/meson.build
++++ b/src/gallium/meson.build
+@@ -165,6 +165,16 @@ if with_gallium_svga
+ else
+   driver_svga = declare_dependency()
+ endif
++if with_gallium_pvr
++  subdir('drivers/pvr')
++else
++  driver_pvr = declare_dependency()
++endif
++if with_gallium_pvr_alias
++  subdir('drivers/pvr_alias')
++else
++  driver_pvr_alias = declare_dependency()
++endif
+ if with_gallium_virgl
+   subdir('winsys/virgl/common')
+   subdir('winsys/virgl/drm')
+@@ -201,6 +211,11 @@ if with_gallium_rusticl
+   subdir('frontends/rusticl')
+   subdir('targets/rusticl')
+ endif
++if with_gallium_pvr
++  subdir('frontends/pvr')
++else
++  libpvr = []
++endif
+ if with_dri
+   subdir('frontends/dri')
+   subdir('targets/dri')
+diff --git a/src/gallium/targets/dri/meson.build b/src/gallium/targets/dri/meson.build
+index 83925248b17..8b5d59995cc 100644
+--- a/src/gallium/targets/dri/meson.build
++++ b/src/gallium/targets/dri/meson.build
+@@ -52,7 +52,7 @@ libgallium_dri = shared_library(
+   link_with : [
+     libdri, libmesa, libgalliumvl,
+     libgallium, libglapi, libloader, libpipe_loader_static, libws_null, libwsw, libswdri,
+-    libswkmsdri,
++    libswkmsdri, libpvr,
+   ],
+   dependencies : [
+     dep_selinux, dep_libdrm, dep_llvm, dep_thread, idep_xmlconfig, idep_mesautil,
+@@ -60,7 +60,7 @@ libgallium_dri = shared_library(
+     driver_kmsro, driver_v3d, driver_vc4, driver_freedreno, driver_etnaviv,
+     driver_tegra, driver_i915, driver_svga, driver_virgl,
+     driver_panfrost, driver_iris, driver_lima, driver_zink, driver_d3d12,
+-    driver_asahi, driver_crocus
++    driver_asahi, driver_crocus, driver_pvr, driver_pvr_alias
+   ],
+   # Will be deleted during installation, see install_megadrivers.py
+   install : true,
+@@ -124,7 +124,9 @@ foreach d : [[with_gallium_kmsro, [
+              [with_gallium_lima, 'lima_dri.so'],
+              [with_gallium_zink, 'zink_dri.so'],
+              [with_gallium_d3d12, 'd3d12_dri.so'],
+-             [with_gallium_asahi, 'asahi_dri.so']]
++             [with_gallium_asahi, 'asahi_dri.so'],
++             [with_gallium_pvr, 'pvr_dri.so'],
++             [with_gallium_pvr_alias, gallium_pvr_alias + '_dri.so']]
+   if d[0]
+     gallium_dri_drivers += d[1]
+   endif
+diff --git a/src/gallium/targets/dri/target.c b/src/gallium/targets/dri/target.c
+index 415e49465df..645153b7e47 100644
+--- a/src/gallium/targets/dri/target.c
++++ b/src/gallium/targets/dri/target.c
+@@ -10,6 +10,16 @@ PUBLIC const __DRIextension **__driDriverGetExtensions_##drivername(void) \
+    return galliumdrm_driver_extensions;                                   \
+ }
+ 
++#define DEFINE_LOADER_PVR_ENTRYPOINT(drivername)                          \
++const __DRIextension **__driDriverGetExtensions_##drivername(void);       \
++PUBLIC const __DRIextension **__driDriverGetExtensions_##drivername(void) \
++{                                                                         \
++   return pvr_driver_extensions;                                          \
++}
++
++#define DEFINE_LOADER_PVR_ALIAS_ENTRYPOINT(drivername)                    \
++   DEFINE_LOADER_PVR_ENTRYPOINT(drivername)
++
+ #if defined(GALLIUM_SOFTPIPE)
+ 
+ const __DRIextension **__driDriverGetExtensions_swrast(void);
+@@ -151,3 +161,11 @@ PUBLIC const __DRIextension **__driDriverGetExtensions_zink(void)
+ #if defined(GALLIUM_D3D12)
+ DEFINE_LOADER_DRM_ENTRYPOINT(d3d12);
+ #endif
++
++#if defined(GALLIUM_PVR)
++DEFINE_LOADER_PVR_ENTRYPOINT(pvr);
++#endif
++
++#if defined(GALLIUM_PVR_ALIAS)
++DEFINE_LOADER_PVR_ALIAS_ENTRYPOINT(GALLIUM_PVR_ALIAS);
++#endif
+diff --git a/src/meson.build b/src/meson.build
+index 1293538b8f6..8fb5e33b5ac 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -29,6 +29,8 @@ inc_src = include_directories('.')
+ inc_gallium = include_directories('gallium/include')
+ inc_gallium_aux = include_directories('gallium/auxiliary')
+ inc_amd_common = include_directories('amd/common')
++inc_pvr = include_directories('mesa/main', 'mapi/glapi',
++                              'gallium/frontends/dri')
+ inc_tool = include_directories('tool')
+ inc_virtio_gpu = include_directories('virtio/virtio-gpu')
+ inc_frontends = include_directories('gallium/frontends')
+-- 
+2.34.1
+

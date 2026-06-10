@@ -1,0 +1,99 @@
+From e98f123d356409aa19e50a0ca123ee1f560e4377 Mon Sep 17 00:00:00 2001
+From: Brendan King <Brendan.King@imgtec.com>
+Date: Tue, 19 Dec 2023 15:58:15 +0000
+Subject: [PATCH 61/71] gbm: use a supported API in createContextAttribs
+
+Don't assume the screen supports OpenGL when creating a new context,
+use an API that the screen supports.
+
+Upstream-Status: Inappropriate [oe specific]
+
+---
+ src/gbm/backends/dri/gbm_dri.c | 35 ++++++++++++++++++++++------------
+ src/gbm/meson.build            |  1 +
+ 2 files changed, 24 insertions(+), 12 deletions(-)
+
+diff --git a/src/gbm/backends/dri/gbm_dri.c b/src/gbm/backends/dri/gbm_dri.c
+index 9b62037fa75..7c48106ae57 100644
+--- a/src/gbm/backends/dri/gbm_dri.c
++++ b/src/gbm/backends/dri/gbm_dri.c
+@@ -44,6 +44,8 @@
+ #include <GL/gl.h> /* dri_interface needs GL types */
+ #include <GL/internal/dri_interface.h>
+ 
++#include "dri/dri_screen.h"
++
+ #include "gbm_driint.h"
+ 
+ #include "gbmint.h"
+@@ -53,6 +55,7 @@
+ #include "util/u_debug.h"
+ #include "util/macros.h"
+ #include "util/os_file.h"
++#include "util/bitscan.h"
+ 
+ /* For importing wl_buffer */
+ #if HAVE_WAYLAND_PLATFORM
+@@ -1143,13 +1146,17 @@ gbm_dri_bo_map(struct gbm_bo *_bo,
+ 
+    mtx_lock(&dri->mutex);
+    if (!dri->context) {
+-      unsigned error;
++      int apifs = ffs(dri_screen(dri->screen)->api_mask);
++
++      if (apifs) {
++         unsigned error;
+ 
+-      dri->context =
+-         dri->image_driver->createContextAttribs(dri->screen,
+-                                                 __DRI_API_OPENGL,
+-                                                 NULL, NULL, 0, NULL,
+-                                                 &error, NULL);
++         dri->context =
++            dri->image_driver->createContextAttribs(dri->screen,
++                                                    apifs - 1,
++                                                    NULL, NULL, 0, NULL,
++                                                    &error, NULL);
++      }
+    }
+    mtx_unlock(&dri->mutex);
+    if (!dri->context) {
+@@ -1277,13 +1284,17 @@ gbm_dri_bo_blit(struct gbm_bo *_dst_bo, struct gbm_bo *_src_bo,
+ 
+    mtx_lock(&dri->mutex);
+    if (!dri->context) {
+-      unsigned error;
++      int apifs = ffs(dri_screen(dri->screen)->api_mask);
+ 
+-      dri->context =
+-         dri->image_driver->createContextAttribs(dri->screen,
+-                                                 __DRI_API_OPENGL,
+-                                                 NULL, NULL, 0, NULL,
+-                                                 &error, NULL);
++      if (apifs) {
++         unsigned error;
++
++         dri->context =
++            dri->image_driver->createContextAttribs(dri->screen,
++                                                    apifs - 1,
++                                                    NULL, NULL, 0, NULL,
++                                                    &error, NULL);
++      }
+    }
+    mtx_unlock(&dri->mutex);
+    if (!dri->context) {
+diff --git a/src/gbm/meson.build b/src/gbm/meson.build
+index df65361aef7..78bcc9b3fab 100644
+--- a/src/gbm/meson.build
++++ b/src/gbm/meson.build
+@@ -34,6 +34,7 @@ args_gbm = [
+ deps_gbm = []
+ incs_gbm = [
+   include_directories('main'), inc_include, inc_src, inc_loader,
++  inc_frontends, inc_mesa, inc_gallium, inc_gallium_aux,
+ ]
+ 
+ if with_dri2
+-- 
+2.34.1
+

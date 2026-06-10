@@ -1,0 +1,207 @@
+From 63851d8e0d5d10d25db56054f982f233b4b1b35b Mon Sep 17 00:00:00 2001
+From: Brendan King <Brendan.King@imgtec.com>
+Date: Thu, 20 May 2021 20:16:18 +0100
+Subject: [PATCH 42/71] egl/null: add support for DRI_PRIME GPU selection
+
+Add support for selecting the GPU to be used for rendering using
+the DRI_PRIME environment variable. If a different GPU is selected,
+a duplicate of the file descriptor for the original GPU/display is
+preserved, which can be obtained by calling the getDisplayFD
+function in the image loader extension.
+
+This change includes code, in function dri2_null_try_device, to
+optionally skip display devices that are not supported by a
+particular DRI driver. This can be enabled by setting Meson build
+option null-dri-driver-name. This feature is to prevent failure
+on PC based test systems, that may have display and GPU hardware
+other than that being tested.
+
+Call dri2_setup_device to ensure the render FD is associated with
+a render node, so that _eglFindDevice doesn't fail. Our call to
+_eglFindDevice has been removed, as dri2_setup_device calls it
+on our behalf.
+
+This patch should be merged with "egl: add null platform", when the
+IMG patches are generated for the next Mesa release, as the latter
+patch is broken without the changes made in this one.
+
+Upstream-Status: Inappropriate [oe specific]
+
+---
+ meson.build                          |  4 ++
+ meson_options.txt                    |  6 +++
+ src/egl/drivers/dri2/platform_null.c | 76 ++++++++++++++++++++--------
+ src/egl/meson.build                  |  5 ++
+ 4 files changed, 71 insertions(+), 20 deletions(-)
+
+diff --git a/meson.build b/meson.build
+index 0d19902ee6e..a361e216e63 100644
+--- a/meson.build
++++ b/meson.build
+@@ -421,6 +421,10 @@ with_platform_haiku = _platforms.contains('haiku')
+ with_platform_windows = _platforms.contains('windows')
+ with_platform_null = _platforms.contains('null')
+ 
++if with_platform_null
++  null_dri_driver_name = get_option('null-dri-driver-name')
++endif
++
+ with_glx = get_option('glx')
+ if with_glx == 'auto'
+   if not with_opengl
+diff --git a/meson_options.txt b/meson_options.txt
+index 2b95156a34f..9a92ee0a93b 100644
+--- a/meson_options.txt
++++ b/meson_options.txt
+@@ -23,6 +23,12 @@ option(
+   description : 'the window system EGL assumes for EGL_DEFAULT_DISPLAY',
+ )
+ 
++option(
++  'null-dri-driver-name',
++  type : 'string',
++  value : '',
++  description : 'For the null platform, ignore all dri drivers apart from this one. By default, no dri drivers are ignored.'
++)
+ option(
+   'android-stub',
+   type : 'boolean',
+diff --git a/src/egl/drivers/dri2/platform_null.c b/src/egl/drivers/dri2/platform_null.c
+index 74063f4665d..4b70c4cdeaf 100644
+--- a/src/egl/drivers/dri2/platform_null.c
++++ b/src/egl/drivers/dri2/platform_null.c
+@@ -45,6 +45,7 @@
+ 
+ #include "egl_dri2.h"
+ #include "loader.h"
++#include "util/os_file.h"
+ 
+ #define NULL_CARD_MINOR_MAX 63U
+ 
+@@ -1841,12 +1842,22 @@ dri2_null_flush_front_buffer(__DRIdrawable * driDrawable, void *loaderPrivate)
+    (void) loaderPrivate;
+ }
+ 
++static int
++dri2_null_get_display_fd(void *loaderPrivate)
++{
++   _EGLDisplay *disp = loaderPrivate;
++   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
++
++   return dri2_dpy->fd_display_gpu;
++}
++
+ static const __DRIimageLoaderExtension image_loader_extension = {
+-   .base = { __DRI_IMAGE_LOADER, 2 },
++   .base = { __DRI_IMAGE_LOADER, 5 },
+ 
+    .getBuffers          = dri2_null_image_get_buffers,
+    .flushFrontBuffer    = dri2_null_flush_front_buffer,
+    .getCapability       = dri2_null_get_capability,
++   .getDisplayFD        = dri2_null_get_display_fd,
+ };
+ 
+ static const __DRIextension *image_loader_extensions[] = {
+@@ -1875,6 +1886,43 @@ dri2_null_device_is_kms(int fd)
+    return is_kms;
+ }
+ 
++static bool
++dri2_null_try_device(_EGLDisplay *disp)
++{
++   struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
++
++   if (!dri2_null_device_is_kms(dri2_dpy->fd_display_gpu))
++      return false;
++
++#if defined(NULL_DRI_DRIVER_NAME)
++   /* Skip devices not handled by NULL_DRI_DRIVER_NAME */
++   {
++      char *driver_name = loader_get_driver_for_fd(dri2_dpy->fd_display_gpu);
++      bool skip = !driver_name || !!strcmp(driver_name, NULL_DRI_DRIVER_NAME);
++
++      free(driver_name);
++
++      if (skip)
++         return false;
++   }
++#endif
++
++   dri2_dpy->driver_name = loader_get_driver_for_fd(dri2_dpy->fd_render_gpu);
++   if (!dri2_dpy->driver_name)
++      return false;
++
++   if (dri2_load_driver_dri3(disp)) {
++         dri2_dpy->loader_extensions = image_loader_extensions;
++         dri2_dpy->own_device = true;
++         return true;
++   }
++
++   free(dri2_dpy->driver_name);
++   dri2_dpy->driver_name = NULL;
++
++   return false;
++}
++
+ static bool
+ dri2_null_probe_device(_EGLDisplay *disp)
+ {
+@@ -1897,25 +1945,8 @@ dri2_null_probe_device(_EGLDisplay *disp)
+       loader_get_user_preferred_fd(&dri2_dpy->fd_render_gpu,
+                                    &dri2_dpy->fd_display_gpu);
+ 
+-      if (dri2_null_device_is_kms(dri2_dpy->fd_display_gpu)) {
+-         dri2_dpy->driver_name = loader_get_driver_for_fd(dri2_dpy->fd_render_gpu);
+-         if (dri2_dpy->driver_name) {
+-            if (dri2_load_driver_dri3(disp)) {
+-               _EGLDevice *dev = _eglFindDevice(dri2_dpy->fd_render_gpu, false);
+-               if (!dev) {
+-                  dlclose(dri2_dpy->driver);
+-                  _eglLog(_EGL_WARNING, "DRI2: failed to find EGLDevice");
+-               } else {
+-                  dri2_dpy->loader_extensions = image_loader_extensions;
+-                  dri2_dpy->own_device = 1;
+-                  disp->Device = dev;
+-                  return true;
+-               }
+-            }
+-            free(dri2_dpy->driver_name);
+-            dri2_dpy->driver_name = NULL;
+-         }
+-      }
++      if (dri2_null_try_device(disp))
++         return true;
+ 
+       close(dri2_dpy->fd_render_gpu);
+       if (dri2_dpy->fd_display_gpu != dri2_dpy->fd_render_gpu)
+@@ -2055,6 +2086,11 @@ dri2_initialize_null(_EGLDisplay *disp)
+       goto cleanup;
+    }
+ 
++   if (!dri2_setup_device(disp, false)) {
++      _eglError(EGL_NOT_INITIALIZED, "failed to setup device");
++      goto cleanup;
++   }
++
+    dri2_setup_screen(disp);
+    dri2_null_setup_swap_interval(disp);
+ 
+diff --git a/src/egl/meson.build b/src/egl/meson.build
+index 52a1905065b..e5302d8e3eb 100644
+--- a/src/egl/meson.build
++++ b/src/egl/meson.build
+@@ -157,6 +157,11 @@ elif with_platform_windows
+   link_for_egl += libgallium_wgl
+ endif
+ if with_platform_null
++  if null_dri_driver_name != ''
++    c_args_for_egl += [
++      '-DNULL_DRI_DRIVER_NAME="@0@"'.format(null_dri_driver_name),
++    ]
++  endif
+   files_egl += files('drivers/dri2/platform_null.c')
+   incs_for_egl += [inc_loader]
+   deps_for_egl += dep_libdrm
+-- 
+2.34.1
+
