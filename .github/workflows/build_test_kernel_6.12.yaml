@@ -23,7 +23,6 @@ jobs:
       - name: Run build
         shell: bash
         run: |
-          while true; do echo "[keepalive] $(date)"; sleep 60; done &
-          ./build.sh -q --console --sbom --rm-work --kernel-version 6.12
-          ./build.sh -q --weston  --sbom --rm-work --kernel-version 6.12
+          ./build.sh --console --sbom --rm-work --kernel-version 6.12
+          ./build.sh --weston  --sbom --rm-work --kernel-version 6.12
 
