@@ -30,6 +30,7 @@ local_conf_header:
       HALT,/tmp,10M,1K"
     PACKAGECONFIG:append:pn-qemu-system-native = " sdl"
     INIT_MANAGER = "systemd"
+    ROOT_HOME = '/root'
 
     # add the static lib to SDK toolchain
     SDKIMAGE_FEATURES:append = " staticdev-pkgs"
