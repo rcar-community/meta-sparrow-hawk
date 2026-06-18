@@ -1,26 +1,20 @@
-SUMMARY = "Binary firmware for Sparrow hawk board"
+SUMMARY = "Backward Compatibility:Binary firmware for Sparrow hawk board"
 LICENSE = "CLOSED"
-PR = "r0"
+PR = "r1"
 
 PACKAGE_ARCH = "${MACHINE_ARCH}"
 COMPATIBLE_MACHINE = "sparrow-hawk"
 
-PCIE_FIRMWARE = "https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git/plain/rcar_gen4_pcie.bin;md5sum=293bdf19d8e16d3c4d8179e438db921b"
-PCIE_FIRMWARE_LIC = "https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git/plain/LICENCE.r8a779g_pcie_phy;md5sum=0b20e76a9a004b83c4a1c87e2153bbad"
-
-SRC_URI:append:sparrow-hawk = " \
-    ${PCIE_FIRMWARE} \
-    ${PCIE_FIRMWARE_LIC} \
-"
+SRC_URI = ""
 
 S = "${UNPACKDIR}"
 
+PACKAGES = "${PN}"
+ALLOW_EMPTY:${PN} = "1"
+RDEPENDS:${PN}:sparrow-hawk = " \
+    linux-firmware-pcie-rcar \
+    linux-firmware-r8a779g-pcie-phy-license \
+"
+do_configure[noexec] = "1"
 do_compile[noexec] = "1"
-FILES:${PN}:sparrow-hawk += "/usr/lib/firmware/"
-
-do_install:append:sparrow-hawk () {
-    install -d ${D}/usr/lib/firmware
-    install -m 755 ${UNPACKDIR}/rcar_gen4_pcie.bin ${D}/usr/lib/firmware
-    install -m 755 ${UNPACKDIR}/LICENCE.r8a779g_pcie_phy ${D}/usr/lib/firmware
-}
-
+do_install[noexec] = "1"

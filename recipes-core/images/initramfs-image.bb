@@ -3,7 +3,10 @@ LICENSE = "MIT"
 inherit image
 
 IMAGE_FEATURES = ""
-IMAGE_INSTALL_LIST = "sparrow-hawk-fw busybox"
+IMAGE_INSTALL_LIST = " \
+    linux-firmware-pcie-rcar linux-firmware-r8a779g-pcie-phy-license \
+    busybox \
+"
 IMAGE_INSTALL_LIST:append = " kernel-module-pcie-rcar-gen4"
 
 INITRAMFS_IMAGE = "initramfs-image"
