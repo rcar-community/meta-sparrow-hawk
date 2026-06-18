@@ -151,9 +151,10 @@ if [[ "${IS_QUIET_BUILD}" == "yes" ]]; then
     QUIET_FLAG="-q"
 fi
 
-bitbake ${QUIET_FLAG} ${TARGET_IMAGE} ${FETCHALL_OPT}
 if [[ "${IS_BUILD_SDK}" == "yes" ]]; then
     bitbake ${QUIET_FLAG} ${TARGET_IMAGE}-sdk -c populate_sdk ${FETCHALL_OPT}
+else
+    bitbake ${QUIET_FLAG} ${TARGET_IMAGE} ${FETCHALL_OPT}
 fi
 
 # Cleanup symbolic link
