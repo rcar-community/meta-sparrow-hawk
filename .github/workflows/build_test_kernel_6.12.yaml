@@ -3,7 +3,7 @@ run-name: Build test using kernel 6.12 for Sparrow-hawk
 on:
   push:
     branches:
-      - 'scarthgap'
+      - 'wrynose'
       - '*-dev'
       - '*-next'
   workflow_dispatch:

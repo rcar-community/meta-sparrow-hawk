@@ -3,7 +3,7 @@ run-name: Build test weston SDK for Sparrow-hawk
 on:
   push:
     branches:
-      - 'scarthgap'
+      - 'wrynose'
       - '*-dev'
       - '*-next'
   workflow_dispatch:

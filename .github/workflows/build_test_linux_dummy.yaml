@@ -3,7 +3,7 @@ run-name: Build test using linux-dummy for Sparrow-hawk
 on:
   push:
     branches:
-      - 'scarthgap'
+      - 'wrynose'
       - '*-dev'
       - '*-next'
   workflow_dispatch:
