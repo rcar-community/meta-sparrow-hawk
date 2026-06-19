@@ -3,7 +3,7 @@ run-name: Release Yocto BSP for Sparrow-hawk
 on:
   push:
     branches:
-      - 'scarthgap'
+      - 'wrynose'
       - '*-dev'
       - '*-next'
   workflow_dispatch:
@@ -103,7 +103,7 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE
           BRANCH="${{ github.ref_name }}"
-          if [[ "$BRANCH" == "scarthgap" ]]; then
+          if [[ "$BRANCH" == "wrynose" ]]; then
             # ex.) vYYYY-MM-DD
             RELEASE_VER=$(grep 'BSP_VERSION ??=' recipes-bsp/bsp-info/bsp-info.bb | cut -d'"' -f2 || true)
             if [[ -z "$RELEASE_VER" ]]; then
@@ -112,9 +112,9 @@ jobs:
               echo "TAG_NAME=${RELEASE_VER}" >> $GITHUB_ENV
             fi
           elif [[ "$BRANCH" == *-dev ]]; then
-            echo "TAG_NAME=dev-latest" >> $GITHUB_ENV
+            echo "TAG_NAME=${BRANCH}-latest" >> $GITHUB_ENV
           elif [[ "$BRANCH" == *-next ]]; then
-            echo "TAG_NAME=next-release" >> $GITHUB_ENV
+            echo "TAG_NAME=${BRANCH}-release" >> $GITHUB_ENV
           fi
 
       - name: Delete release tag if it exists
