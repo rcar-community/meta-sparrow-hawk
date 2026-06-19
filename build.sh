@@ -73,7 +73,9 @@ else
 fi
 
 cd $WORK
-git clone https://git.yoctoproject.org/poky
+git clone https://git.openembedded.org/bitbake
+git clone https://git.openembedded.org/openembedded-core
+git clone https://git.yoctoproject.org/meta-yocto
 git clone https://git.openembedded.org/meta-openembedded
 if [[ "${IS_BUILD_INSIDE_REPO}" == "yes" ]]; then
     rm -f meta-sparrow-hawk
@@ -81,17 +83,18 @@ if [[ "${IS_BUILD_INSIDE_REPO}" == "yes" ]]; then
 else
     git clone https://github.com/rcar-community/meta-sparrow-hawk.git
 fi
-
-git -C poky checkout -B scarthgap da5493bf86b3e75bbae4c5789fdfaca67b6f6a65
-git -C meta-openembedded checkout -B scarthgap 06f846a325fde423bb0a6d49d771d8c1e144d7eb
+git -C bitbake checkout -B wrynose origin/2.18
+git -C openembedded-core checkout -B wrynose origin/wrynose
+git -C meta-yocto checkout -B wrynose origin/wrynose
+git -C meta-openembedded checkout -B wrynose origin/wrynose
 if [[ "${IS_BUILD_INSIDE_REPO}" == "no" ]]; then
-    git -C meta-sparrow-hawk checkout -B scarthgap v2026-04-13
+    git -C meta-sparrow-hawk checkout -B wrynose wrynose-dev
 fi
 
 cd $WORK
 rm -rf build-$MACHINE/conf
 TEMPLATECONF=${WORK}/meta-sparrow-hawk/conf/templates/$MACHINE${TEMPLATE_POSTFIX} \
-    . poky/oe-init-build-env build-$MACHINE
+    . openembedded-core/oe-init-build-env build-$MACHINE
 
 if [[ "${USE_SSTATE_MIRROR}" == "yes" ]]; then
 cat << EOS >> conf/local.conf
