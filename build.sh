@@ -77,7 +77,7 @@ git clone https://git.yoctoproject.org/poky
 git clone https://git.openembedded.org/meta-openembedded
 if [[ "${IS_BUILD_INSIDE_REPO}" == "yes" ]]; then
     rm -f meta-sparrow-hawk
-    ln -sfd ${SCRIPT_DIR} meta-sparrow-hawk
+    ln -sf ${SCRIPT_DIR} meta-sparrow-hawk
 else
     git clone https://github.com/rcar-community/meta-sparrow-hawk.git
 fi
