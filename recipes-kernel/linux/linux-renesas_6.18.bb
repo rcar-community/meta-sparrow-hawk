@@ -25,6 +25,7 @@ SRC_URI:append:sparrow-hawk = " \
     file://0001-arm64-dts-renesas-sparrow-hawk-Enable-I2C3-I2C4.patch \
     file://0002-HACK-drivers-gpu-drm-drm_file-Ingnore-flag-checking.patch \
     file://0003-arm64-dts-renesas-r8a779g0-Add-qos-node.patch \
+    file://0004-arm64-dts-renesas-sparrow-hawk-Add-pcie-ep-dtbo.patch \
 "
 KERNEL_DEVICETREE:append:sparrow-hawk = " \
     renesas/r8a779g3-sparrow-hawk-camera-j1-imx219.dtbo \
@@ -35,6 +36,7 @@ KERNEL_DEVICETREE:append:sparrow-hawk = " \
     renesas/r8a779g3-sparrow-hawk-camera-j2-imx708.dtbo \
     renesas/r8a779g3-sparrow-hawk-fan-pwm.dtbo \
     renesas/r8a779g3-sparrow-hawk-fan-argon40.dtbo \
+    renesas/r8a779g3-sparrow-hawk-pcie-ep.dtbo \
     renesas/r8a779g3-sparrow-hawk-rpi-display-2-5in.dtbo \
     renesas/r8a779g3-sparrow-hawk-rpi-display-2-7in.dtbo \
     renesas/r8a779g3-sparrow-hawk-ws-display-13in.dtbo \
