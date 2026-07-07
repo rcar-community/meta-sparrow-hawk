@@ -13,7 +13,7 @@ CVE_PRODUCT = ""
 DEPENDS = "chrpath-native gnutls libevent libyaml python3-jinja2-native python3-ply-native python3-pyyaml-native"
 DEPENDS:append = " libdrm libpisp libsdl2 python3-pybind11 udev tiff"
 PV = "v0.6.0+upstream+git${SRCPV}"
-SRC_URI = "git://git.libcamera.org/libcamera/libcamera.git;protocol=https;branch=master"
+SRC_URI = "git://gitlab.freedesktop.org/camera/libcamera.git;protocol=https;branch=master"
 # nooelint: oelint.file.upstreamstatus oelint.file.patchsignedoff
 SRC_URI:append = " \
     file://0001-libcamera-ipa_manager-Create-IPA-by-name.patch \
