@@ -10,22 +10,21 @@ DEPENDS += "bc-native dtc-native python3-pyelftools-native gnutls-native"
 
 UBOOT_URL = "git://source.denx.de/u-boot/u-boot.git"
 BRANCH = "master"
-SRCREV = "88dc2788777babfd6322fa655df549a019aa1e69"
+SRCREV = "ece349ade2973e220f524ce59e59711cc919263f"
 LICENSE = "GPL-2.0-or-later"
 LIC_FILES_CHKSUM = "file://Licenses/README;md5=2ca5f2c35c8cc335f0a19756634782f1"
 
 SRC_URI = "${UBOOT_URL};branch=${BRANCH};protocol=https"
 
-PV = "v2026.04+git${SRCPV}"
+PV = "v2026.07+git${SRCPV}"
 
 UBOOT_SREC_SUFFIX = "srec"
 UBOOT_SREC ?= "u-boot-elf.${UBOOT_SREC_SUFFIX}"
 UBOOT_SREC_IMAGE ?= "u-boot-elf-${MACHINE}-${PV}-${PR}.${UBOOT_SREC_SUFFIX}"
 UBOOT_SREC_SYMLINK ?= "u-boot-elf-${MACHINE}.${UBOOT_SREC_SUFFIX}"
 
-# Backport to support over 2GB RAM bank
+# Fix PCIe SSD issue
 SRC_URI:append = "\
-    file://0005-lmb-Reinstate-access-to-memory-above-ram_top.patch \
     file://0001-PCI-rcar-gen4-Limit-Max_Read_Request_Size-and-Max_Pa.patch \
 "
 
