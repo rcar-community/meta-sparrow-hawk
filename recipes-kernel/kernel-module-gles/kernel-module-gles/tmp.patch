@@ -1,0 +1,100 @@
+commit 4ea0c6e425fe099c237bdd23a68b0a60b92efeb6
+Author: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+Date:   Fri Sep 25 11:59:32 2026 +0900
+
+    SYSCONFIG: Fix GPU clock rate setting
+    
+    Set the requested rate instead of hard-coded 900 MHz.
+    
+    Signed-off-by: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+
+diff --git a/services/system/rgx_rcar/sysconfig.c b/services/system/rgx_rcar/sysconfig.c
+index 46a58080..dd854b79 100644
+--- a/services/system/rgx_rcar/sysconfig.c
++++ b/services/system/rgx_rcar/sysconfig.c
+@@ -313,32 +313,22 @@ static PVRSRV_ERROR SetClocks(SYS_DATA *psSysData, unsigned long set_rate, unsig
+ 	int res;
+ 	unsigned long new_rate, cur_rate;
+ 
+-	struct clk *clk;
+-
+-	// new_rate = set_rate + 1000000;
+-
+-	// ret = clk_prepare_enable(psSysData->psRGX_FCK);
+-	if (clk_prepare_enable(psSysData->psRGX_FCK) < 0)
+-	{
+-		return PVRSRV_ERROR_UNABLE_TO_ENABLE_CLOCK;
+-	}
+-	clk = psSysData->psRGX_FCK;
++	struct clk *clk = psSysData->psRGX_FCK;
+ 
+ 	cur_rate = clk_get_rate(clk);
+ 	PVR_DPF((PVR_DBG_ERROR, "EnableClocks: cur_rate. res = %ld", cur_rate));
+ 
+-	// new_rate = clk_round_rate(psSysData->psRGX_FCK, set_rate + 1000000);
+-	new_rate = clk_round_rate(clk, 1);
++	new_rate = clk_round_rate(clk, set_rate);
+ 	PVR_DPF((PVR_DBG_ERROR, "EnableClocks: clk_round_rate. res = %ld", new_rate));
+-	// if (new_rate <= 0)
+-	// {
+-	// 	PVR_DPF((PVR_DBG_ERROR, "EnableClocks: clk_round_rate failed. res = %ld", new_rate));
+-	// 	return PVRSRV_ERROR_UNABLE_TO_ENABLE_CLOCK;
+-	// }
++	if ((long)new_rate <= 0)
++	{
++		PVR_DPF((PVR_DBG_ERROR, "EnableClocks: clk_round_rate failed. res = %ld", new_rate));
++		return PVRSRV_ERROR_UNABLE_TO_ENABLE_CLOCK;
++	}
+ 
+ 	if (cur_rate != new_rate)
+ 	{
+-		res = clk_set_rate(psSysData->psRGX_FCK, 900000000);
++		res = clk_set_rate(psSysData->psRGX_FCK, new_rate);
+ 		if (res < 0)
+ 		{
+ 			PVR_DPF((PVR_DBG_ERROR, "EnableClocks: clk_set_rate failed. res = %d", res));
+@@ -391,6 +381,12 @@ static PVRSRV_ERROR InitClocks(SYS_DATA *psSysData)
+ 	clk_prepare(psSysData->psRGX_FCK);
+ 	clk_enable(psSysData->psRGX_FCK);
+ 
++	/* Set initial rate so that RGX_3DGE_ClockFreqGet() reports the rate used */
++	if (clk_set_rate(psSysData->psRGX_FCK, RGX_3DGE_CORE_CLOCK_SPEED) < 0)
++	{
++		PVR_DPF((PVR_DBG_ERROR, "InitClocks: clk_set_rate(%u) failed", RGX_3DGE_CORE_CLOCK_SPEED));
++	}
++
+ 	return PVRSRV_OK;
+ }
+ 
+@@ -560,9 +556,6 @@ PVRSRV_ERROR SysDevInit(void *pvOSDevice, PVRSRV_DEVICE_CONFIG **ppsDevConfig)
+ 	PHYS_HEAP_CONFIG *pasPhysHeaps;
+ 	IMG_UINT32 uiPhysHeapCount;
+ 	PVRSRV_ERROR eError;
+-
+-    IMG_UINT32 ret = 0;
+-	struct clk *clk_gsx;
+ #if defined(PVR_LINUX_DYNAMIC_RGX_RESOURCE_INFO)
+         struct resource *dev_res = NULL;
+         IMG_INT32 dev_irq = 0;
+@@ -609,21 +602,6 @@ PVRSRV_ERROR SysDevInit(void *pvOSDevice, PVRSRV_DEVICE_CONFIG **ppsDevConfig)
+ 		eError = PVRSRV_ERROR_INVALID_DEVICE;
+ 		goto ErrorFreeSysData;
+ 	}
+-
+-	clk_gsx = devm_clk_get(&gpsSysData->pdev->dev, NULL);
+-	if (IS_ERR(clk_gsx))
+-	{
+-		PVR_DPF((PVR_DBG_ERROR, "%s: devm_clk_get", __FUNCTION__));
+-		return dev_err_probe(&gpsSysData->pdev->dev, PTR_ERR(clk_gsx), "cannot get clock");
+-	}
+-
+-	ret = clk_prepare_enable(clk_gsx);
+-	if (ret < 0)
+-		return ret;
+-
+-	ret = clk_get_rate(clk_gsx);
+-	PVR_DPF((PVR_DBG_ERROR, "%s: clk_prepare_enable %d", __FUNCTION__, ret));
+-
+ #endif /* defined(PVR_LINUX_DYNAMIC_RGX_RESOURCE_INFO) */
+ 
+ 	eError = InitClocks(gpsSysData);
