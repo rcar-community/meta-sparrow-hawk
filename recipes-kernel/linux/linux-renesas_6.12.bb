@@ -50,6 +50,7 @@ SRC_URI:append:sparrow-hawk = " \
     file://uio/0014-uio-uio_pdrv_genirq-Add-parameter-error-in-case-not-.patch \
     file://uio/0015-Fix-build-error-on-kernel-6.12.patch \
     file://uio/0016-include-uapi-linux-renesas_uioctl.h-Fix-SPDX-part.patch \
+    file://uio/0017-arm64-dts-renesas-sparrow-hawk-Add-overlay-for-UIO-C.patch \
 "
 S = "${WORKDIR}/git"
 
@@ -67,6 +68,7 @@ KERNEL_DEVICETREE:append:sparrow-hawk = " \
     renesas/r8a779g3-sparrow-hawk-rpi-display-2-7in.dtbo \
     renesas/r8a779g3-sparrow-hawk-ws-display-13in.dtbo \
     renesas/r8a779g3-sparrow-hawk-olimex-dsi-hdmi.dtbo \
+    renesas/r8a779g3-sparrow-hawk-uio.dtbo \
 "
 
 BBCLASSEXTEND ?= ""
