@@ -85,6 +85,11 @@ if itest.s "${fan}" == "argon40" ; then
     fi
 fi
 
+# Enable UIO devicetree overlay if not disabled explicitly
+if itest.s "${disable_uio}" != "1"; then
+    setenv uio_conf '#uio'
+fi
+
 echo --- Check Boot device ---;
 # extract boot device from bootargs
 setenv bootdev ${bootargs}
@@ -101,7 +106,7 @@ else
 fi
 
 echo --- Booting ---;
-setenv conf "${initramfs_conf}${j1_conf}${j2_conf}${j4_conf}${fan_conf}${conf_append}"
+setenv conf "${initramfs_conf}${j1_conf}${j2_conf}${j4_conf}${fan_conf}${uio_conf}${conf_append}"
 echo bootcmd: bootm ${loadaddr}${conf}
 bootm ${loadaddr}${conf}
 
