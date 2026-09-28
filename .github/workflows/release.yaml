@@ -42,16 +42,6 @@ jobs:
           zip -r ${GITHUB_WORKSPACE}/build/build-sparrow-hawk/tmp/deploy/ipl-burning.zip ./ipl-burning
           cd ${GITHUB_WORKSPACE}/build/build-sparrow-hawk/tmp/deploy
           zip -ry -s 1900m deploy_spdx_split.zip spdx/
-          # Prepara kernel deb packages for debian based distribution
-          mkdir -p kernel_deb_package
-          PKG_LIST="recipe-linux-renesas recipe-linux-fitimage \
-                    recipe-arm-trusted-firmware recipe-kernel-module"
-          for pkg in ${PKG_LIST}; do
-            find ./spdx/ | grep $pkg | xargs -i cp -f {} -t kernel_deb_package/
-          done
-          find ./deb/ | grep -e /kernel- -e /linux-fitimage | xargs -i cp -f {} -t kernel_deb_package/
-          zip -r kernel_deb_package.zip kernel_deb_package
-
           cd $GITHUB_WORKSPACE
 
       - name: Prepare release message
@@ -165,7 +155,6 @@ jobs:
           files: |
             ./build/build-sparrow-hawk/tmp/deploy/images/deploy_sparrow-hawk.zip
             ./build/build-sparrow-hawk/tmp/deploy/deploy_spdx_split.z*
-            ./build/build-sparrow-hawk/tmp/deploy/kernel_deb_package.zip
             ./build/build-sparrow-hawk/tmp/deploy/ipl-burning.zip
             ./build/build-sparrow-hawk/tmp/deploy/images/*/core-image-*-sparrow-hawk.rootfs.wic.*
           body_path: ${{ github.workspace }}-release_msg.txt
