@@ -37,7 +37,7 @@ jobs:
         shell: bash
         run: |
           cd ${GITHUB_WORKSPACE}/build/build-sparrow-hawk/tmp/deploy/images/
-          zip -ry deploy_sparrow-hawk.zip sparrow-hawk
+          zip -ry -s 1900m deploy_sparrow-hawk.zip sparrow-hawk
           cd ${GITHUB_WORKSPACE}/build/build-sparrow-hawk/tmp/deploy/images/sparrow-hawk
           zip -r ${GITHUB_WORKSPACE}/build/build-sparrow-hawk/tmp/deploy/ipl-burning.zip ./ipl-burning
           cd ${GITHUB_WORKSPACE}/build/build-sparrow-hawk/tmp/deploy
@@ -153,7 +153,7 @@ jobs:
           draft: false
           prerelease: ${{ env.PRERELEASE }}
           files: |
-            ./build/build-sparrow-hawk/tmp/deploy/images/deploy_sparrow-hawk.zip
+            ./build/build-sparrow-hawk/tmp/deploy/images/deploy_sparrow-hawk.z*
             ./build/build-sparrow-hawk/tmp/deploy/deploy_spdx_split.z*
             ./build/build-sparrow-hawk/tmp/deploy/ipl-burning.zip
             ./build/build-sparrow-hawk/tmp/deploy/images/*/core-image-*-sparrow-hawk.rootfs.wic.*
