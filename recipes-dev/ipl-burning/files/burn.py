@@ -152,6 +152,10 @@ def main():
             print("")
             print("Close this window or press Enter key: "); input()
             quit()
+        # On Windows, a COM port may not be released immediately after closing,
+        # so wait briefly before reopening it.
+        time.sleep(0.5)
+
     # Automatic mode
     elif args[1] not in [comport.device for comport in serial.tools.list_ports.comports()]:
         print_err(f"ERROR: Please \"input\" correct comport:")
