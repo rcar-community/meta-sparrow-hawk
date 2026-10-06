@@ -34,5 +34,5 @@ jobs:
             sudo apparmor_parser -R /etc/apparmor.d/unprivileged_userns
           fi
 
-          ./build.sh --weston --sbom --rm-work --sdk
+          ./build.sh --weston --rm-work --sdk
 

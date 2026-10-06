@@ -34,6 +34,6 @@ jobs:
             sudo apparmor_parser -R /etc/apparmor.d/unprivileged_userns
           fi
 
-          ./build.sh --console --sbom --rm-work --kernel-version dummy
-          # ./build.sh --weston --sbom --rm-work --build-rootfs-only
+          ./build.sh --console --rm-work --kernel-version dummy
+          # ./build.sh --weston --rm-work --build-rootfs-only
 

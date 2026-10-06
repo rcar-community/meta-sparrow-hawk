@@ -34,6 +34,6 @@ jobs:
             sudo apparmor_parser -R /etc/apparmor.d/unprivileged_userns
           fi
 
-          ./build.sh --console --sbom --rm-work --kernel-version 6.12
-          ./build.sh --weston  --sbom --rm-work --kernel-version 6.12
+          ./build.sh --console --rm-work --kernel-version 6.12
+          ./build.sh --weston  --rm-work --kernel-version 6.12
 
