@@ -1,0 +1,123 @@
+From 50c004f940b3575da3001476a9374faea7c85fd1 Mon Sep 17 00:00:00 2001
+From: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+Date: Tue, 6 Oct 2026 13:02:17 +0900
+Subject: [PATCH] media: renesas: vin: Add VIDIOC_ENUM_FRAMESIZES for media
+ controller mode
+
+libcamera enumerates the frame sizes of every pixel format a capture
+video device supports, but the VIN driver does not implement
+VIDIOC_ENUM_FRAMESIZES in the media controller mode. The ioctl fails
+with ENOTTY, the list of supported sizes is empty and no camera can be
+registered by pipeline handlers which use the VIN to capture raw frames.
+
+Report the size limits as a stepwise range. They are the same limits
+that rvin_format_align() applies to the format: the width is bounded
+by 5 and the maximum supported by the VIN and aligned depending on the
+pixel format, the height is bounded by 2 and the maximum supported by
+the VIN.
+
+Move the width alignment selection to a helper so it is shared by
+rvin_format_align() and the new ioctl.
+
+Upstream-Status: Inappropriate [temporary workaround]
+Signed-off-by: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+---
+ .../platform/renesas/rcar-vin/rcar-v4l2.c     | 62 ++++++++++++++-----
+ 1 file changed, 45 insertions(+), 17 deletions(-)
+
+diff --git a/drivers/media/platform/renesas/rcar-vin/rcar-v4l2.c b/drivers/media/platform/renesas/rcar-vin/rcar-v4l2.c
+index 9d45e11..b21dadd 100644
+--- a/drivers/media/platform/renesas/rcar-vin/rcar-v4l2.c
++++ b/drivers/media/platform/renesas/rcar-vin/rcar-v4l2.c
+@@ -187,6 +187,24 @@ static u32 rvin_format_sizeimage(struct v4l2_pix_format *pix)
+ 	}
+ }
+ 
++/* Hardware limits width alignment based on format. */
++static u32 rvin_format_walign(u32 pixelformat)
++{
++	switch (pixelformat) {
++	/* Multiple of 32 (2^5) for NV12/16. */
++	case V4L2_PIX_FMT_NV12:
++	case V4L2_PIX_FMT_NV16:
++		return 5;
++	/* Multiple of 2 (2^1) for YUV. */
++	case V4L2_PIX_FMT_YUYV:
++	case V4L2_PIX_FMT_UYVY:
++		return 1;
++	/* No multiple for RGB. */
++	default:
++		return 0;
++	}
++}
++
+ static void rvin_format_align(struct rvin_dev *vin, struct v4l2_pix_format *pix)
+ {
+ 	u32 walign;
+@@ -208,23 +226,7 @@ static void rvin_format_align(struct rvin_dev *vin, struct v4l2_pix_format *pix)
+ 		break;
+ 	}
+ 
+-	/* Hardware limits width alignment based on format. */
+-	switch (pix->pixelformat) {
+-	/* Multiple of 32 (2^5) for NV12/16. */
+-	case V4L2_PIX_FMT_NV12:
+-	case V4L2_PIX_FMT_NV16:
+-		walign = 5;
+-		break;
+-	/* Multiple of 2 (2^1) for YUV. */
+-	case V4L2_PIX_FMT_YUYV:
+-	case V4L2_PIX_FMT_UYVY:
+-		walign = 1;
+-		break;
+-	/* No multiple for RGB. */
+-	default:
+-		walign = 0;
+-		break;
+-	}
++	walign = rvin_format_walign(pix->pixelformat);
+ 
+ 	/* Limit to VIN capabilities */
+ 	v4l_bound_align_image(&pix->width, 5, vin->info->max_width, walign,
+@@ -558,12 +560,38 @@ static int rvin_mc_s_fmt_vid_cap(struct file *file, void *priv,
+ 	return 0;
+ }
+ 
++static int rvin_mc_enum_framesizes(struct file *file, void *priv,
++				   struct v4l2_frmsizeenum *fsize)
++{
++	struct rvin_dev *vin = video_drvdata(file);
++	u32 walign;
++
++	if (fsize->index)
++		return -EINVAL;
++
++	if (!rvin_format_from_pixel(vin, fsize->pixel_format))
++		return -EINVAL;
++
++	walign = rvin_format_walign(fsize->pixel_format);
++
++	fsize->type = V4L2_FRMSIZE_TYPE_STEPWISE;
++	fsize->stepwise.min_width = ALIGN(5, 1 << walign);
++	fsize->stepwise.max_width = vin->info->max_width;
++	fsize->stepwise.step_width = 1 << walign;
++	fsize->stepwise.min_height = 2;
++	fsize->stepwise.max_height = vin->info->max_height;
++	fsize->stepwise.step_height = 1;
++
++	return 0;
++}
++
+ static const struct v4l2_ioctl_ops rvin_mc_ioctl_ops = {
+ 	.vidioc_querycap		= rvin_querycap,
+ 	.vidioc_try_fmt_vid_cap		= rvin_mc_try_fmt_vid_cap,
+ 	.vidioc_g_fmt_vid_cap		= rvin_g_fmt_vid_cap,
+ 	.vidioc_s_fmt_vid_cap		= rvin_mc_s_fmt_vid_cap,
+ 	.vidioc_enum_fmt_vid_cap	= rvin_enum_fmt_vid_cap,
++	.vidioc_enum_framesizes		= rvin_mc_enum_framesizes,
+ 
+ 	.vidioc_g_selection		= rvin_g_selection,
+ 	.vidioc_s_selection		= rvin_s_selection,
+-- 
+2.43.0
+
