@@ -1,0 +1,738 @@
+From 827b2e564f09766a7074197645cb8982ca370123 Mon Sep 17 00:00:00 2001
+From: Jai Luthra <jai.luthra@ideasonboard.com>
+Date: Fri, 18 Sep 2026 14:09:40 +0200
+Subject: [PATCH] ipa: rppx1: Add
+
+Copy the rkisp1 IPA module and remove the unnecessary parts, and adjust it
+as necessary to create the base for the new rppx1 ipa module.
+
+Co-developed-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+Signed-off-by: Jai Luthra <jai.luthra@ideasonboard.com>
+Reviewed-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+
+Upstream-Status: Submitted [https://patchwork.libcamera.org/patch/28350/]
+
+---
+ meson_options.txt                    |   2 +-
+ src/ipa/meson.build                  |   1 +
+ src/ipa/rppx1/algorithms/algorithm.h |  22 +++
+ src/ipa/rppx1/algorithms/meson.build |   4 +
+ src/ipa/rppx1/data/meson.build       |   8 +
+ src/ipa/rppx1/ipa_context.cpp        |  37 ++++
+ src/ipa/rppx1/ipa_context.h          |  58 ++++++
+ src/ipa/rppx1/meson.build            |  31 +++
+ src/ipa/rppx1/module.h               |  29 +++
+ src/ipa/rppx1/params.h               |  89 +++++++++
+ src/ipa/rppx1/rppx1.cpp              | 278 +++++++++++++++++++++++++++
+ src/ipa/rppx1/stats.h                |  55 ++++++
+ 12 files changed, 613 insertions(+), 1 deletion(-)
+ create mode 100644 src/ipa/rppx1/algorithms/algorithm.h
+ create mode 100644 src/ipa/rppx1/algorithms/meson.build
+ create mode 100644 src/ipa/rppx1/data/meson.build
+ create mode 100644 src/ipa/rppx1/ipa_context.cpp
+ create mode 100644 src/ipa/rppx1/ipa_context.h
+ create mode 100644 src/ipa/rppx1/meson.build
+ create mode 100644 src/ipa/rppx1/module.h
+ create mode 100644 src/ipa/rppx1/params.h
+ create mode 100644 src/ipa/rppx1/rppx1.cpp
+ create mode 100644 src/ipa/rppx1/stats.h
+
+diff --git a/meson_options.txt b/meson_options.txt
+index 3c4bc9f8e..2d98955dc 100644
+--- a/meson_options.txt
++++ b/meson_options.txt
+@@ -49,7 +49,7 @@ option('gstreamer',
+ option('ipas',
+         type : 'array',
+         choices : ['ipu3', 'mali-c55', 'rkisp1', 'rpi/pisp', 'rpi/vc4',
+-                   'softisp', 'vimc'],
++                   'rppx1', 'softisp', 'vimc'],
+         description : 'Select which IPA modules to build')
+ 
+ option('lc-compliance',
+diff --git a/src/ipa/meson.build b/src/ipa/meson.build
+index ab4a1897f..17ca21195 100644
+--- a/src/ipa/meson.build
++++ b/src/ipa/meson.build
+@@ -27,6 +27,7 @@ ipa_sign = files('ipa-sign.sh')
+ supported_ipas = {
+     'ipu3':       'ipu3',
+     'mali-c55':   'mali-c55',
++    'rcar-gen4':  'rppx1',
+     'rkisp1':     'rkisp1',
+     'rpi/pisp':   'rpi/pisp',
+     'rpi/vc4':    'rpi/vc4',
+diff --git a/src/ipa/rppx1/algorithms/algorithm.h b/src/ipa/rppx1/algorithms/algorithm.h
+new file mode 100644
+index 000000000..f5f002a0a
+--- /dev/null
++++ b/src/ipa/rppx1/algorithms/algorithm.h
+@@ -0,0 +1,22 @@
++/* SPDX-License-Identifier: LGPL-2.1-or-later */
++/*
++ * Copyright (C) 2026, Ideas On Board
++ *
++ * RPP-X1 control algorithm interface
++ */
++
++#pragma once
++
++#include <libipa/algorithm.h>
++
++#include "module.h"
++
++namespace libcamera {
++
++namespace ipa::rppx1 {
++
++using Algorithm = libcamera::ipa::Algorithm<Module>;
++
++} /* namespace ipa::rppx1 */
++
++} /* namespace libcamera */
+diff --git a/src/ipa/rppx1/algorithms/meson.build b/src/ipa/rppx1/algorithms/meson.build
+new file mode 100644
+index 000000000..5fed9e9d5
+--- /dev/null
++++ b/src/ipa/rppx1/algorithms/meson.build
+@@ -0,0 +1,4 @@
++# SPDX-License-Identifier: CC0-1.0
++
++rppx1_ipa_algorithms = files([
++])
+diff --git a/src/ipa/rppx1/data/meson.build b/src/ipa/rppx1/data/meson.build
+new file mode 100644
+index 000000000..d1eb32175
+--- /dev/null
++++ b/src/ipa/rppx1/data/meson.build
+@@ -0,0 +1,8 @@
++# SPDX-License-Identifier: CC0-1.0
++
++conf_files = files([
++])
++
++install_data(conf_files,
++             install_dir : ipa_data_dir / 'rppx1',
++             install_tag : 'runtime')
+diff --git a/src/ipa/rppx1/ipa_context.cpp b/src/ipa/rppx1/ipa_context.cpp
+new file mode 100644
+index 000000000..2cd435d98
+--- /dev/null
++++ b/src/ipa/rppx1/ipa_context.cpp
+@@ -0,0 +1,37 @@
++/* SPDX-License-Identifier: LGPL-2.1-or-later */
++/*
++ * Copyright (C) 2026, Ideas On Board
++ *
++ * RPP-X1 IPA Context
++ */
++
++#include "ipa_context.h"
++
++/**
++ * \file ipa_context.h
++ * \brief Context and state information shared between the algorithms
++ */
++
++namespace libcamera::ipa::rppx1 {
++
++/**
++ * \struct IPASessionConfiguration
++ * \brief Session configuration for the IPA module
++ */
++
++/**
++ * \struct IPAActiveState
++ * \brief Active state for algorithms
++ */
++
++/**
++ * \struct IPAFrameContext
++ * \brief Per-frame context for algorithms
++ */
++
++/**
++ * \struct IPAContext
++ * \brief Global IPA context data shared between all algorithms
++ */
++
++} /* namespace libcamera::ipa::rppx1 */
+diff --git a/src/ipa/rppx1/ipa_context.h b/src/ipa/rppx1/ipa_context.h
+new file mode 100644
+index 000000000..079fcab78
+--- /dev/null
++++ b/src/ipa/rppx1/ipa_context.h
+@@ -0,0 +1,58 @@
++/* SPDX-License-Identifier: LGPL-2.1-or-later */
++/*
++ * Copyright (C) 2026, Ideas On Board
++ *
++ * RPP-X1 IPA Context
++ */
++
++#pragma once
++
++#include <memory>
++
++#include <libcamera/base/utils.h>
++
++#include <libcamera/control_ids.h>
++#include <libcamera/controls.h>
++#include <libcamera/geometry.h>
++
++#include <libcamera/ipa/core_ipa_interface.h>
++
++#include <libipa/camera_sensor_helper.h>
++#include <libipa/fc_queue.h>
++
++namespace libcamera {
++
++namespace ipa::rppx1 {
++
++struct IPASessionConfiguration {
++};
++
++struct IPAActiveState {
++};
++
++struct IPAFrameContext : public FrameContext {
++};
++
++struct IPAContext {
++	IPAContext(unsigned int frameContextSize)
++		: frameContexts(frameContextSize)
++	{
++	}
++
++	IPACameraSensorInfo sensorInfo;
++	IPASessionConfiguration configuration;
++	IPAActiveState activeState;
++
++	FCQueue<IPAFrameContext> frameContexts;
++
++	ControlInfoMap::Map ctrlMap;
++
++	ControlInfoMap sensorControls;
++
++	/* Interface to the Camera Helper */
++	std::unique_ptr<CameraSensorHelper> camHelper;
++};
++
++} /* namespace ipa::rppx1 */
++
++} /* namespace libcamera*/
+diff --git a/src/ipa/rppx1/meson.build b/src/ipa/rppx1/meson.build
+new file mode 100644
+index 000000000..98499c3f7
+--- /dev/null
++++ b/src/ipa/rppx1/meson.build
+@@ -0,0 +1,31 @@
++# SPDX-License-Identifier: CC0-1.0
++
++subdir('algorithms')
++subdir('data')
++
++ipa_name = 'ipa_rppx1'
++
++rppx1_ipa_sources = files([
++    'ipa_context.cpp',
++    'rppx1.cpp',
++])
++
++rppx1_ipa_sources += rppx1_ipa_algorithms
++
++mod = shared_module(ipa_name, rppx1_ipa_sources,
++                    name_prefix : '',
++                    include_directories : [ipa_includes],
++                    dependencies : [libcamera_private, libipa_dep],
++                    install : true,
++                    install_dir : ipa_install_dir)
++
++if ipa_sign_module
++    custom_target(ipa_name + '.so.sign',
++                  input : mod,
++                  output : ipa_name + '.so.sign',
++                  command : [ipa_sign, ipa_priv_key, '@INPUT@', '@OUTPUT@'],
++                  install : false,
++                  build_by_default : true)
++endif
++
++ipa_names += ipa_name
+diff --git a/src/ipa/rppx1/module.h b/src/ipa/rppx1/module.h
+new file mode 100644
+index 000000000..04902eae1
+--- /dev/null
++++ b/src/ipa/rppx1/module.h
+@@ -0,0 +1,29 @@
++/* SPDX-License-Identifier: LGPL-2.1-or-later */
++/*
++ * Copyright (C) 2026, Ideas On Board
++ *
++ * RPP-X1 IPA Module
++ */
++
++#pragma once
++
++#include <linux/media/dreamchip/rppx1-config.h>
++
++#include <libcamera/ipa/rppx1_ipa_interface.h>
++
++#include <libipa/module.h>
++
++#include "ipa_context.h"
++#include "params.h"
++#include "stats.h"
++
++namespace libcamera {
++
++namespace ipa::rppx1 {
++
++using Module = ipa::Module<IPAContext, IPAFrameContext, IPACameraSensorInfo,
++			   RppX1Params, RppX1Stats>;
++
++} /* namespace ipa::rppx1 */
++
++} /* namespace libcamera*/
+diff --git a/src/ipa/rppx1/params.h b/src/ipa/rppx1/params.h
+new file mode 100644
+index 000000000..315c8a978
+--- /dev/null
++++ b/src/ipa/rppx1/params.h
+@@ -0,0 +1,89 @@
++/* SPDX-License-Identifier: LGPL-2.1-or-later */
++/*
++ * Copyright (C) 2026, Ideas On Board
++ *
++ * RPP-X1 ISP Parameters
++ */
++
++#pragma once
++
++#include <linux/media/dreamchip/rppx1-config.h>
++
++#include <libipa/v4l2_params.h>
++
++namespace libcamera {
++
++namespace ipa::rppx1 {
++
++enum class BlockType : uint16_t {
++};
++
++namespace details {
++
++template<BlockType B>
++struct block_type {
++};
++
++#define RPPX1_DEFINE_BLOCK_TYPE(blkType, cfgType, id)			\
++	template<>							\
++	struct block_type<BlockType::blkType> {				\
++		using type = struct rppx1_##cfgType##_params;		\
++		static constexpr rppx1_params_block_type blockType =	\
++			RPPX1_PARAMS_BLOCK_TYPE_##id;			\
++	};
++
++struct params_traits {
++	using id_type = BlockType;
++
++	template<id_type Id>
++	using id_to_details = block_type<Id>;
++};
++
++} /* namespace details */
++
++template<typename T>
++class RppX1ParamsBlock final : public V4L2ParamsBlock<T>
++{
++public:
++	RppX1ParamsBlock(const std::span<uint8_t> data)
++		: V4L2ParamsBlock<T>(data),
++		  configData_(data.subspan(sizeof(v4l2_isp_block_header)))
++	{
++	}
++
++	const T *operator->() const override
++	{
++		return reinterpret_cast<const T *>(configData_.data());
++	}
++
++	T *operator->() override
++	{
++		return reinterpret_cast<T *>(configData_.data());
++	}
++
++	const T &operator*() const override
++	{
++		return *reinterpret_cast<const T *>(configData_.data());
++	}
++
++	T &operator*() override
++	{
++		return *reinterpret_cast<T *>(configData_.data());
++	}
++
++private:
++	std::span<uint8_t> configData_;
++};
++
++class RppX1Params : public V4L2Params<details::params_traits>
++{
++public:
++	RppX1Params(std::span<uint8_t> data)
++		: V4L2Params(data, V4L2_ISP_PARAMS_VERSION_V1)
++	{
++	}
++};
++
++} /* namespace ipa::rppx1 */
++
++} /* namespace libcamera */
+diff --git a/src/ipa/rppx1/rppx1.cpp b/src/ipa/rppx1/rppx1.cpp
+new file mode 100644
+index 000000000..23ab8391b
+--- /dev/null
++++ b/src/ipa/rppx1/rppx1.cpp
+@@ -0,0 +1,278 @@
++/* SPDX-License-Identifier: LGPL-2.1-or-later */
++/*
++ * Copyright (C) 2019, Google Inc.
++ *
++ * RPP-X1 Image Processing Algorithms
++ */
++
++#include <map>
++#include <stdint.h>
++#include <string.h>
++#include <utility>
++
++#include <linux/v4l2-controls.h>
++
++#include <libcamera/base/file.h>
++#include <libcamera/base/log.h>
++
++#include <libcamera/control_ids.h>
++#include <libcamera/controls.h>
++#include <libcamera/framebuffer.h>
++#include <libcamera/request.h>
++
++#include <libcamera/ipa/core_ipa_interface.h>
++#include <libcamera/ipa/ipa_module_info.h>
++#include <libcamera/ipa/rppx1_ipa_interface.h>
++
++#include "libcamera/internal/mapped_framebuffer.h"
++#include "libcamera/internal/yaml_parser.h"
++
++#include "algorithms/algorithm.h"
++
++#include "ipa_context.h"
++#include "module.h"
++#include "params.h"
++#include "stats.h"
++
++namespace libcamera {
++
++LOG_DEFINE_CATEGORY(IPARppX1)
++
++namespace ipa::rppx1 {
++
++/* Maximum number of frame contexts to be held */
++static constexpr uint32_t kMaxFrameContexts = 16;
++
++class IPARppX1 final : public IPARppX1Interface, public Module
++{
++public:
++	IPARppX1();
++
++	int init(const IPASettings &settings,
++		 const IPACameraSensorInfo &sensorInfo,
++		 const ControlInfoMap &sensorControls,
++		 ControlInfoMap *ipaControls) override;
++	int start() override;
++	void stop() override;
++
++	int configure(const IPAConfigInfo &ipaConfig, ControlInfoMap *ipaControls) override;
++	void mapBuffers(const std::vector<IPABuffer> &buffers) override;
++	void unmapBuffers(const std::vector<unsigned int> &ids) override;
++
++	void queueRequest(const uint32_t frame, const ControlList &controls) override;
++	void computeParams(const uint32_t frame, const uint32_t bufferId) override;
++	void processStats(const uint32_t frame, const uint32_t bufferId,
++			  const ControlList &sensorControls) override;
++
++protected:
++	std::string logPrefix() const override;
++
++private:
++	void updateControls(ControlInfoMap *ipaControls);
++	void setControls(unsigned int frame);
++
++	std::map<unsigned int, MappedFrameBuffer> mappedBuffers_;
++
++	/* Local parameter storage */
++	struct IPAContext context_;
++};
++
++IPARppX1::IPARppX1()
++	: context_(kMaxFrameContexts)
++{
++}
++
++std::string IPARppX1::logPrefix() const
++{
++	return "rppx1";
++}
++
++int IPARppX1::init(const IPASettings &settings,
++		   const IPACameraSensorInfo &sensorInfo,
++		   const ControlInfoMap &sensorControls,
++		   ControlInfoMap *ipaControls)
++{
++	context_.sensorInfo = sensorInfo;
++	context_.sensorControls = sensorControls;
++
++	context_.camHelper = CameraSensorHelperFactoryBase::create(settings.sensorModel);
++	if (!context_.camHelper) {
++		LOG(IPARppX1, Error)
++			<< "Failed to create camera sensor helper for "
++			<< settings.sensorModel;
++		return -ENODEV;
++	}
++
++	/* Load the tuning data file. */
++	File file(settings.configurationFile);
++	if (!file.open(File::OpenModeFlag::ReadOnly)) {
++		int ret = file.error();
++		LOG(IPARppX1, Error)
++			<< "Failed to open configuration file "
++			<< settings.configurationFile << ": " << strerror(-ret);
++		return ret;
++	}
++
++	std::unique_ptr<ValueNode> data = YamlParser::parse(file);
++	if (!data)
++		return -EINVAL;
++
++	unsigned int version = (*data)["version"].get<uint32_t>(0);
++	if (version != 1) {
++		LOG(IPARppX1, Error)
++			<< "Invalid tuning file version " << version;
++		return -EINVAL;
++	}
++
++	if (!data->contains("algorithms")) {
++		LOG(IPARppX1, Error)
++			<< "Tuning file doesn't contain any algorithm";
++		return -EINVAL;
++	}
++
++	int ret = createAlgorithms(context_, (*data)["algorithms"]);
++	if (ret)
++		return ret;
++
++	/* Initialize controls. */
++	updateControls(ipaControls);
++
++	return 0;
++}
++
++int IPARppX1::start()
++{
++	/* \todo Properly handle startup controls. */
++	return 0;
++}
++
++void IPARppX1::stop()
++{
++	context_.frameContexts.clear();
++}
++
++int IPARppX1::configure(const IPAConfigInfo &ipaConfig, ControlInfoMap *ipaControls)
++{
++	context_.sensorInfo = ipaConfig.sensorInfo;
++	context_.sensorControls = ipaConfig.sensorControls;
++
++	/* Clear the IPA context before the streaming session. */
++	context_.configuration = {};
++	context_.activeState = {};
++	context_.frameContexts.clear();
++
++	for (const auto &a : algorithms()) {
++		Algorithm *algo = static_cast<Algorithm *>(a.get());
++
++		int ret = algo->configure(context_, context_.sensorInfo);
++		if (ret)
++			return ret;
++	}
++
++	updateControls(ipaControls);
++
++	return 0;
++}
++
++void IPARppX1::mapBuffers(const std::vector<IPABuffer> &buffers)
++{
++	for (const IPABuffer &buffer : buffers) {
++		FrameBuffer fb(buffer.planes);
++
++		auto [it, inserted] = mappedBuffers_.try_emplace(
++			buffer.id, &fb, MappedFrameBuffer::MapFlag::ReadWrite);
++		ASSERT(inserted);
++
++		if (!it->second.isValid()) {
++			LOG(IPARppX1, Fatal)
++				<< "Failed to mmap buffer: "
++				<< strerror(it->second.error());
++		}
++	}
++}
++
++void IPARppX1::unmapBuffers(const std::vector<unsigned int> &ids)
++{
++	for (unsigned int id : ids)
++		mappedBuffers_.erase(id);
++}
++
++void IPARppX1::queueRequest(const uint32_t frame, const ControlList &controls)
++{
++	IPAFrameContext &frameContext = context_.frameContexts.alloc(frame);
++
++	for (const auto &a : algorithms()) {
++		Algorithm *algo = static_cast<Algorithm *>(a.get());
++		algo->queueRequest(context_, frame, frameContext, controls);
++	}
++}
++
++void IPARppX1::computeParams(const uint32_t frame, const uint32_t bufferId)
++{
++	IPAFrameContext &frameContext = context_.frameContexts.get(frame);
++
++	RppX1Params params(mappedBuffers_.at(bufferId).planes()[0]);
++
++	for (const auto &algo : algorithms())
++		algo->prepare(context_, frame, frameContext, &params);
++
++	paramsComputed.emit(frame, params.bytesused());
++}
++
++void IPARppX1::processStats(const uint32_t frame, const uint32_t bufferId,
++			    [[maybe_unused]] const ControlList &sensorControls)
++{
++	auto stats = RppX1Stats(mappedBuffers_.at(bufferId).planes()[0]);
++	if (!stats)
++		return;
++
++	IPAFrameContext &frameContext = context_.frameContexts.get(frame);
++	ControlList metadata(controls::controls);
++
++	for (auto const &a : algorithms()) {
++		Algorithm *algo = static_cast<Algorithm *>(a.get());
++		algo->process(context_, frame, frameContext, &stats, metadata);
++	}
++
++	setControls(frame);
++
++	metadataReady.emit(frame, metadata);
++}
++
++void IPARppX1::updateControls(ControlInfoMap *ipaControls)
++{
++	ControlInfoMap::Map ctrlMap = {};
++
++	ctrlMap.insert(context_.ctrlMap.begin(), context_.ctrlMap.end());
++	*ipaControls = { std::move(ctrlMap), controls::controls };
++}
++
++void IPARppX1::setControls(unsigned int frame)
++{
++	[[maybe_unused]] IPAFrameContext &frameContext = context_.frameContexts.get(frame);
++
++	ControlList ctrls(context_.sensorControls);
++
++	setSensorControls.emit(frame, ctrls);
++}
++
++} /* namespace ipa::rppx1 */
++
++/*
++ * External IPA module interface
++ */
++
++extern "C" {
++const struct IPAModuleInfo ipaModuleInfo = {
++	IPA_MODULE_API_VERSION,
++	1,
++	"rppx1",
++};
++
++IPAInterface *ipaCreate()
++{
++	return new ipa::rppx1::IPARppX1();
++}
++}
++
++} /* namespace libcamera */
+diff --git a/src/ipa/rppx1/stats.h b/src/ipa/rppx1/stats.h
+new file mode 100644
+index 000000000..39dc132ba
+--- /dev/null
++++ b/src/ipa/rppx1/stats.h
+@@ -0,0 +1,55 @@
++/* SPDX-License-Identifier: LGPL-2.1-or-later */
++/*
++ * Copyright (C) 2026, Ideas On Board
++ *
++ * RPP-X1 ISP Statistics
++ */
++
++#pragma once
++
++#include <linux/media/dreamchip/rppx1-config.h>
++
++#include <libipa/v4l2_stats.h>
++
++namespace libcamera {
++
++namespace ipa::rppx1 {
++
++enum class StatsType : uint16_t {
++};
++
++namespace details {
++
++template<StatsType B>
++struct stats_type {
++};
++
++#define RPPX1_DEFINE_STATS_TYPE(blkType, cfgType, id)			\
++	template<>							\
++	struct stats_type<StatsType::blkType> {				\
++		using type = struct rppx1_##cfgType##_stats;		\
++		static constexpr rppx1_stats_block_type blockType =	\
++			RPPX1_STATS_BLOCK_TYPE_##id;			\
++	};
++
++struct stats_traits {
++	using id_type = StatsType;
++
++	template<id_type Id>
++	using id_to_details = stats_type<Id>;
++};
++
++} /* namespace details */
++
++class RppX1Stats : public V4L2Stats<details::stats_traits>
++{
++public:
++	RppX1Stats(std::span<uint8_t> data)
++		: V4L2Stats(data, V4L2_ISP_VERSION_V1)
++	{
++	}
++};
++
++} /* namespace ipa::rppx1 */
++
++} /* namespace libcamera */
+-- 
+2.43.0
+

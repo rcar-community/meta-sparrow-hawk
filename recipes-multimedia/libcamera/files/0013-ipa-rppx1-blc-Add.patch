@@ -1,0 +1,219 @@
+From e78317175c2dc8c260a6eff1490dbc0b091fb251 Mon Sep 17 00:00:00 2001
+From: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+Date: Fri, 18 Sep 2026 14:09:41 +0200
+Subject: [PATCH] ipa: rppx1: blc: Add
+
+Add the algorithm to the rppx1 ipa module based on the corresponding
+algorithm in the rkisp1 ipa module.
+
+Signed-off-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+
+Upstream-Status: Submitted [https://patchwork.libcamera.org/patch/28351/]
+
+---
+ src/ipa/rppx1/algorithms/blc.cpp     | 111 +++++++++++++++++++++++++++
+ src/ipa/rppx1/algorithms/blc.h       |  41 ++++++++++
+ src/ipa/rppx1/algorithms/meson.build |   1 +
+ src/ipa/rppx1/params.h               |   3 +
+ 4 files changed, 156 insertions(+)
+ create mode 100644 src/ipa/rppx1/algorithms/blc.cpp
+ create mode 100644 src/ipa/rppx1/algorithms/blc.h
+
+diff --git a/src/ipa/rppx1/algorithms/blc.cpp b/src/ipa/rppx1/algorithms/blc.cpp
+new file mode 100644
+index 000000000..a56b834fb
+--- /dev/null
++++ b/src/ipa/rppx1/algorithms/blc.cpp
+@@ -0,0 +1,111 @@
++/* SPDX-License-Identifier: LGPL-2.1-or-later */
++/*
++ * Copyright (C) 2026, Ideas On Board
++ *
++ * RPP-X1 Black Level Correction control
++ */
++
++#include "blc.h"
++
++#include <libcamera/base/log.h>
++
++#include <libcamera/control_ids.h>
++
++#include "libcamera/internal/value_node.h"
++
++/**
++ * \file blc.h
++ */
++
++namespace libcamera {
++
++namespace ipa::rppx1::algorithms {
++
++LOG_DEFINE_CATEGORY(RppX1Blc)
++
++/**
++ * \copydoc libcamera::ipa::Algorithm::init
++ */
++int BlackLevelCorrection::init(IPAContext &context, [[maybe_unused]] const ValueNode &tuningData)
++{
++	auto blackLevel = context.camHelper->blackLevel();
++	if (!blackLevel) {
++		LOG(RppX1Blc, Error)
++			<< "No black levels provided by camera sensor helper";
++		return -ENOTSUP;
++	}
++
++	blackLevelRed_ = *blackLevel;
++	blackLevelGreenR_ = *blackLevel;
++	blackLevelGreenB_ = *blackLevel;
++	blackLevelBlue_ = *blackLevel;
++
++	LOG(RppX1Blc, Debug)
++		<< "Black levels: red " << blackLevelRed_
++		<< ", green (red) " << blackLevelGreenR_
++		<< ", green (blue) " << blackLevelGreenB_
++		<< ", blue " << blackLevelBlue_;
++
++	return 0;
++}
++
++int BlackLevelCorrection::configure([[maybe_unused]] IPAContext &context,
++				    [[maybe_unused]] const IPACameraSensorInfo &configInfo)
++{
++	return 0;
++}
++
++/**
++ * \copydoc libcamera::ipa::Algorithm::prepare
++ */
++void BlackLevelCorrection::prepare([[maybe_unused]] IPAContext &context,
++				   const uint32_t frame,
++				   [[maybe_unused]] IPAFrameContext &frameContext,
++				   RppX1Params *params)
++{
++	if (frame > 0)
++		return;
++
++	auto config = params->block<BlockType::BlsPre1>();
++	config.setEnabled(true);
++
++	config->mode = RPPX1_BLS_MODE_FIXED;
++	config->en_windows = RPPX1_BLS_WIN_EN_OFF;
++
++	/*
++	 * RPP-X1: the rppx1 specifies fixed BLS values per-color component
++	 * matching on the input port cropping configuration.
++	 * We have the same BLS value for all channels, so this is not relevant
++	 * for now, but should probably be handled properly.
++	 *
++	 * Black level values are 16 bits, scale to the RPP-X1 PRE1 pipe
++	 * 24-bit-domain.
++	 */
++
++	config->fixed.a = static_cast<int32_t>(blackLevelRed_) << 8;
++	config->fixed.b = static_cast<int32_t>(blackLevelGreenR_) << 8;
++	config->fixed.c = static_cast<int32_t>(blackLevelGreenB_) << 8;
++	config->fixed.d = static_cast<int32_t>(blackLevelBlue_) << 8;
++}
++
++/**
++ * \copydoc libcamera::ipa::Algorithm::process
++ */
++void BlackLevelCorrection::process([[maybe_unused]] IPAContext &context,
++				   [[maybe_unused]] const uint32_t frame,
++				   [[maybe_unused]] IPAFrameContext &frameContext,
++				   [[maybe_unused]] const RppX1Stats *stats,
++				   ControlList &metadata)
++{
++	metadata.set(controls::SensorBlackLevels,
++		     { static_cast<int32_t>(blackLevelRed_),
++		       static_cast<int32_t>(blackLevelGreenR_),
++		       static_cast<int32_t>(blackLevelGreenB_),
++		       static_cast<int32_t>(blackLevelBlue_) });
++}
++
++REGISTER_IPA_ALGORITHM(BlackLevelCorrection, "BlackLevelCorrection")
++
++} /* namespace ipa::rppx1::algorithms */
++
++} /* namespace libcamera */
+diff --git a/src/ipa/rppx1/algorithms/blc.h b/src/ipa/rppx1/algorithms/blc.h
+new file mode 100644
+index 000000000..3752166d7
+--- /dev/null
++++ b/src/ipa/rppx1/algorithms/blc.h
+@@ -0,0 +1,41 @@
++/* SPDX-License-Identifier: LGPL-2.1-or-later */
++/*
++ * Copyright (C) 2026, Ideas On Board
++ *
++ * RPP-X1 Black Level Correction control
++ */
++
++#pragma once
++
++#include <stdint.h>
++
++#include "algorithm.h"
++
++namespace libcamera {
++
++namespace ipa::rppx1::algorithms {
++
++class BlackLevelCorrection : public Algorithm
++{
++public:
++	int init(IPAContext &context, const ValueNode &tuningData) override;
++	int configure(IPAContext &context,
++		      const IPACameraSensorInfo &configInfo) override;
++	void prepare(IPAContext &context, const uint32_t frame,
++		     IPAFrameContext &frameContext,
++		     RppX1Params *params) override;
++	void process(IPAContext &context, const uint32_t frame,
++		     IPAFrameContext &frameContext,
++		     const RppX1Stats *stats,
++		     ControlList &metadata) override;
++
++private:
++	int16_t blackLevelRed_;
++	int16_t blackLevelGreenR_;
++	int16_t blackLevelGreenB_;
++	int16_t blackLevelBlue_;
++};
++
++} /* namespace ipa::rppx1::algorithms */
++
++} /* namespace libcamera */
+diff --git a/src/ipa/rppx1/algorithms/meson.build b/src/ipa/rppx1/algorithms/meson.build
+index 5fed9e9d5..165f0ce05 100644
+--- a/src/ipa/rppx1/algorithms/meson.build
++++ b/src/ipa/rppx1/algorithms/meson.build
+@@ -1,4 +1,5 @@
+ # SPDX-License-Identifier: CC0-1.0
+ 
+ rppx1_ipa_algorithms = files([
++    'blc.cpp',
+ ])
+diff --git a/src/ipa/rppx1/params.h b/src/ipa/rppx1/params.h
+index 315c8a978..05db30991 100644
+--- a/src/ipa/rppx1/params.h
++++ b/src/ipa/rppx1/params.h
+@@ -16,6 +16,7 @@ namespace libcamera {
+ namespace ipa::rppx1 {
+ 
+ enum class BlockType : uint16_t {
++	BlsPre1,
+ };
+ 
+ namespace details {
+@@ -32,6 +33,8 @@ struct block_type {
+ 			RPPX1_PARAMS_BLOCK_TYPE_##id;			\
+ 	};
+ 
++RPPX1_DEFINE_BLOCK_TYPE(BlsPre1, bls, BLS_PRE1)
++
+ struct params_traits {
+ 	using id_type = BlockType;
+ 
+-- 
+2.43.0
+

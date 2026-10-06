@@ -1,0 +1,39 @@
+From a84cd76e7b8219db9081182135f0627e14434107 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Barnab=C3=A1s=20P=C5=91cze?=
+ <barnabas.pocze@ideasonboard.com>
+Date: Fri, 18 Sep 2026 14:09:34 +0200
+Subject: [PATCH] libcamera: controls: Fix `ColourTemperature` direction
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The control has been updated to be writable, but that change
+failed to adjust the `direction` appropriately. So do that.
+
+Fixes: 4d2618fb1096 ("libcamera: controls: Update the ColourTemperature control to be writable")
+Signed-off-by: Barnabás Pőcze <barnabas.pocze@ideasonboard.com>
+Reviewed-by: Kieran Bingham <kieran.bingham@ideasonboard.com>
+Reviewed-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+
+Upstream-Status: Submitted [https://patchwork.libcamera.org/patch/28344/]
+
+---
+ src/libcamera/control_ids_core.yaml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/libcamera/control_ids_core.yaml b/src/libcamera/control_ids_core.yaml
+index 89991d03d..e87c0bb13 100644
+--- a/src/libcamera/control_ids_core.yaml
++++ b/src/libcamera/control_ids_core.yaml
+@@ -598,7 +598,7 @@ controls:
+ 
+   - ColourTemperature:
+       type: int32_t
+-      direction: out
++      direction: inout
+       description: |
+         ColourTemperature of the frame, in kelvin.
+ 
+-- 
+2.43.0
+

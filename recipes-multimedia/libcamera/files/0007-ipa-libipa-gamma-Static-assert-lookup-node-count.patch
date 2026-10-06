@@ -1,0 +1,36 @@
+From 4392700591a0c0116ee25836ddeb2bb55aa71ea6 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Barnab=C3=A1s=20P=C5=91cze?=
+ <barnabas.pocze@ideasonboard.com>
+Date: Fri, 18 Sep 2026 14:09:35 +0200
+Subject: [PATCH] ipa: libipa: gamma: Static assert lookup node count
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Require at least 2, which is reasonable.
+
+Signed-off-by: Barnabás Pőcze <barnabas.pocze@ideasonboard.com>
+Reviewed-by: Kieran Bingham <kieran.bingham@ideasonboard.com>
+
+Upstream-Status: Submitted [https://patchwork.libcamera.org/patch/28345/]
+
+---
+ src/ipa/libipa/gamma.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/src/ipa/libipa/gamma.h b/src/ipa/libipa/gamma.h
+index 9954f94ba..e5ac3f96f 100644
+--- a/src/ipa/libipa/gamma.h
++++ b/src/ipa/libipa/gamma.h
+@@ -63,6 +63,8 @@ protected:
+ template<unsigned int NLutNodes, typename UQ>
+ class GammaAlgorithm : public GammaAlgorithmBase
+ {
++	static_assert(NLutNodes >= 2);
++
+ public:
+ 	GammaAlgorithm()
+ 		: GammaAlgorithmBase(NLutNodes)
+-- 
+2.43.0
+

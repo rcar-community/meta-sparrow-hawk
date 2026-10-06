@@ -1,0 +1,42 @@
+From c5b90201bc69857bd02d891d8a6cae1f9166c971 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Barnab=C3=A1s=20P=C5=91cze?=
+ <barnabas.pocze@ideasonboard.com>
+Date: Fri, 18 Sep 2026 14:09:33 +0200
+Subject: [PATCH] ipa: libipa: awb_bayes: Fix initial max value
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+For floating-point types `std::numeric_limits<T>::min()` is the smallest
+normal positive value. So `lowest()` needs to be used other e.g. a value
+of 0 will not be properly handled.
+
+This type is only used for logging, so no effects on the algorithm.
+
+Fixes: c2059585f3c7 ("libipa: awb_bayes: Add logging of value limits")
+Signed-off-by: Barnabás Pőcze <barnabas.pocze@ideasonboard.com>
+Reviewed-by: Kieran Bingham <kieran.bingham@ideasonboard.com>
+Reviewed-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+
+Upstream-Status: Submitted [https://patchwork.libcamera.org/patch/28343/]
+
+---
+ src/ipa/libipa/awb_bayes.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/ipa/libipa/awb_bayes.cpp b/src/ipa/libipa/awb_bayes.cpp
+index 10e05962b..7f3237c0a 100644
+--- a/src/ipa/libipa/awb_bayes.cpp
++++ b/src/ipa/libipa/awb_bayes.cpp
+@@ -66,7 +66,7 @@ class LimitsRecorder
+ public:
+ 	LimitsRecorder()
+ 		: min_(std::numeric_limits<T>::max()),
+-		  max_(std::numeric_limits<T>::min())
++		  max_(std::numeric_limits<T>::lowest())
+ 	{
+ 	}
+ 
+-- 
+2.43.0
+

@@ -1,0 +1,228 @@
+From 9b9c6c5c52cc6ccd8632f448b654e155023d1b5f Mon Sep 17 00:00:00 2001
+From: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+Date: Fri, 18 Sep 2026 14:09:46 +0200
+Subject: [PATCH] ipa: rppx1: goc: Add
+
+Add the algorithm to the rppx1 ipa module based on the corresponding
+algorithm in the rkisp1 ipa module.
+
+Signed-off-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+Reviewed-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+
+Upstream-Status: Submitted [https://patchwork.libcamera.org/patch/28357/]
+
+---
+ src/ipa/rppx1/algorithms/goc.cpp     | 86 ++++++++++++++++++++++++++++
+ src/ipa/rppx1/algorithms/goc.h       | 43 ++++++++++++++
+ src/ipa/rppx1/algorithms/meson.build |  1 +
+ src/ipa/rppx1/ipa_context.h          |  5 ++
+ src/ipa/rppx1/params.h               |  2 +
+ 5 files changed, 137 insertions(+)
+ create mode 100644 src/ipa/rppx1/algorithms/goc.cpp
+ create mode 100644 src/ipa/rppx1/algorithms/goc.h
+
+diff --git a/src/ipa/rppx1/algorithms/goc.cpp b/src/ipa/rppx1/algorithms/goc.cpp
+new file mode 100644
+index 000000000..36a8e069a
+--- /dev/null
++++ b/src/ipa/rppx1/algorithms/goc.cpp
+@@ -0,0 +1,86 @@
++/* SPDX-License-Identifier: LGPL-2.1-or-later */
++/*
++ * Copyright (C) 2026, Ideas On Board
++ *
++ * RPP-X1 Gamma out control
++ */
++
++#include "goc.h"
++
++/**
++ * \file goc.h
++ */
++
++namespace libcamera {
++
++namespace ipa::rppx1::algorithms {
++
++/**
++ * \copydoc libcamera::ipa::Algorithm::init
++ */
++int GammaOutCorrection::init(IPAContext &context, const ValueNode &tuningData)
++{
++	/* The logarithmic segments as specified in the reference. */
++	static constexpr unsigned int segments[] = {
++		64, 64, 64, 64, 128, 128, 128, 128,
++		256, 256, 256, 512, 512, 512, 512, 512,
++	};
++
++	return gamma_.init(context.ctrlMap, tuningData, segments);
++}
++
++/**
++ * \copydoc libcamera::ipa::Algorithm::configure
++ */
++int GammaOutCorrection::configure(IPAContext &context,
++				  [[maybe_unused]] const IPACameraSensorInfo &configInfo)
++{
++	gamma_.configure(context.activeState.goc);
++	return 0;
++}
++
++/**
++ * \copydoc libcamera::ipa::Algorithm::queueRequest
++ */
++void GammaOutCorrection::queueRequest(IPAContext &context, const uint32_t frame,
++				      IPAFrameContext &frameContext,
++				      const ControlList &controls)
++{
++	gamma_.queueRequest(context.activeState.goc, frame, frameContext.goc, controls);
++}
++
++/**
++ * \copydoc libcamera::ipa::Algorithm::prepare
++ */
++void GammaOutCorrection::prepare([[maybe_unused]] IPAContext &context,
++				 [[maybe_unused]] const uint32_t frame,
++				 IPAFrameContext &frameContext,
++				 RppX1Params *params)
++{
++	if (!frameContext.goc.update)
++		return;
++
++	auto config = params->block<BlockType::GaHv>();
++	config.setEnabled(true);
++
++	config->mode = RPPX1_GA_SEG_MODE_LOGARITHMIC;
++	gamma_.prepare(frameContext.goc, std::span(config->gamma_y));
++}
++
++/**
++ * \copydoc libcamera::ipa::Algorithm::process
++ */
++void GammaOutCorrection::process([[maybe_unused]] IPAContext &context,
++				 [[maybe_unused]] const uint32_t frame,
++				 IPAFrameContext &frameContext,
++				 [[maybe_unused]] const RppX1Stats *stats,
++				 ControlList &metadata)
++{
++	metadata.set(controls::Gamma, frameContext.goc.gamma);
++}
++
++REGISTER_IPA_ALGORITHM(GammaOutCorrection, "GammaOutCorrection")
++
++} /* namespace ipa::rppx1::algorithms */
++
++} /* namespace libcamera */
+diff --git a/src/ipa/rppx1/algorithms/goc.h b/src/ipa/rppx1/algorithms/goc.h
+new file mode 100644
+index 000000000..241d0d4cb
+--- /dev/null
++++ b/src/ipa/rppx1/algorithms/goc.h
+@@ -0,0 +1,43 @@
++/* SPDX-License-Identifier: LGPL-2.1-or-later */
++/*
++ * Copyright (C) 2026, Ideas On Board
++ *
++ * RPP-X1 Gamma out control
++ */
++
++#pragma once
++
++#include <libipa/gamma.h>
++
++#include "algorithm.h"
++
++namespace libcamera {
++
++namespace ipa::rppx1::algorithms {
++
++class GammaOutCorrection : public Algorithm
++{
++public:
++	int init(IPAContext &context, const ValueNode &tuningData) override;
++	int configure(IPAContext &context,
++		      const IPACameraSensorInfo &configInfo) override;
++	void queueRequest(IPAContext &context,
++			  const uint32_t frame,
++			  IPAFrameContext &frameContext,
++			  const ControlList &controls) override;
++	void prepare(IPAContext &context, const uint32_t frame,
++		     IPAFrameContext &frameContext,
++		     RppX1Params *params) override;
++	void process(IPAContext &context, const uint32_t frame,
++		     IPAFrameContext &frameContext,
++		     const RppX1Stats *stats,
++		     ControlList &metadata) override;
++
++private:
++	/* RPP_OUT ("human vision") pipeline with 12-bit gamma values */
++	GammaAlgorithm<RPPX1_GA_MAX_SAMPLES, UQ<0, 12>> gamma_;
++};
++
++} /* namespace ipa::rppx1::algorithms */
++
++} /* namespace libcamera */
+diff --git a/src/ipa/rppx1/algorithms/meson.build b/src/ipa/rppx1/algorithms/meson.build
+index 7e0b4ad01..d93b22c63 100644
+--- a/src/ipa/rppx1/algorithms/meson.build
++++ b/src/ipa/rppx1/algorithms/meson.build
+@@ -5,5 +5,6 @@ rppx1_ipa_algorithms = files([
+     'awb.cpp',
+     'blc.cpp',
+     'ccm.cpp',
++    'goc.cpp',
+     'lux.cpp',
+ ])
+diff --git a/src/ipa/rppx1/ipa_context.h b/src/ipa/rppx1/ipa_context.h
+index c0ef73b04..0d7b298f4 100644
+--- a/src/ipa/rppx1/ipa_context.h
++++ b/src/ipa/rppx1/ipa_context.h
+@@ -21,6 +21,7 @@
+ #include <libipa/ccm.h>
+ #include <libipa/camera_sensor_helper.h>
+ #include <libipa/fc_queue.h>
++#include <libipa/gamma.h>
+ 
+ namespace libcamera {
+ 
+@@ -46,6 +47,8 @@ struct IPAActiveState {
+ 
+ 	ipa::ccm::ActiveState ccm;
+ 
++	ipa::gamma::ActiveState goc;
++
+ 	struct {
+ 		double lux;
+ 	} lux;
+@@ -66,6 +69,8 @@ struct IPAFrameContext : public FrameContext {
+ 
+ 	ipa::ccm::FrameContext ccm;
+ 
++	ipa::gamma::FrameContext goc;
++
+ 	struct {
+ 		double lux;
+ 	} lux;
+diff --git a/src/ipa/rppx1/params.h b/src/ipa/rppx1/params.h
+index b863b9ba1..b724fa316 100644
+--- a/src/ipa/rppx1/params.h
++++ b/src/ipa/rppx1/params.h
+@@ -20,6 +20,7 @@ enum class BlockType : uint16_t {
+ 	BlsPre1,
+ 	CcorPost,
+ 	ExmPre1,
++	GaHv,
+ 	HistPost,
+ 	WbMeasPost,
+ };
+@@ -42,6 +43,7 @@ RPPX1_DEFINE_BLOCK_TYPE(AwbGPre1, awbg, AWBG_PRE1)
+ RPPX1_DEFINE_BLOCK_TYPE(BlsPre1, bls, BLS_PRE1)
+ RPPX1_DEFINE_BLOCK_TYPE(CcorPost, ccor, CCOR_POST)
+ RPPX1_DEFINE_BLOCK_TYPE(ExmPre1, exm, EXM_PRE1)
++RPPX1_DEFINE_BLOCK_TYPE(GaHv, ga, GA_HV)
+ RPPX1_DEFINE_BLOCK_TYPE(HistPost, hist, HIST_POST)
+ RPPX1_DEFINE_BLOCK_TYPE(WbMeasPost, wbmeas, WBMEAS_POST)
+ 
+-- 
+2.43.0
+

@@ -1,0 +1,1325 @@
+From 85704b5de4f7c6b5c9c275b2e80708078c2ca7e9 Mon Sep 17 00:00:00 2001
+From: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+Date: Fri, 18 Sep 2026 14:09:38 +0200
+Subject: [PATCH] include: linux: Update to Linux 7.3-rc3
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Update the kernel headers to v7.3-rc3 using utils/update-kernel-headers.sh.
+Preserve the libcamera local modifications manually.
+
+This in particular includes the definitions of RPP-X1.
+
+Signed-off-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+[From upstream revision, modify location accordingly.]
+Signed-off-by: Barnabás Pőcze <barnabas.pocze@ideasonboard.com>
+Reviewed-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+
+Upstream-Status: Submitted [https://patchwork.libcamera.org/patch/28348/]
+
+---
+ include/linux/README                         |   2 +-
+ include/linux/drm.h                          |   7 +
+ include/linux/drm_fourcc.h                   | 244 ++++++-
+ include/linux/drm_mode.h                     |   1 +
+ include/linux/media/dreamchip/rppx1-config.h | 730 +++++++++++++++++++
+ include/linux/rkisp1-config.h                | 113 ++-
+ include/linux/v4l2-controls.h                |   2 +
+ include/linux/videodev2.h                    |   4 +
+ utils/update-kernel-headers.sh               |   1 +
+ 9 files changed, 1078 insertions(+), 26 deletions(-)
+ create mode 100644 include/linux/media/dreamchip/rppx1-config.h
+
+diff --git a/include/linux/README b/include/linux/README
+index 9303e0f14..574168af2 100644
+--- a/include/linux/README
++++ b/include/linux/README
+@@ -1,4 +1,4 @@
+ # SPDX-License-Identifier: CC0-1.0
+ 
+-Files in this directory are imported from v7.1 of the Linux kernel. Do not
++Files in this directory are imported from v7.3-rc3 of the Linux kernel. Do not
+ modify them manually.
+diff --git a/include/linux/drm.h b/include/linux/drm.h
+index 5eecc8bed..b051d2da4 100644
+--- a/include/linux/drm.h
++++ b/include/linux/drm.h
+@@ -1299,6 +1299,13 @@ extern "C" {
+  */
+ #define DRM_IOCTL_MODE_GETFB2		DRM_IOWR(0xCE, struct drm_mode_fb_cmd2)
+ 
++/**
++ * DRM_IOCTL_SYNCOBJ_EVENTFD - Register an eventfd to be signalled by a syncobj.
++ *
++ * This can be used to integrate a syncobj in an event loop.
++ *
++ * The IOCTL argument is a struct drm_syncobj_eventfd.
++ */
+ #define DRM_IOCTL_SYNCOBJ_EVENTFD	DRM_IOWR(0xCF, struct drm_syncobj_eventfd)
+ 
+ /**
+diff --git a/include/linux/drm_fourcc.h b/include/linux/drm_fourcc.h
+index 8e2a6abae..b4e8bda8e 100644
+--- a/include/linux/drm_fourcc.h
++++ b/include/linux/drm_fourcc.h
+@@ -224,9 +224,9 @@ extern "C" {
+  * [31:0] sign:exponent:mantissa 1:8:23
+  */
+ #define DRM_FORMAT_R32F          fourcc_code('R', ' ', ' ', 'F') /* [31:0] R 32 little endian */
+-#define DRM_FORMAT_GR3232F       fourcc_code('G', 'R', ' ', 'F') /* [63:0] R:G 32:32 little endian */
+-#define DRM_FORMAT_BGR323232F    fourcc_code('B', 'G', 'R', 'F') /* [95:0] R:G:B 32:32:32 little endian */
+-#define DRM_FORMAT_ABGR32323232F fourcc_code('A', 'B', '8', 'F') /* [127:0] R:G:B:A 32:32:32:32 little endian */
++#define DRM_FORMAT_GR3232F       fourcc_code('G', 'R', ' ', 'F') /* [63:0] G:R 32:32 little endian */
++#define DRM_FORMAT_BGR323232F    fourcc_code('B', 'G', 'R', 'F') /* [95:0] B:G:R 32:32:32 little endian */
++#define DRM_FORMAT_ABGR32323232F fourcc_code('A', 'B', '8', 'F') /* [127:0] A:B:G:R 32:32:32:32 little endian */
+ 
+ /*
+  * RGBA format with 10-bit components packed in 64-bit per pixel, with 6 bits
+@@ -246,6 +246,7 @@ extern "C" {
+ #define DRM_FORMAT_XVUY8888	fourcc_code('X', 'V', 'U', 'Y') /* [31:0] X:Cr:Cb:Y 8:8:8:8 little endian */
+ #define DRM_FORMAT_VUY888	fourcc_code('V', 'U', '2', '4') /* [23:0] Cr:Cb:Y 8:8:8 little endian */
+ #define DRM_FORMAT_VUY101010	fourcc_code('V', 'U', '3', '0') /* Y followed by U then V, 10:10:10. Non-linear modifier only */
++#define DRM_FORMAT_XVUY2101010	fourcc_code('X', 'Y', '3', '0') /* [31:0] x:Cr:Cb:Y 2:10:10:10 little endian */
+ 
+ /*
+  * packed Y2xx indicate for each component, xx valid data occupy msb
+@@ -361,6 +362,14 @@ extern "C" {
+  */
+ #define DRM_FORMAT_P030		fourcc_code('P', '0', '3', '0') /* 2x2 subsampled Cr:Cb plane 10 bits per channel packed */
+ 
++/*
++ * 2 plane YCbCr422.
++ * 3 10 bit components and 2 padding bits packed into 4 bytes.
++ * index 0 = Y plane, [31:0] x:Y2:Y1:Y0 2:10:10:10 little endian
++ * index 1 = Cr:Cb plane, [63:0] x:Cr2:Cb2:Cr1:x:Cb1:Cr0:Cb0 [2:10:10:10:2:10:10:10] little endian
++ */
++#define DRM_FORMAT_P230		fourcc_code('P', '2', '3', '0') /* 2x1 subsampled Cr:Cb plane 10 bits per channel packed */
++
+ /* 3 plane non-subsampled (444) YCbCr
+  * 16 bits per component, but only 10 bits are used and 6 bits are padded
+  * index 0: Y plane, [15:0] Y:x [10:6] little endian
+@@ -377,6 +386,15 @@ extern "C" {
+  */
+ #define DRM_FORMAT_Q401		fourcc_code('Q', '4', '0', '1')
+ 
++/*
++ * 3 plane non-subsampled (444) YCbCr LSB aligned
++ * 10 bpc, 30 bits per sample image data in a single contiguous buffer.
++ * index 0: Y plane,  [31:0] x:Y2:Y1:Y0    [2:10:10:10] little endian
++ * index 1: Cb plane, [31:0] x:Cb2:Cb1:Cb0 [2:10:10:10] little endian
++ * index 2: Cr plane, [31:0] x:Cr2:Cr1:Cr0 [2:10:10:10] little endian
++ */
++#define DRM_FORMAT_T430		fourcc_code('T', '4', '3', '0')
++
+ /*
+  * 3 plane YCbCr LSB aligned
+  * In order to use these formats in a similar fashion to MSB aligned ones
+@@ -433,6 +451,17 @@ extern "C" {
+ #define DRM_FORMAT_YUV444	fourcc_code('Y', 'U', '2', '4') /* non-subsampled Cb (1) and Cr (2) planes */
+ #define DRM_FORMAT_YVU444	fourcc_code('Y', 'V', '2', '4') /* non-subsampled Cr (1) and Cb (2) planes */
+ 
++/*
++ * Y-only (greyscale) formats
++ *
++ * The Y-only formats are handled similarly to the YCbCr formats in the display
++ * pipeline, with the Cb and Cr implicitly neutral (0.0 in nominal values). This
++ * also means that COLOR_RANGE property applies to the Y-only formats.
++ */
++
++#define DRM_FORMAT_Y8		fourcc_code('G', 'R', 'E', 'Y')  /* 8-bit Y-only */
++#define DRM_FORMAT_XYYY2101010	fourcc_code('Y', 'P', 'A', '4')  /* [31:0] x:Y2:Y1:Y0 2:10:10:10 little endian */
++
+ /* Compressed formats */
+ #define DRM_FORMAT_MJPEG	fourcc_code('M', 'J', 'P', 'G') /* Motion-JPEG */
+ 
+@@ -1694,36 +1723,69 @@ drm_fourcc_canonicalize_nvidia_format_mod(__u64 modifier)
+  * For multi-plane formats the above surfaces get merged into one plane for
+  * each format plane, based on the required alignment only.
+  *
+- * Bits  Parameter                Notes
+- * ----- ------------------------ ---------------------------------------------
++ * Bits    Parameter                Notes
++ * ------- ------------------------ ---------------------------------------------
++ *
++ * DRM format modifier fields on AMD GPUs:
++ *     7:0 TILE_VERSION             Values are AMD_FMT_MOD_TILE_VER_*
++ *    12:8 TILE                     Values are AMD_FMT_MOD_TILE_<version>_*
++ *      13 DCC                      Delta Color Compression, supported on GFX8 and newer
++ *   55:14 (chip specific)          See below for details, depends on GFX block version
++ *   63:56 Vendor                   Value is DRM_FORMAT_MOD_VENDOR_AMD
++ *
++ * Chip specific fields on Gfx9 and newer:
++ *      14 DCC_RETILE
++ *      15 DCC_PIPE_ALIGN
++ *      16 DCC_INDEPENDENT_64B
++ *      17 DCC_INDEPENDENT_128B
++ *   19:18 DCC_MAX_COMPRESSED_BLOCK Values are AMD_FMT_MOD_DCC_BLOCK_*
++ *      20 DCC_CONSTANT_ENCODE
++ *   23:21 PIPE_XOR_BITS            Only for some chips
++ *   26:24 BANK_XOR_BITS            Only for some chips
++ *   29:27 PACKERS                  Only for some chips
++ *   32:30 RB                       Only for some chips
++ *   35:33 PIPE                     Only for some chips
++ *   55:36 -                        Reserved for future use, must be zero
++ *
++ * Chip specific fields on Gfx6-8:
++ *   16:14 MICROTILE                Micro tile format
++ *   21:17 PIPE_CONFIG              Number of pipes and how pipes are interleaved
++ *   24:22 TILE_SPLIT               Tile split size
++ *   26:25 BANK_WIDTH               Number of tiles in the X direction in the same bank
++ *   28:27 BANK_HEIGHT              Number of tiles in the Y direction in the same bank
++ *   30:29 MACRO_TILE_ASPECT        Macro tile aspect ratio
++ *   32:31 NUM_BANKS                Number of banks
++ *   55:33 -                        Reserved for future use, must be zero
+  *
+- *   7:0 TILE_VERSION             Values are AMD_FMT_MOD_TILE_VER_*
+- *  12:8 TILE                     Values are AMD_FMT_MOD_TILE_<version>_*
+- *    13 DCC
+- *    14 DCC_RETILE
+- *    15 DCC_PIPE_ALIGN
+- *    16 DCC_INDEPENDENT_64B
+- *    17 DCC_INDEPENDENT_128B
+- * 19:18 DCC_MAX_COMPRESSED_BLOCK Values are AMD_FMT_MOD_DCC_BLOCK_*
+- *    20 DCC_CONSTANT_ENCODE
+- * 23:21 PIPE_XOR_BITS            Only for some chips
+- * 26:24 BANK_XOR_BITS            Only for some chips
+- * 29:27 PACKERS                  Only for some chips
+- * 32:30 RB                       Only for some chips
+- * 35:33 PIPE                     Only for some chips
+- * 55:36 -                        Reserved for future use, must be zero
+  */
+ #define AMD_FMT_MOD fourcc_mod_code(AMD, 0)
+ 
+ #define IS_AMD_FMT_MOD(val) (((val) >> 56) == DRM_FORMAT_MOD_VENDOR_AMD)
+ 
+-/* Reserve 0 for GFX8 and older */
++#define AMD_FMT_MOD_TILE_VER_GFX6 0
+ #define AMD_FMT_MOD_TILE_VER_GFX9 1
+ #define AMD_FMT_MOD_TILE_VER_GFX10 2
+ #define AMD_FMT_MOD_TILE_VER_GFX10_RBPLUS 3
+ #define AMD_FMT_MOD_TILE_VER_GFX11 4
+ #define AMD_FMT_MOD_TILE_VER_GFX12 5
+ 
++/*
++ * Gfx6-8 tiling modes.
++ * A complete reference implementation is found in addrlib in the Mesa code base.
++ *
++ * - Microtiled modes (1D):
++ *   Pixel data is organized into micro tiles of 8x8 pixels.
++ *
++ * - Macrotiled modes (2D):
++ *   Micro tiles are further organized into macro tiles.
++ *   These are optimized for even load distribution among memory channels.
++ *
++ * Note that only THIN1 modes are exposed here.
++ * THICK and XTHICK are for 3D images and not relevant to DRM format modifiers.
++ */
++#define AMD_FMT_MOD_TILE_GFX6_1D_TILED_THIN1 0x2
++#define AMD_FMT_MOD_TILE_GFX6_2D_TILED_THIN1 0x4
++
+ /*
+  * 64K_S is the same for GFX9/GFX10/GFX10_RBPLUS and hence has GFX9 as canonical
+  * version.
+@@ -1822,6 +1884,146 @@ drm_fourcc_canonicalize_nvidia_format_mod(__u64 modifier)
+ #define AMD_FMT_MOD_PIPE_SHIFT 33
+ #define AMD_FMT_MOD_PIPE_MASK 0x7
+ 
++/*
++ * MICRO_TILE_MODE, 3 bits. Determines the micro tile format.
++ * Only relevant to Gfx6-8.
++ *
++ * DISPLAY - Displayable tiling
++ * THIN - Non-displayable tiling, a.k.a thin micro tiling
++ * DEPTH, THICK - not exposed, not relevant to DRM format modifier use cases
++ * ROTATED - not exposed, not implemented in Linux or Mesa
++ */
++#define AMD_FMT_MOD_MICROTILE_SHIFT 14ULL
++#define AMD_FMT_MOD_MICROTILE_MASK 0x7
++
++#define AMD_FMT_MOD_MICROTILE_DISPLAY 0x0
++#define AMD_FMT_MOD_MICROTILE_THIN 0x1
++
++/*
++ * PIPE_CONFIG, 5 bits. Number of pipes and how pipes are interleaved on the surface,
++ * which means the shader engine tile size and packer tile size.
++ * Typically matches the number of memory channels, or number of RBs.
++ * Only relevant to Gfx6-8 macro tiled modes.
++ *
++ * P<n>_<a>x<b>_<c>x<d>
++ * where:
++ * <n> - number of pipes
++ * <a>x<b> - shader engine tile size
++ * <c>x<d> - packer tile size
++ */
++#define AMD_FMT_MOD_PIPE_CONFIG_SHIFT 17ULL
++#define AMD_FMT_MOD_PIPE_CONFIG_MASK 0x1f
++
++#define AMD_FMT_MOD_PIPE_CONFIG_P2 0x0
++#define AMD_FMT_MOD_PIPE_CONFIG_P4_8x16 0x4
++#define AMD_FMT_MOD_PIPE_CONFIG_P4_16x16 0x5
++#define AMD_FMT_MOD_PIPE_CONFIG_P4_16x32 0x6
++#define AMD_FMT_MOD_PIPE_CONFIG_P4_32x32 0x7
++#define AMD_FMT_MOD_PIPE_CONFIG_P8_16x16_8x16 0x8
++#define AMD_FMT_MOD_PIPE_CONFIG_P8_16x32_8x16 0x9
++#define AMD_FMT_MOD_PIPE_CONFIG_P8_32x32_8x16 0xa
++#define AMD_FMT_MOD_PIPE_CONFIG_P8_16x32_16x16 0xb
++#define AMD_FMT_MOD_PIPE_CONFIG_P8_32x32_16x16 0xc
++#define AMD_FMT_MOD_PIPE_CONFIG_P8_32x32_16x32 0xd
++#define AMD_FMT_MOD_PIPE_CONFIG_P8_32x64_32x32 0xe
++#define AMD_FMT_MOD_PIPE_CONFIG_P16_32x32_8x16 0x10
++#define AMD_FMT_MOD_PIPE_CONFIG_P16_32x32_16x16 0x11
++
++/*
++ * TILE_SPLIT, 3 bits.
++ * Only relevant to Gfx6-8 macro tiled modes.
++ *
++ * On GFX6 (or with depth tiling modes on GFX7 and newer),
++ * the GFX block uses the GB_TILE_MODE.TILE_SPLIT field directly.
++ *
++ * On GFX7 and newer with non-depth tiling modes, the GFX block uses a
++ * split factor which is stored in the GB_TILE_MODE.SAMPLE_SPLIT field.
++ * SAMPLE_SPLIT may be: 0 - 1 byte; 1 - 2 bytes; 2 - 4 bytes; 3 - 8 bytes.
++ * The actual tile size and tile split bytes are calculated as follows:
++ *
++ *    bpp = ... <- bits per pixel in the current image
++ *    thickness = ... <- depends on array mode; may be: 1, 4, 8
++ *    num_samples = ... <- number of samples in the current image
++ *    tile_size_pixels = 8 * 8
++ *    tile_bytes_1x = thickness * tile_size_pixels * bpp / 8
++ *    sample_split_factor = 1 << SAMPLE_SPLIT
++ *    tile_split_bytes = clamp(tile_bytes_1x * sample_split_factor, 256, dram_row_size_bytes)
++ *    tile_bytes = clamp(tile_bytes_1x * num_samples, 64, tile_split_bytes)
++ *
++ * In both cases, the display block (DCE) has no SAMPLE_SPLIT
++ * and just needs the tile split bytes in the GRPH_CONTROL.GRPH_TILE_SPLIT field.
++ * To maximize compatibility between GFX6-7, we don't include the SAMPLE_SPLIT
++ * in the format modifiers.
++ *
++ * The actual tile split in bytes is: 64 << field value
++ * Possible values of this field:
++ *
++ * 0 - Tile split is 64 bytes
++ * 1 - Tile split is 128 bytes
++ * 2 - Tile split is 256 bytes
++ * 3 - Tile split is 512 bytes
++ * 4 - Tile split is 1 KiB
++ * 5 - Tile split is 2 KiB
++ * 6 - Tile split is 4 KiB
++ */
++#define AMD_FMT_MOD_TILE_SPLIT_SHIFT 22ULL
++#define AMD_FMT_MOD_TILE_SPLIT_MASK 0x7
++
++/*
++ * BANK_WIDTH, 2 bits. Number of tiles in the X direction in the same bank.
++ * Only relevant to Gfx6-8 macro tiled modes.
++ * The actual bank width is: 1 << field value
++ * Possible values:
++ *
++ * 0 - bank width is 1
++ * 1 - bank width is 2
++ * 2 - bank width is 4
++ * 3 - bank width is 8
++ */
++#define AMD_FMT_MOD_BANK_WIDTH_SHIFT 25ULL
++#define AMD_FMT_MOD_BANK_WIDTH_MASK 0x3
++
++/*
++ * BANK_HEIGHT, 2 bits. Number of tiles in the Y direction in the same bank.
++ * Only relevant to Gfx6-8 macro tiled modes.
++ * The actual bank height is: 1 << field value
++ * Possible values:
++ *
++ * 0 - bank height is 1
++ * 1 - bank height is 2
++ * 2 - bank height is 4
++ * 3 - bank height is 8
++ */
++#define AMD_FMT_MOD_BANK_HEIGHT_SHIFT 27ULL
++#define AMD_FMT_MOD_BANK_HEIGHT_MASK 0x3
++
++/*
++ * MACRO_TILE_ASPECT, 2 bits. Macro tile aspect ratio.
++ * Only relevant to Gfx6-8 macro tiled modes.
++ * Possible values:
++ *
++ * 0 - aspect ratio is 1:1
++ * 1 - aspect ratio is 4:1
++ * 2 - aspect ratio is 16:1
++ * 3 - aspect ratio is 64:1
++ */
++#define AMD_FMT_MOD_MACRO_TILE_ASPECT_SHIFT 29ULL
++#define AMD_FMT_MOD_MACRO_TILE_ASPECT_MASK 0x3
++
++/*
++ * NUM_BANKS, 2 bits. Number of banks.
++ * Only relevant to Gfx6-8 macro tiled modes.
++ * The actual number of banks is: 2 << field value
++ * Possible values:
++ *
++ * 0 - number of banks is 2
++ * 1 - number of banks is 4
++ * 2 - number of banks is 8
++ * 3 - number of banks is 16
++ */
++#define AMD_FMT_MOD_NUM_BANKS_SHIFT 31ULL
++#define AMD_FMT_MOD_NUM_BANKS_MASK 0x3
++
+ #define AMD_FMT_MOD_SET(field, value) \
+ 	((__u64)(value) << AMD_FMT_MOD_##field##_SHIFT)
+ #define AMD_FMT_MOD_GET(field, value) \
+diff --git a/include/linux/drm_mode.h b/include/linux/drm_mode.h
+index 381a3e857..bd435effd 100644
+--- a/include/linux/drm_mode.h
++++ b/include/linux/drm_mode.h
+@@ -155,6 +155,7 @@ extern "C" {
+ /* Panel type property */
+ #define DRM_MODE_PANEL_TYPE_UNKNOWN	0
+ #define DRM_MODE_PANEL_TYPE_OLED	1
++#define DRM_MODE_PANEL_TYPE_LCD		2
+ 
+ /*
+  * DRM_MODE_ROTATE_<degrees>
+diff --git a/include/linux/media/dreamchip/rppx1-config.h b/include/linux/media/dreamchip/rppx1-config.h
+new file mode 100644
+index 000000000..3507a9ab0
+--- /dev/null
++++ b/include/linux/media/dreamchip/rppx1-config.h
+@@ -0,0 +1,730 @@
++/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
++/*
++ * Dreamchip RPP-X1 ISP Driver - Userspace API
++ *
++ * Copyright (C) 2026 Renesas Electronics Corp.
++ * Copyright (C) 2026 Ideas on Board Oy
++ * Copyright (C) 2026 Ragnatech AB
++ */
++
++#ifndef __UAPI_RPP_X1_CONFIG_H
++#define __UAPI_RPP_X1_CONFIG_H
++
++#include <linux/media/v4l2-isp.h>
++
++/**
++ * struct rppx1_window - Measurement window
++ *
++ * RPP-X1 measurement window. Different blocks use a window or multiple
++ * windows for measurement purposes. This defines a common type for all of
++ * them. The number of relevant bits depends on the block where the window is
++ * used and is specified in the per-block description
++ *
++ * @h_offs: horizontal offset from the left of the frame in pixels
++ * @v_offs: vertical offset from the top of the frame in pixels
++ * @h_size: horizontal size of the window in pixels
++ * @v_size: vertical size of the window in pixels
++ */
++struct rppx1_window {
++	__u16 h_offs;
++	__u16 v_offs;
++	__u16 h_size;
++	__u16 v_size;
++};
++
++/**
++ * enum rppx1_meas_chan - Measurement point for the Histogram and EXM Modules
++ *
++ * Measurement points for the RPP-X1 Histogram measurement module and Exposure
++ * measurement module.
++ *
++ * All tap points are available for the PRE1/PRE2 pipes. Only
++ * RPPX1_MEAS_CHAN_SEL4 and RPPX1_MEAS_CHAN_SEL7 are available for the
++ * MAIN_POST pipe.
++ *
++ * @RPPX1_MEAS_CHAN_SEL0: after input acquisition
++ * @RPPX1_MEAS_CHAN_SEL1: after black level subtraction
++ * @RPPX1_MEAS_CHAN_SEL2: after sensor gamma linearization
++ * @RPPX1_MEAS_CHAN_SEL3: after lens shading correction
++ * @RPPX1_MEAS_CHAN_SEL4: after auto white balance gains
++ * @RPPX1_MEAS_CHAN_SEL5: after defect pixel correction
++ * @RPPX1_MEAS_CHAN_SEL6: after denoise pre-filter
++ * @RPPX1_MEAS_CHAN_SEL7: after demosaicing
++ */
++enum rppx1_meas_chan {
++	RPPX1_MEAS_CHAN_SEL0,
++	RPPX1_MEAS_CHAN_SEL1,
++	RPPX1_MEAS_CHAN_SEL2,
++	RPPX1_MEAS_CHAN_SEL3,
++	RPPX1_MEAS_CHAN_SEL4,
++	RPPX1_MEAS_CHAN_SEL5,
++	RPPX1_MEAS_CHAN_SEL6,
++	RPPX1_MEAS_CHAN_SEL7,
++};
++
++/* ---------------------------------------------------------------------------
++ * Parameter Structures
++ *
++ * The same ISP block might be instantiated in multiple pipeliness and operate
++ * on a different bitdepth/precision. For fields of varying length among
++ * different instances of the same block, use a data type that can accommodate
++ * the larger bitdepth/precision.
++ */
++
++/**
++ * enum rppx1_params_block_type - RPP-X1 extensible params block types
++ *
++ * NOTE: Only append to the enumeration as the numbers are uAPI.
++ *
++ * @RPPX1_PARAMS_BLOCK_TYPE_WBMEAS_POST: AWB Measurement Configuration
++ * @RPPX1_PARAMS_BLOCK_TYPE_AWBG_PRE1: PRE1 pipe White Balance Gains
++ * @RPPX1_PARAMS_BLOCK_TYPE_AWBG_PRE2: PRE2 White Balance Gains
++ * @RPPX1_PARAMS_BLOCK_TYPE_AWBG_POST: MAIN_POST White Balance Gains
++ * @RPPX1_PARAMS_BLOCK_TYPE_EXM_PRE1: PRE1 pipe Exposure Measurement
++ * @RPPX1_PARAMS_BLOCK_TYPE_EXM_PRE2: PRE2 pipe Exposure Measurement
++ * @RPPX1_PARAMS_BLOCK_TYPE_HIST_PRE1: PRE1 pipe Histogram Measurement
++ * @RPPX1_PARAMS_BLOCK_TYPE_HIST_PRE2: PRE2 pipe Histogram Measurement
++ * @RPPX1_PARAMS_BLOCK_TYPE_HIST_POST: POST pipe Histogram Measurement
++ * @RPPX1_PARAMS_BLOCK_TYPE_BLS_PRE1: PRE1 pipe Black Level Subtraction
++ * @RPPX1_PARAMS_BLOCK_TYPE_BLS_PRE2: PRE2 pipe Black Level Subtraction
++ * @RPPX1_PARAMS_BLOCK_TYPE_CCOR_POST: POST pipe Color Correction
++ * @RPPX1_PARAMS_BLOCK_TYPE_LSC_PRE1: PRE1 pipe Lens Shading Correction
++ * @RPPX1_PARAMS_BLOCK_TYPE_LSC_PRE2: PRE2 pipe Lens Shading Correction
++ * @RPPX1_PARAMS_BLOCK_TYPE_GA_HV: Human Vision Pipe Gamma Out Correction
++ * @RPPX1_PARAMS_BLOCK_TYPE_GA_MV: Machine Vision Gamma Out Correction
++ * @RPPX1_PARAMS_BLOCK_TYPE_LIN_PRE1: PRE1 pipe Linearization (Sensor De-gamma)
++ * @RPPX1_PARAMS_BLOCK_TYPE_LIN_PRE2: PRE2 pipe Linearization (Sensor De-gamma)
++ */
++enum rppx1_params_block_type {
++	RPPX1_PARAMS_BLOCK_TYPE_WBMEAS_POST,
++	RPPX1_PARAMS_BLOCK_TYPE_AWBG_PRE1,
++	RPPX1_PARAMS_BLOCK_TYPE_AWBG_PRE2,
++	RPPX1_PARAMS_BLOCK_TYPE_AWBG_POST,
++	RPPX1_PARAMS_BLOCK_TYPE_EXM_PRE1,
++	RPPX1_PARAMS_BLOCK_TYPE_EXM_PRE2,
++	RPPX1_PARAMS_BLOCK_TYPE_HIST_PRE1,
++	RPPX1_PARAMS_BLOCK_TYPE_HIST_PRE2,
++	RPPX1_PARAMS_BLOCK_TYPE_HIST_POST,
++	RPPX1_PARAMS_BLOCK_TYPE_BLS_PRE1,
++	RPPX1_PARAMS_BLOCK_TYPE_BLS_PRE2,
++	RPPX1_PARAMS_BLOCK_TYPE_CCOR_POST,
++	RPPX1_PARAMS_BLOCK_TYPE_LSC_PRE1,
++	RPPX1_PARAMS_BLOCK_TYPE_LSC_PRE2,
++	RPPX1_PARAMS_BLOCK_TYPE_GA_HV,
++	RPPX1_PARAMS_BLOCK_TYPE_GA_MV,
++	RPPX1_PARAMS_BLOCK_TYPE_LIN_PRE1,
++	RPPX1_PARAMS_BLOCK_TYPE_LIN_PRE2,
++};
++
++/**
++ * enum rppx1_wbmeas_mode - AWB measurement mode
++ *
++ * @RPPX1_WBMEAS_MODE_YCBCR: YCbCr measurement mode
++ * @RPPX1_WBMEAS_MODE_RGB: RGB measurement mode
++ */
++enum rppx1_wbmeas_mode {
++	RPPX1_WBMEAS_MODE_YCBCR,
++	RPPX1_WBMEAS_MODE_RGB,
++};
++
++/**
++ * struct rppx1_wbmeas_params - AWB measurement configuration
++ *
++ * The Auto-White Balance measurement module is available on the MAIN_POST pipe.
++ * It supports two measurement modes, selected by the @mode field. The
++ * measurement window is programmed through the @wnd field.
++ *
++ * To support measurement in YCbCr mode a color conversion matrix with
++ * programmable offset is available in the @ccor_coeff and @ccor_offs fields.
++ * The color conversion matrix coefficients are represented as 16 bits signed
++ * Q4.12 numbers ranging from -8 to +7.99. The per-color channel offsets are
++ * represented as 25 bits 2's complement integer numbers ranging from -16777216
++ * to +16777215.
++ *
++ * @header: block header (type = RPPX1_PARAMS_BLOCK_TYPE_WBMEAS_POST)
++ * @wnd: measurement window
++ * @mode: measurement mode (from enum rppx1_wbmeas_mode)
++ * @ymax_cmp: enable Y_MAX compare using @max_y
++ * @frames: number of frames for mean value calculation (0 = 1 frame)
++ * @reserved: padding
++ * @ref_cr_max_r: reference Cr or max red value in RGB mode, 24 bits
++ * @ref_cb_max_b: reference Cb or max blue value in RGB mode, 24 bits
++ * @min_y_max_g: luminance minimum value or max green value in RGB mode, 24 bits
++ * @max_y: luminance maximum value, only valid if @mode is set to YCbCr and
++ *	   @ymax_cmp is set to enabled, 24 bits
++ * @max_csum: chrominance sum maximum value, 24 bits
++ * @min_c: chrominance minimum value, 24 bits
++ * @ccor_coeff: coefficients for color conversion matrix, signed 16 bits Q4.6
++ * @reserved2: padding
++ * @ccor_offs: R-G-B color conversion coefficients, signed 25 bits 2's complement
++ * @reserved3: padding
++ */
++struct rppx1_wbmeas_params {
++	struct v4l2_isp_params_block_header header;
++	struct rppx1_window wnd;
++	__u8 mode;
++	__u8 ymax_cmp;
++	__u8 frames;
++	__u8 reserved;
++	__u32 ref_cr_max_r;
++	__u32 ref_cb_max_b;
++	__u32 min_y_max_g;
++	__u32 max_y;
++	__u32 max_csum;
++	__u32 min_c;
++	__u16 ccor_coeff[3][3];
++	__u16 reserved2;
++	__u32 ccor_offs[3];
++	__u32 reserved3;
++};
++
++/**
++ * struct rppx1_awbg_params  - WB gain configuration
++ *
++ * The RPP-X1 White Balance Gain module is available in the PRE1 and PRE2
++ * pre-fusion pipes and in the MAIN_POST post-fusion pipe. Userspace selects
++ * which pipe to operate by setting the @header.type field to
++ * RPPX1_PARAMS_BLOCK_TYPE_AWBG_PRE1, RPPX1_PARAMS_BLOCK_TYPE_AWBG_PRE2
++ * or RPPX1_PARAMS_BLOCK_TYPE_AWBG_POST.
++ *
++ * The White Balance module allows to specify per-color channel gains, expressed
++ * as unsigned fixed-point values as 18 bits unsigned integers in Q6.12 format
++ * with a maximum of 63.999.
++ *
++ * @header: block header (type = RPPX1_PARAMS_BLOCK_TYPE_AWBG_PRE1 or
++ *	    type = RPPX1_PARAMS_BLOCK_TYPE_AWBG_PRE2 or
++ *	    type = RPPX1_PARAMS_BLOCK_TYPE_AWBG_POST)
++ * @gain_red: gain for red component, 18-bit (unsigned Q6.12)
++ * @gain_green_r: gain for green component in red lines, 18-bit (unsigned Q6.12)
++ * @gain_blue: gain for blue component, 18-bit (unsigned Q6.12)
++ * @gain_green_b: gain for green component in blue lines, 18-bit (unsigned Q6.12)
++ */
++struct rppx1_awbg_params {
++	struct v4l2_isp_params_block_header header;
++	__u32 gain_red;
++	__u32 gain_green_r;
++	__u32 gain_blue;
++	__u32 gain_green_b;
++};
++
++/**
++ * enum rppx1_exm_mode - Exposure measurement mode
++ *
++ * Exaposure measurement mode selection (RGB/Bayer).
++ *
++ * @RPPX1_EXP_MEASURING_MODE_DISABLED: no measurement
++ * @RPPX1_EXP_MEASURING_MODE_RGB: Y/R/G/B measurement
++ * @RPPX1_EXP_MEASURING_MODE_BAYER: Bayer RGB measurement
++ */
++enum rppx1_exm_mode {
++	RPPX1_EXP_MEASURING_MODE_DISABLED,
++	RPPX1_EXP_MEASURING_MODE_RGB,
++	RPPX1_EXP_MEASURING_MODE_BAYER,
++};
++
++/**
++ * struct rppx1_exm_params - Exposure measurement configuration
++ *
++ * The RPP-X1 Exposure measurement unit is available on the PRE1 and PRE2
++ * pre-fusion pipes. Userspace selects which pipe to operate by setting
++ * the @header.type field to RPPX1_PARAMS_BLOCK_TYPE_EXM_PRE1 or
++ * RPPX1_PARAMS_BLOCK_TYPE_EXM_PRE2.
++ *
++ * Exposure measurement is performed in the RGB or Bayer domain, according to
++ * the setting of the @mode field. The exposure measurement tap point is
++ * selected according to the value of @channel_sel.
++ *
++ * The exposure measurement is performed on an input window specified in @wnd.
++ * To each color component a programmable weight coefficient is associated.
++ * Coefficients are represented as unsigned 8 bits integer values in Q1.7 format
++ * ranging from 0 to 1.992.
++ *
++ * The @last_line fields controls when the exposure measurement completes. It
++ * is usually programmed to the value of (@wnd.v_offs + @wnd.v_size + 1).
++ *
++ * @header: block header (type = RPPX1_PARAMS_BLOCK_TYPE_EXM_PRE1 or
++ *	    type = RPPX1_PARAMS_BLOCK_TYPE_EXM_PRE2)
++ * @wnd: measurement window coordinates
++ * @mode: exposure measure mode (from enum rppx1_exm_mode)
++ * @last_line: line number for which the exposure measurement completes
++ * @channel_sel: exposure measurement point (see enum rppx1_meas_chan)
++ * @coeff_r: coefficient for the red Bayer sample or red color channel, Q1.7
++ * @coeff_g_gr: coefficient for the green/red Bayer sample or green color channel, Q1.7
++ * @coeff_b: coefficient for the blue Bayer sample or blue color channel, Q1.7
++ * @coeff_gb: coefficient for the green/blue Bayer sample, unused in RGB mode, Q1.7
++ * @reserved: padding
++ */
++struct rppx1_exm_params {
++	struct v4l2_isp_params_block_header header;
++	struct rppx1_window wnd;
++	__u32 mode;
++	__u32 last_line;
++	__u8 channel_sel;
++	__u8 coeff_r;
++	__u8 coeff_g_gr;
++	__u8 coeff_b;
++	__u8 coeff_gb;
++	__u8 reserved[3];
++};
++
++/* Histogram */
++#define RPPX1_HIST_WEIGHT_GRIDS_SIZE 25
++
++/**
++ * enum rppx1_hist_mode - Histogram measurement mode
++ *
++ * Histogram measurement mode. Select which channel or combination of channels
++ * the histogram measurement is performed on.
++ *
++ * @RPPX1_HIST_MODE_DISABLE: histogram disabled
++ * @RPPX1_HIST_MODE_RGB_COMBINED: combined RGB histogram
++ * @RPPX1_HIST_MODE_R_HISTOGRAM: red channel histogram
++ * @RPPX1_HIST_MODE_GR_HISTOGRAM: green/red channel histogram
++ * @RPPX1_HIST_MODE_B_HISTOGRAM: blue channel histogram
++ * @RPPX1_HIST_MODE_GB_HISTOGRAM: green/blue histogram
++ */
++enum rppx1_hist_mode {
++	RPPX1_HIST_MODE_DISABLE,
++	RPPX1_HIST_MODE_RGB_COMBINED,
++	RPPX1_HIST_MODE_R_HISTOGRAM,
++	RPPX1_HIST_MODE_GR_HISTOGRAM,
++	RPPX1_HIST_MODE_B_HISTOGRAM,
++	RPPX1_HIST_MODE_GB_HISTOGRAM,
++};
++
++/**
++ * struct rppx1_hist_params - Histogram measurement configuration
++ *
++ * The RPP-X1 Histogram measurement unit is available on the PRE1, PRE2 and
++ * MAIN_POST pipes. Userspace selects which pipe to operate by setting the
++ * @header.type field to RPPX1_PARAMS_BLOCK_TYPE_HIST_PRE1,
++ * RPPX1_PARAMS_BLOCK_TYPE_HIST_PRE2 or
++ * RPPX1_PARAMS_BLOCK_TYPE_HIST_POST.
++ *
++ * The histogram measurement point is selected using the @channel field while
++ * histogram measurement mode is selected using the @mode field.
++ *
++ * Histogram measurement is performed by programming subsampling factors using
++ * the @v_stepsize and @h_step_inc fields and by weighted windowing, by
++ * programming the size of the measurement window @wnd with @weights associated
++ * to each cell of the 5x5 measurement grid. Weights are represented as 5 bits
++ * integer values ranging from 0 to 16.
++ *
++ * The @last_line fields controls when the histogram measurement completes. It
++ * is usually programmed to the value of (@wnd.v_offs + @wnd.v_size - 1).
++ *
++ * Histogram values are calculated by applying a per-color channel coefficient
++ * represented as an 8 bits unsigned Q1.7 integer value. The @sample_offs and
++ * @sample_shift fields allow to reduce the color dynamic range on which
++ * histogram data are produced.
++ *
++ * @header: block header (type = RPPX1_PARAMS_BLOCK_TYPE_HIST_PRE1,
++ *	    type = RPPX1_PARAMS_BLOCK_TYPE_HIST_PRE2 or
++ *	    type = RPPX1_PARAMS_BLOCK_TYPE_HIST_POST)
++ * @wnd: measurement window coordinates
++ * @last_line: line number for which the histogram measurement completes
++ * @v_stepsize: vertical subsampling divider, 7 bits
++ * @h_step_inc: horizontal subsampling step counter, 17 bits
++ * @sample_offs: sample offset, 24 bits
++ * @mode: histogram measurement mode (from enum rppx1_hist_mode)
++ * @channel_sel: histogram measurement point (see enum rppx1_meas_chan)
++ * @weights: weighting factors for each sub-window (5x5 grid)
++ * @coeff: R-G-B coefficients, 8 bits unsigned Q1.7
++ * @sample_shift: sample shift, 4 bits
++ * @reserved: padding
++ */
++struct rppx1_hist_params {
++	struct v4l2_isp_params_block_header header;
++	struct rppx1_window wnd;
++	__u32 last_line;
++	__u32 v_stepsize;
++	__u32 h_step_inc;
++	__u32 sample_offs;
++	__u8 mode;
++	__u8 channel_sel;
++	__u8 weights[RPPX1_HIST_WEIGHT_GRIDS_SIZE];
++	__u8 coeff[3];
++	__u8 sample_shift;
++	__u8 reserved;
++};
++
++/**
++ * struct rppx1_bls_fixed - BLS fixed subtraction values
++ *
++ * Fixed black level values subtracted from sensor data per Bayer channel.
++ * Negative values result in addition.
++ *
++ * The PRE1 pipe BLS module operates on a 24-bits input data and fixed black
++ * levels are stored as a signed 2's complement representation ranging from
++ * -2^24 to 2^24-1.
++ *
++ * The PRE2 pipe BLS module operates on a 12-bits input data and fixed black
++ * levels are stored as a signed 2's complement representation ranging from
++ * -2^12 to 2^12-1.
++ *
++ * Userspace is expected to provide fixed black level values with a bit-depth
++ * matching the one of pipe in use.
++ *
++ * These subtraction values are matched with the sensor native Bayer components
++ * ordering according to the cropping configuration on the input port.
++ *
++ * @a: subtraction value for channel A
++ * @b: subtraction value for channel B
++ * @c: subtraction value for channel C
++ * @d: subtraction value for channel D
++ */
++struct rppx1_bls_fixed {
++	__u32 a;
++	__u32 b;
++	__u32 c;
++	__u32 d;
++};
++
++/**
++ * enum rppx1_bls_mode - BLS subtraction mode
++ *
++ * Select if subtracted black level come from fixed or measured values.
++ *
++ * @RPPX1_BLS_MODE_FIXED: subtract fixed values
++ * @RPPX1_BLS_MODE_MEAS: subtract measured values
++ */
++enum rppx1_bls_mode {
++	RPPX1_BLS_MODE_FIXED,
++	RPPX1_BLS_MODE_MEAS,
++};
++
++/**
++ * enum rppx1_bls_win_en: BLS measurement configuration
++ *
++ * Select the measurement window to use for measured black level values.
++ *
++ * @RPPX1_BLS_WIN_EN_OFF: disable measurement
++ * @RPPX1_BLS_WIN_EN_WIN1: Enable measurement from window 1
++ * @RPPX1_BLS_WIN_EN_WIN2: enable measurement from window 2
++ * @RPPX1_BLS_WIN_EN_WIN12: enable measurement from window 1 and window 2
++ */
++enum rppx1_bls_win_en {
++	RPPX1_BLS_WIN_EN_OFF,
++	RPPX1_BLS_WIN_EN_WIN1,
++	RPPX1_BLS_WIN_EN_WIN2,
++	RPPX1_BLS_WIN_EN_WIN12,
++};
++
++/**
++ * struct rppx1_bls_params - RPP-X1 Black Level Subtraction Module
++ *
++ * The RPP-X1 Black Level Subtraction module is available on the PRE1 and PRE2
++ * pre-fusion pipes. Userspace selects which pipe to operate by setting the
++ * @header.type field to RPPX1_PARAMS_BLOCK_TYPE_BLS_PRE1 or
++ * RPPX1_PARAMS_BLOCK_TYPE_BLS_PRE2.
++ *
++ * The BLS module operates on fixed or measured data according to the setting of
++ * the @mode field. When RPPX1_BLS_MODE_FIXED is used userspace shall provide
++ * the per-channel black levels in @fixed. When RPPX1_BLS_MODE_MEAS is used
++ * userspace shall configure the measurement windows @window1 and optionally
++ * @window2 to select the optically black pixels region in the input frame. The
++ * @samples fields controls how many measure samples are used for averaging the
++ * measured black levels.
++ *
++ * @header: block header (type = RPPX1_PARAMS_BLOCK_TYPE_BLS_PRE1 or
++ *	    type == RPPX1_PARAMS_BLOCK_TYPE_BLS_PRE2)
++ * @window1: BLS measurement window 1 (14 bits)
++ * @window2: BLS measurement window 2 (14 bits)
++ * @fixed: fixed subtraction values (see enum rppx1_bls_fixed)
++ * @mode: BLS subtraction mode (see enum rppx1_bls_mode)
++ * @en_windows: BLS measurement mode (see rppx1_bls_win_en)
++ * @samples: log2 of the number of measured pixels per Bayer position
++ * @reserved: padding
++ */
++struct rppx1_bls_params {
++	struct v4l2_isp_params_block_header header;
++	struct rppx1_window window1;
++	struct rppx1_window window2;
++	struct rppx1_bls_fixed fixed;
++	__u8 mode;
++	__u8 en_windows;
++	__u8 samples;
++	__u8 reserved[5];
++};
++
++/**
++ * struct rppx1_ccor_params - Color CORrection configuration
++ *
++ * The CCOR (Color Correction) module is available on the MAIN_POST pipe. It
++ * performs color space correction on a pixel-per-pixel basis using a 3x3 matrix
++ * of coefficients and per-color channel offsets.
++ *
++ * The matrix coefficients are represented as 16 bits signed fixed point values
++ * in Q4.12 format ranging from -8 to +7.999.
++ *
++ * The per-channel color offsets are represented as 2's complement values
++ * stored in 25 bits ranging from -16777216 to 16777215.
++ *
++ * @header: block header (type = RPPX1_PARAMS_BLOCK_TYPE_CCOR_POST)
++ * @coeff: color correction matrix coefficients, 16 bits signed Q4.12
++ * @reserved: padding
++ * @offset: R, G, B offsets, 2's complement 25 bits
++ */
++struct rppx1_ccor_params {
++	struct v4l2_isp_params_block_header header;
++	__u16 coeff[3][3];
++	__u16 reserved;
++	__u32 offset[3];
++};
++
++/* Lens Shade Correction */
++#define RPPX1_LSC_SAMPLES_MAX 17
++#define RPPX1_LSC_NUM_SECTORS 16
++
++/**
++ * struct rppx1_lsc_params - Lens Shading Correction configuration
++ *
++ * The RPP-X1 Lens shading correction module is available on the PRE1 and PRE2
++ * pre-fusion pipes. Userspace selects which pipe to operate by setting the
++ * @header.type field to RPPX1_PARAMS_BLOCK_TYPE_LSC_PRE1 or
++ * RPPX1_PARAMS_BLOCK_TYPE_LSC_PRE2.
++ *
++ * The module applies per-color channel correction factors @r_data, @gr_data,
++ * @gb_data and @b_data as a 16x16 grid mapped on the image. The size of each
++ * grid segment is expressed by the @x_sect_size and @y_sect_size arrays.  Each
++ * segment shall be at least 8 pixels in size and the sum of all horizontal
++ * segments @x_sect_size shall match the input frame size width.
++ *
++ * The correction factors values are expressed as unsigned Q2.10 integers
++ * ranging from 1 to 3.999.
++ *
++ * Pre-calculated interpolation factors shall be provided in the @x_grad
++ * and @y_grad fields, expressed as 12 bits integer values.
++ *
++ * @header: block header (type = RPPX1_PARAMS_BLOCK_TYPE_LSC)
++ * @r_data: correction factors for the red channel in Q2.10 format
++ * @gr_data: correction factors for the green (red) channel in Q2.10 format
++ * @gb_data: correction factors for the green (blue) channel in Q2.10 format
++ * @b_data: correction factors for the blue channel in Q2.10 format
++ * @x_grad: Interpolation gradients for each horizontal sector (12 bits)
++ * @y_grad: Interpolation gradients for each vertical sector (12 bits)
++ * @x_sect_size: Horizontal sectors sizes
++ * @y_sect_size: Vertical sectors sizes
++ */
++struct rppx1_lsc_params {
++	struct v4l2_isp_params_block_header header;
++	__u16 r_data[RPPX1_LSC_SAMPLES_MAX][RPPX1_LSC_SAMPLES_MAX];
++	__u16 gr_data[RPPX1_LSC_SAMPLES_MAX][RPPX1_LSC_SAMPLES_MAX];
++	__u16 gb_data[RPPX1_LSC_SAMPLES_MAX][RPPX1_LSC_SAMPLES_MAX];
++	__u16 b_data[RPPX1_LSC_SAMPLES_MAX][RPPX1_LSC_SAMPLES_MAX];
++	__u16 x_grad[RPPX1_LSC_NUM_SECTORS];
++	__u16 y_grad[RPPX1_LSC_NUM_SECTORS];
++	__u16 x_sect_size[RPPX1_LSC_NUM_SECTORS];
++	__u16 y_sect_size[RPPX1_LSC_NUM_SECTORS];
++};
++
++/* Gamma Out */
++#define RPPX1_GA_MAX_SAMPLES 17
++
++/**
++ * enum rppx1_ga_seg_mode - Gamma out curve segmentation mode
++ *
++ * Segmentation mode of the 16 input sampling points for the Gamma Out
++ * Correction module.
++ *
++ * @RPPX1_GA_SEG_MODE_LOGARITHMIC: logarithmic-like segmentation mode
++ * @RPPX1_GA_SEG_MODE_EQUIDISTANT: equidistant segmentation mode
++ */
++enum rppx1_ga_seg_mode {
++	RPPX1_GA_SEG_MODE_LOGARITHMIC,
++	RPPX1_GA_SEG_MODE_EQUIDISTANT
++};
++
++/**
++ * struct rppx1_ga_params - Gamma Out Correction configuration
++ *
++ * The Gamma Out Correction module is available on the Human Vision Output
++ * Pipe (HV) and the Machine Vision Output Pipe (MV). Userspace selects
++ * which pipe to operate by setting the @header.type field to
++ * RPPX1_PARAMS_BLOCK_TYPE_GA_HV or RPPX1_PARAMS_BLOCK_TYPE_GA_MV.
++ *
++ * The module allows to apply a @gamma_y gamma correction curve to RGB data
++ * represented as a table of 16 entries. The 16 input sampling points can be
++ * equidistant or segmented using a logarithmic scale according to the value of
++ * @mode.
++ *
++ * The gamma curve values are 12 bits on the HV output pipe and 24 bits on the
++ * MV output pipe. Userspace is expected to provide the curve values with a
++ * bit-depth matching the one of pipe in use.
++ *
++ * @header: block header (type = RPPX1_PARAMS_BLOCK_TYPE_GA_HV or
++ *	    type = RPPX1_PARAMS_BLOCK_TYPE_GA_MV)
++ * @gamma_y: gamma out curve y-axis values
++ * @mode: gamma curve input segmentation mode (see rppx1_ga_seg_mode)
++ * @reserved: padding
++ */
++struct rppx1_ga_params {
++	struct v4l2_isp_params_block_header header;
++	__u32 gamma_y[RPPX1_GA_MAX_SAMPLES];
++	__u8 mode;
++	__u8 reserved[3];
++};
++
++/* Linearization (Sensor De-gamma) */
++#define RPPX1_LIN_SAMPLE_POINTS_NUM 16
++#define RPPX1_LIN_DEGAMMA_CURVE_NUM 17
++
++/**
++ * struct rppx1_lin_params - Linearization (Sensor De-gamma) configuration
++ *
++ * The RPP-X1 linearization module is available on the PRE1 and PRE2 pre-fusion
++ * pipes. Userspace selects which pipe to operate by setting the @header.type
++ * field to RPPX1_PARAMS_BLOCK_TYPE_LIN_PRE1 or
++ * RPPX1_PARAMS_BLOCK_TYPE_LIN_PRE2.
++ *
++ * The LIN module applies the per-color channel de-gamma linearization curves
++ * @curve_r, @curve_g and @curve_b defined on the input sampling points @dx.
++ *
++ * For the PRE1 pipe the de-gamma curves values are 24-bits, for the PRE2 pipe
++ * the de-gamma curve values are 12-bits.
++ *
++ * For the PRE1 pipe de-gamma module sampling points @dx values are in the range
++ * [0, 15] (4 bits). For the PRE2 pipe de-gamma module sampling points values
++ * are in the range [0, 7] (3 bits).
++ *
++ * Userspace is expected to provide the curve values and sampling points with a
++ * bit-depth matching the one of pipe in use.
++ *
++ * @header: block header (type = RPPX1_PARAMS_BLOCK_TYPE_LIN_PRE1 or
++ *	    RPPX1_PARAMS_BLOCK_TYPE_LIN_PRE2)
++ * @curve_r: de-gamma linearization curve for red channel
++ * @curve_g: de-gamma linearization curve for green channel
++ * @curve_b: de-gamma linearization curve for blue channel
++ * @dx: input sampling points
++ * @reserved: padding
++ */
++struct rppx1_lin_params {
++	struct v4l2_isp_params_block_header header;
++	__u32 curve_r[RPPX1_LIN_DEGAMMA_CURVE_NUM];
++	__u32 curve_g[RPPX1_LIN_DEGAMMA_CURVE_NUM];
++	__u32 curve_b[RPPX1_LIN_DEGAMMA_CURVE_NUM];
++	__u8 dx[RPPX1_LIN_SAMPLE_POINTS_NUM];
++	__u32 reserved;
++};
++
++/**
++ * RPPX1_PARAMS_MAX_SIZE - Maximum size of all RPP-X1 parameter blocks
++ *
++ * Some types are reported twice as the same block might be instantiated in
++ * multiple pipes.
++ */
++#define RPPX1_PARAMS_MAX_SIZE						\
++	(sizeof(struct rppx1_wbmeas_params)			+	\
++	sizeof(struct rppx1_awbg_params)			+	\
++	sizeof(struct rppx1_awbg_params)			+	\
++	sizeof(struct rppx1_awbg_params)			+	\
++	sizeof(struct rppx1_exm_params)				+	\
++	sizeof(struct rppx1_exm_params)				+	\
++	sizeof(struct rppx1_hist_params)			+	\
++	sizeof(struct rppx1_hist_params)			+	\
++	sizeof(struct rppx1_hist_params)			+	\
++	sizeof(struct rppx1_bls_params)				+	\
++	sizeof(struct rppx1_bls_params)				+	\
++	sizeof(struct rppx1_ccor_params)			+	\
++	sizeof(struct rppx1_lsc_params)				+	\
++	sizeof(struct rppx1_lsc_params)				+	\
++	sizeof(struct rppx1_ga_params)				+	\
++	sizeof(struct rppx1_ga_params)				+	\
++	sizeof(struct rppx1_lin_params)				+	\
++	sizeof(struct rppx1_lin_params))
++
++/* ---------------------------------------------------------------------------
++ * Statistics Structures
++ *
++ * The same ISP block might be instantiated in multiple pipeliness and operate
++ * on a different bitdepth/precision. For fields of varying length among
++ * different instances of the same block, use a data type that can accommodate
++ * the larger bitdepth/precision.
++ */
++
++/**
++ * enum rppx1_stats_block_type - RPP-X1 extensible stats block types
++ *
++ * NOTE: Only append to the enumeration as the numbers are uAPI.
++ *
++ * @RPPX1_STATS_BLOCK_TYPE_WBMEAS_POST: post-fusion white-balance measurement
++ * @RPPX1_STATS_BLOCK_TYPE_EXM_PRE1: pre-fusion pipe1 exposure measurement
++ * @RPPX1_STATS_BLOCK_TYPE_EXM_PRE2: pre-fusion pipe2 exposure measurement
++ * @RPPX1_STATS_BLOCK_TYPE_HIST_PRE1: pre-fusion pipe1 histogram
++ * @RPPX1_STATS_BLOCK_TYPE_HIST_PRE2: pre-fusion pipe2 histogram
++ * @RPPX1_STATS_BLOCK_TYPE_HIST_POST: post-fusion histogram
++ */
++enum rppx1_stats_block_type {
++	RPPX1_STATS_BLOCK_TYPE_WBMEAS_POST,
++	RPPX1_STATS_BLOCK_TYPE_EXM_PRE1,
++	RPPX1_STATS_BLOCK_TYPE_EXM_PRE2,
++	RPPX1_STATS_BLOCK_TYPE_HIST_PRE1,
++	RPPX1_STATS_BLOCK_TYPE_HIST_PRE2,
++	RPPX1_STATS_BLOCK_TYPE_HIST_POST,
++};
++
++/**
++ * struct rppx1_wbmeas_stats - AWB statistics
++ *
++ * @header: block header (type = RPPX1_STATS_BLOCK_TYPE_WBMEAS_POST)
++ * @cnt: Number of pixels matched
++ * @mean_y_or_g: mean Y (or G in RGB mode) value, 24-bit
++ * @mean_cb_or_b: mean Cb (or B in RGB mode) value, 24-bit
++ * @mean_cr_or_r: mean Cr (or R in RGB mode) value, 24-bit
++ */
++struct rppx1_wbmeas_stats {
++	struct v4l2_isp_block_header header;
++	__u32 cnt;
++	__u32 mean_y_or_g;
++	__u32 mean_cb_or_b;
++	__u32 mean_cr_or_r;
++};
++
++/* Exposure Measurement */
++#define RPPX1_EXM_NUM_WIN 25
++
++/**
++ * struct rppx1_exm_stats - Exposure measurement
++ *
++ * RPP-X1 exposure measurement calculates the mean value on 25 programmable
++ * windows on the input picture.
++ *
++ * @header: block header (type = RPPX1_STATS_BLOCK_TYPE_EXM_PRE1)
++ * @exp_mean: mean luminance values per block, up to 20-bit
++ * @reserved: padding
++ */
++struct rppx1_exm_stats {
++	struct v4l2_isp_block_header header;
++	__u32 exp_mean[RPPX1_EXM_NUM_WIN];
++	__u32 reserved;
++};
++
++/* Histogram */
++#define RPPX1_HIST_NUM_BINS 32
++
++/**
++ * struct rppx1_hist_stats - Histogram statistics
++ *
++ * @header: block header (type = RPPX1_STATS_BLOCK_TYPE_HIST_POST)
++ * @hist_bins: accumulation histogram results in unsigned 20-bit Q16.4 format
++ */
++struct rppx1_hist_stats {
++	struct v4l2_isp_block_header header;
++	__u32 hist_bins[RPPX1_HIST_NUM_BINS];
++};
++
++/**
++ * RPPX1_STATS_MAX_SIZE - Maximum size of all RPP-X1 statistics
++ *
++ * Some types are reported twice as the same block might be instantiated in
++ * multiple pipes.
++ */
++#define RPPX1_STATS_MAX_SIZE						\
++	(sizeof(struct rppx1_wbmeas_stats)			+	\
++	sizeof(struct rppx1_exm_stats)				+	\
++	sizeof(struct rppx1_exm_stats)				+	\
++	sizeof(struct rppx1_hist_stats)				+	\
++	sizeof(struct rppx1_hist_stats)				+	\
++	sizeof(struct rppx1_hist_stats))
++
++#endif /* __UAPI_RPP_X1_CONFIG_H */
+diff --git a/include/linux/rkisp1-config.h b/include/linux/rkisp1-config.h
+index 3e8aa77fd..e2c755e1a 100644
+--- a/include/linux/rkisp1-config.h
++++ b/include/linux/rkisp1-config.h
+@@ -964,6 +964,92 @@ struct rkisp1_cif_isp_wdr_config {
+ 	__u8 use_iref;
+ };
+ 
++/*
++ * enum rkisp1_cif_isp_cac_h_clip_mode - horizontal clipping mode
++ *
++ * @RKISP1_CIF_ISP_CAC_H_CLIP_MODE_4PX: +/- 4 pixels
++ * @RKISP1_CIF_ISP_CAC_H_CLIP_MODE_4_5PX: +/- 4/5 pixels depending on bayer position
++ */
++enum rkisp1_cif_isp_cac_h_clip_mode {
++	RKISP1_CIF_ISP_CAC_H_CLIP_MODE_4PX = 0,
++	RKISP1_CIF_ISP_CAC_H_CLIP_MODE_4_5PX = 1,
++};
++
++/**
++ * enum rkisp1_cif_isp_cac_v_clip_mode - vertical clipping mode
++ *
++ * @RKISP1_CIF_ISP_CAC_V_CLIP_MODE_2PX: +/- 2 pixels
++ * @RKISP1_CIF_ISP_CAC_V_CLIP_MODE_3PX: +/- 3 pixels
++ * @RKISP1_CIF_ISP_CAC_V_CLIP_MODE_3_4PX: +/- 3/4 pixels depending on bayer position
++ */
++enum rkisp1_cif_isp_cac_v_clip_mode {
++	RKISP1_CIF_ISP_CAC_V_CLIP_MODE_2PX = 0,
++	RKISP1_CIF_ISP_CAC_V_CLIP_MODE_3PX = 1,
++	RKISP1_CIF_ISP_CAC_V_CLIP_MODE_3_4PX = 2,
++};
++
++/**
++ * struct rkisp1_cif_isp_cac_config - chromatic aberration correction configuration
++ *
++ * The correction is carried out by shifting the red and blue pixels relative
++ * to the green ones, depending on the distance from the optical center:
++ *
++ * @h_count_start: horizontal coordinate of the optical center (13-bit unsigned integer; [1,8191])
++ * @v_count_start: vertical coordinate of the optical center (13-bit unsigned integer; [1,8191])
++ *
++ * For each pixel, the x/y distances from the optical center are calculated and
++ * then transformed into the [0,255] range based on the following formula:
++ *
++ *   (((d << 4) >> ns) * nf) >> 5
++ *
++ * where `d` is the distance, `ns` and `nf` are the normalization parameters:
++ *
++ * @x_nf: horizontal normalization scale parameter (5-bit unsigned integer; [0,31])
++ * @x_ns: horizontal normalization shift parameter (4-bit unsigned integer; [0,15])
++ *
++ * @y_nf: vertical normalization scale parameter (5-bit unsigned integer; [0,31])
++ * @y_ns: vertical normalization shift parameter (4-bit unsigned integer; [0,15])
++ *
++ * These parameters should be chosen based on the image resolution, the position
++ * of the optical center, and the shape of pixels, so that no normalized distance
++ * is larger than 255. If the pixels have square shape, the two sets of parameters
++ * should be equal.
++ *
++ * The actual amount of correction is calculated with a third degree polynomial:
++ *
++ *   c[0] * r + c[1] * r^2 + c[2] * r^3
++ *
++ * where `c` is the set of coefficients for the given color, and `r` is distance:
++ *
++ * @red: red coefficients (5.4 two's complement; [-16,15.9375])
++ * @blue: blue coefficients (5.4 two's complement; [-16,15.9375])
++ *
++ * Finally, the amount is clipped as requested:
++ *
++ * @h_clip_mode: maximum horizontal shift (from enum rkisp1_cif_isp_cac_h_clip_mode)
++ * @v_clip_mode: maximum vertical shift (from enum rkisp1_cif_isp_cac_v_clip_mode)
++ *
++ * A positive result will shift away from the optical center, while a negative
++ * one will shift towards the optical center. In the latter case, the pixel
++ * values at the edges are duplicated.
++ */
++struct rkisp1_cif_isp_cac_config {
++	__u8 h_clip_mode;
++	__u8 v_clip_mode;
++
++	__u16 h_count_start;
++	__u16 v_count_start;
++
++	__u16 red[3];
++	__u16 blue[3];
++
++	__u8 x_nf;
++	__u8 x_ns;
++
++	__u8 y_nf;
++	__u8 y_ns;
++};
++
+ /*---------- PART2: Measurement Statistics ------------*/
+ 
+ /**
+@@ -1135,6 +1221,7 @@ struct rkisp1_stat_buffer {
+  * @RKISP1_EXT_PARAMS_BLOCK_TYPE_COMPAND_EXPAND: Companding expand curve
+  * @RKISP1_EXT_PARAMS_BLOCK_TYPE_COMPAND_COMPRESS: Companding compress curve
+  * @RKISP1_EXT_PARAMS_BLOCK_TYPE_WDR: Wide dynamic range
++ * @RKISP1_EXT_PARAMS_BLOCK_TYPE_CAC: Chromatic aberration correction
+  */
+ enum rkisp1_ext_params_block_type {
+ 	RKISP1_EXT_PARAMS_BLOCK_TYPE_BLS,
+@@ -1158,6 +1245,7 @@ enum rkisp1_ext_params_block_type {
+ 	RKISP1_EXT_PARAMS_BLOCK_TYPE_COMPAND_EXPAND,
+ 	RKISP1_EXT_PARAMS_BLOCK_TYPE_COMPAND_COMPRESS,
+ 	RKISP1_EXT_PARAMS_BLOCK_TYPE_WDR,
++	RKISP1_EXT_PARAMS_BLOCK_TYPE_CAC,
+ };
+ 
+ /* For backward compatibility */
+@@ -1504,6 +1592,22 @@ struct rkisp1_ext_params_wdr_config {
+ 	struct rkisp1_cif_isp_wdr_config config;
+ } __attribute__((aligned(8)));
+ 
++/**
++ * struct rkisp1_ext_params_cac_config - RkISP1 extensible params CAC config
++ *
++ * RkISP1 extensible parameters CAC block.
++ * Identified by :c:type:`RKISP1_EXT_PARAMS_BLOCK_TYPE_CAC`.
++ *
++ * @header: The RkISP1 extensible parameters header, see
++ *	    :c:type:`rkisp1_ext_params_block_header`
++ * @config: CAC configuration, see
++ *	    :c:type:`rkisp1_cif_isp_cac_config`
++ */
++struct rkisp1_ext_params_cac_config {
++	struct rkisp1_ext_params_block_header header;
++	struct rkisp1_cif_isp_cac_config config;
++} __attribute__((aligned(8)));
++
+ /*
+  * The rkisp1_ext_params_compand_curve_config structure is counted twice as it
+  * is used for both the COMPAND_EXPAND and COMPAND_COMPRESS block types.
+@@ -1529,14 +1633,15 @@ struct rkisp1_ext_params_wdr_config {
+ 	sizeof(struct rkisp1_ext_params_compand_bls_config)		+\
+ 	sizeof(struct rkisp1_ext_params_compand_curve_config)		+\
+ 	sizeof(struct rkisp1_ext_params_compand_curve_config)		+\
+-	sizeof(struct rkisp1_ext_params_wdr_config))
++	sizeof(struct rkisp1_ext_params_wdr_config)			+\
++	sizeof(struct rkisp1_ext_params_cac_config))
+ 
+ /**
+- * enum rksip1_ext_param_buffer_version - RkISP1 extensible parameters version
++ * enum rkisp1_ext_param_buffer_version - RkISP1 extensible parameters version
+  *
+  * @RKISP1_EXT_PARAM_BUFFER_V1: First version of RkISP1 extensible parameters
+  */
+-enum rksip1_ext_param_buffer_version {
++enum rkisp1_ext_param_buffer_version {
+ 	RKISP1_EXT_PARAM_BUFFER_V1 = V4L2_ISP_PARAMS_VERSION_V1,
+ };
+ 
+@@ -1598,7 +1703,7 @@ enum rksip1_ext_param_buffer_version {
+  *	+---------------------------------------------------------------------+
+  *
+  * @version: The RkISP1 extensible parameters buffer version, see
+- *	     :c:type:`rksip1_ext_param_buffer_version`
++ *	     :c:type:`rkisp1_ext_param_buffer_version`
+  * @data_size: The RkISP1 configuration data effective size, excluding this
+  *	       header
+  * @data: The RkISP1 extensible configuration data blocks
+diff --git a/include/linux/v4l2-controls.h b/include/linux/v4l2-controls.h
+index c0d9cab3c..5e25e7f1f 100644
+--- a/include/linux/v4l2-controls.h
++++ b/include/linux/v4l2-controls.h
+@@ -464,6 +464,8 @@ enum v4l2_mpeg_video_intra_refresh_period_type {
+ 	V4L2_CID_MPEG_VIDEO_INTRA_REFRESH_PERIOD_TYPE_CYCLIC	= 1,
+ };
+ 
++#define V4L2_CID_MPEG_VIDEO_BACKGROUND_DETECTION	(V4L2_CID_CODEC_BASE + 238)
++
+ /* CIDs for the MPEG-2 Part 2 (H.262) codec */
+ #define V4L2_CID_MPEG_VIDEO_MPEG2_LEVEL			(V4L2_CID_CODEC_BASE+270)
+ enum v4l2_mpeg_video_mpeg2_level {
+diff --git a/include/linux/videodev2.h b/include/linux/videodev2.h
+index 8bccad84f..c823409c7 100644
+--- a/include/linux/videodev2.h
++++ b/include/linux/videodev2.h
+@@ -864,6 +864,10 @@ struct v4l2_pix_format {
+ #define V4L2_META_FMT_MALI_C55_PARAMS	v4l2_fourcc('C', '5', '5', 'P') /* ARM Mali-C55 Parameters */
+ #define V4L2_META_FMT_MALI_C55_STATS	v4l2_fourcc('C', '5', '5', 'S') /* ARM Mali-C55 3A Statistics */
+ 
++/* Vendor specific - used for Dreamchip RPP-X1 ISP */
++#define V4L2_META_FMT_RPPX1_PARAMS	v4l2_fourcc('D', 'R', '1', 'P') /* Dreamchip RPP-X1 Parameters */
++#define V4L2_META_FMT_RPPX1_STATS	v4l2_fourcc('D', 'R', '1', 'S') /* Dreamchip RPP-X1 Statistics */
++
+ /*
+  * Line-based metadata formats. Remember to update v4l_fill_fmtdesc() when
+  * adding new ones!
+diff --git a/utils/update-kernel-headers.sh b/utils/update-kernel-headers.sh
+index 3fdea5f1e..488b87de5 100755
+--- a/utils/update-kernel-headers.sh
++++ b/utils/update-kernel-headers.sh
+@@ -56,6 +56,7 @@ headers="
+ 	linux/media-bus-format.h
+ 	linux/media.h
+ 	linux/media/arm/mali-c55-config.h
++	linux/media/dreamchip/rppx1-config.h
+ 	linux/media/v4l2-isp.h
+ 	linux/rkisp1-config.h
+ 	linux/stddef.h
+-- 
+2.43.0
+

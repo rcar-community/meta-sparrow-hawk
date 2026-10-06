@@ -1,0 +1,178 @@
+From 6147219695f05891f6c0ec33ad037e93817c9a24 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Barnab=C3=A1s=20P=C5=91cze?=
+ <barnabas.pocze@ideasonboard.com>
+Date: Fri, 18 Sep 2026 14:09:30 +0200
+Subject: [PATCH] ipa: libipa: quantized: Make floating point type customizable
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Retrieve the floating point type from `Traits` and use that instead
+of hard-coding `float`.
+
+Signed-off-by: Barnabás Pőcze <barnabas.pocze@ideasonboard.com>
+Reviewed-by: Kieran Bingham <kieran.bingham@ideasonboard.com>
+Reviewed-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+
+Upstream-Status: Submitted [https://patchwork.libcamera.org/patch/28340/]
+
+---
+ src/ipa/libipa/fixedpoint.cpp |  7 ++++++-
+ src/ipa/libipa/fixedpoint.h   | 11 ++++++-----
+ src/ipa/libipa/quantized.cpp  | 10 +++++++++-
+ src/ipa/libipa/quantized.h    | 14 +++++++++-----
+ test/ipa/libipa/quantized.cpp |  8 ++++++--
+ 5 files changed, 36 insertions(+), 14 deletions(-)
+
+diff --git a/src/ipa/libipa/fixedpoint.cpp b/src/ipa/libipa/fixedpoint.cpp
+index b06ad8d26..8c0e9746c 100644
+--- a/src/ipa/libipa/fixedpoint.cpp
++++ b/src/ipa/libipa/fixedpoint.cpp
+@@ -47,6 +47,11 @@ namespace ipa {
+  * \brief The integral storage type used for the fixed-point representation
+  */
+ 
++/**
++ * \typedef FixedPointQTraits::FloatingType
++ * \brief The type used for the floating-point representation
++ */
++
+ /**
+  * \var FixedPointQTraits::qMin
+  * \brief Minimum representable quantized integer value
+@@ -71,7 +76,7 @@ namespace ipa {
+  */
+ 
+ /**
+- * \fn FixedPointQTraits::fromFloat(float v)
++ * \fn FixedPointQTraits::fromFloat(FloatingType v)
+  * \brief Convert a floating-point value to a fixed-point integer
+  * \param[in] v The floating-point value to be converted
+  * \return The quantized fixed-point integer representation
+diff --git a/src/ipa/libipa/fixedpoint.h b/src/ipa/libipa/fixedpoint.h
+index 537bc774a..66863075c 100644
+--- a/src/ipa/libipa/fixedpoint.h
++++ b/src/ipa/libipa/fixedpoint.h
+@@ -37,6 +37,7 @@ private:
+ 
+ public:
+ 	using QuantizedType = UT;
++	using FloatingType = float;
+ 
+ 	static constexpr UT qMin = std::is_signed_v<T>
+ 				 ? -(UT{ 1 } << (bits - 1))
+@@ -49,7 +50,7 @@ public:
+ 	static constexpr float toFloat(QuantizedType q)
+ 	{
+ 		if constexpr (std::is_unsigned_v<T>)
+-			return static_cast<float>(q) / static_cast<float>(UT{ 1 } << F);
++			return static_cast<FloatingType>(q) / static_cast<FloatingType>(UT{ 1 } << F);
+ 
+ 		/*
+ 		 * Recreate the upper bits in case of a negative number by
+@@ -60,16 +61,16 @@ public:
+ 		 */
+ 		unsigned int remaining_bits = sizeof(UT) * 8 - (I + F);
+ 		T t = static_cast<T>(static_cast<UT>(q) << remaining_bits) >> remaining_bits;
+-		return static_cast<float>(t) / static_cast<float>(UT{ 1 } << F);
++		return static_cast<FloatingType>(t) / static_cast<FloatingType>(UT{ 1 } << F);
+ 	}
+ 
+-	static constexpr float min = toFloat(qMin);
+-	static constexpr float max = toFloat(qMax);
++	static constexpr FloatingType min = toFloat(qMin);
++	static constexpr FloatingType max = toFloat(qMax);
+ 
+ 	static_assert(min < max, "FixedPointQTraits: Minimum must be less than maximum");
+ 
+ 	/* Conversion functions required by Quantized<Traits> */
+-	static QuantizedType fromFloat(float v)
++	static QuantizedType fromFloat(FloatingType v)
+ 	{
+ 		v = std::clamp(v, min, max);
+ 
+diff --git a/src/ipa/libipa/quantized.cpp b/src/ipa/libipa/quantized.cpp
+index 06143a97a..34cf6b1b9 100644
+--- a/src/ipa/libipa/quantized.cpp
++++ b/src/ipa/libipa/quantized.cpp
+@@ -58,7 +58,15 @@ namespace ipa {
+  */
+ 
+ /**
+- * \fn Quantized::Quantized(float x)
++ * \typedef Quantized::FloatingType
++ * \brief The floating type used for the value representation
++ *
++ * This alias corresponds to \c TraitsType::FloatingType, as defined by
++ * the traits class.
++ */
++
++/**
++ * \fn Quantized::Quantized(FloatingType x)
+  * \brief Construct a Quantized value from a floating-point number
+  * \param[in] x The floating-point value to be quantized
+  *
+diff --git a/src/ipa/libipa/quantized.h b/src/ipa/libipa/quantized.h
+index 8d7b06a2d..5c41d0b5d 100644
+--- a/src/ipa/libipa/quantized.h
++++ b/src/ipa/libipa/quantized.h
+@@ -21,13 +21,17 @@ template<typename Traits>
+ struct Quantized {
+ 	using TraitsType = Traits;
+ 	using QuantizedType = typename Traits::QuantizedType;
+-	static_assert(std::is_arithmetic_v<QuantizedType>,
+-		      "Quantized: QuantizedType must be arithmetic");
++	using FloatingType = typename Traits::FloatingType;
++
++	static_assert(std::is_integral_v<QuantizedType>,
++		      "Quantized: QuantizedType must be integral");
++	static_assert(std::is_floating_point_v<FloatingType>,
++		      "Quantized: FloatingType must be floating");
+ 
+ 	constexpr Quantized()
+-		: Quantized(0.0f) {}
++		: Quantized(FloatingType{}) {}
+ 
+-	constexpr Quantized(float x)
++	constexpr Quantized(FloatingType x)
+ 		: Quantized(Traits::fromFloat(x))
+ 	{
+ 	}
+@@ -73,7 +77,7 @@ struct Quantized {
+ 
+ private:
+ 	QuantizedType quantized_;
+-	float value_;
++	FloatingType value_;
+ };
+ 
+ } /* namespace ipa */
+diff --git a/test/ipa/libipa/quantized.cpp b/test/ipa/libipa/quantized.cpp
+index 18655dac5..4b1d869bf 100644
+--- a/test/ipa/libipa/quantized.cpp
++++ b/test/ipa/libipa/quantized.cpp
+@@ -20,7 +20,9 @@ using namespace ipa;
+ 
+ struct BrightnessHueTraits {
+ 	using QuantizedType = uint8_t;
+-	static QuantizedType fromFloat(float v)
++	using FloatingType = float;
++
++	static QuantizedType fromFloat(FloatingType v)
+ 	{
+ 		int quantized = std::lround(v * 128.0f);
+ 		return std::clamp<int>(quantized, -128, 127);
+@@ -35,7 +37,9 @@ using BrightnessHueQuantizer = Quantized<BrightnessHueTraits>;
+ 
+ struct ContrastSaturationTraits {
+ 	using QuantizedType = uint8_t;
+-	static QuantizedType fromFloat(float v)
++	using FloatingType = float;
++
++	static QuantizedType fromFloat(FloatingType v)
+ 	{
+ 		int quantized = std::lround(v * 128.0f);
+ 		return std::clamp<int>(quantized, 0, 255);
+-- 
+2.43.0
+
