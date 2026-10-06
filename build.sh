@@ -153,9 +153,12 @@ if [[ "${IS_BUILD_SDK}" == "yes" ]]; then
 else
     bitbake ${QUIET_FLAG} ${TARGET_IMAGE} ${FETCHALL_OPT}
 fi
+BITBAKE_RESULT=$?
 
 # Cleanup symbolic link
 if [[ "${IS_BUILD_INSIDE_REPO}" == "yes" ]]; then
     rm -f ${WORK}/meta-sparrow-hawk
 fi
+
+exit ${BITBAKE_RESULT}
 
