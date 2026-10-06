@@ -8,6 +8,10 @@ on:
       - '*-next'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   Release:
     name: Release
