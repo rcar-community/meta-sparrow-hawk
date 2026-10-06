@@ -27,6 +27,7 @@ UBOOT_SREC_SYMLINK ?= "u-boot-elf-${MACHINE}.${UBOOT_SREC_SUFFIX}"
 SRC_URI:append = "\
     file://0001-PCI-rcar-gen4-Limit-Max_Read_Request_Size-and-Max_Pa.patch \
 "
+SRC_URI:append = " file://0002-mtd-spi-nor-ids-Add-Winbond-W77T51NW.patch"
 
 SRC_URI:append = "\
     file://nfs_cmd.cfg \
