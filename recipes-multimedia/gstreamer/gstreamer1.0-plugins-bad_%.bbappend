@@ -1,2 +1,2 @@
-PACKAGECONFIG:append:sparrow-hawk = " kms"
+PACKAGECONFIG:append:sparrow-hawk = " kms wayland"
 
