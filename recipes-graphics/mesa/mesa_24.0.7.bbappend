@@ -111,8 +111,16 @@ crlf_file_postpatch() {
 	done
 }
 
-do_patch[prefuncs] += "crlf_file_prepatch"
-do_patch[postfuncs] += "crlf_file_postpatch"
+# Call the helpers from within do_patch itself instead of using
+# do_patch[prefuncs]/[postfuncs]. create-spdx runs do_patch with
+# bb.build.exec_func(), which does not run prefuncs/postfuncs.
+python do_patch:prepend() {
+    bb.build.exec_func('crlf_file_prepatch', d)
+}
+
+python do_patch:append() {
+    bb.build.exec_func('crlf_file_postpatch', d)
+}
 
 PACKAGECONFIG:append:class-target = " pvr-alias"
 
