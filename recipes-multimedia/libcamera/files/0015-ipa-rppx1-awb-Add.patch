@@ -1,0 +1,452 @@
+From c93aab2a0f7c21fe6a5bf948ca82989d542909af Mon Sep 17 00:00:00 2001
+From: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+Date: Fri, 18 Sep 2026 14:09:43 +0200
+Subject: [PATCH] ipa: rppx1: awb: Add
+
+Add the algorithm to the rppx1 ipa module based on the corresponding
+algorithm in the rkisp1 ipa module.
+
+Signed-off-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+
+Upstream-Status: Submitted [https://patchwork.libcamera.org/patch/28353/]
+
+---
+ src/ipa/rppx1/algorithms/awb.cpp     | 266 +++++++++++++++++++++++++++
+ src/ipa/rppx1/algorithms/awb.h       |  48 +++++
+ src/ipa/rppx1/algorithms/meson.build |   1 +
+ src/ipa/rppx1/ipa_context.h          |  10 +
+ src/ipa/rppx1/params.h               |   4 +
+ src/ipa/rppx1/stats.h                |   2 +
+ 6 files changed, 331 insertions(+)
+ create mode 100644 src/ipa/rppx1/algorithms/awb.cpp
+ create mode 100644 src/ipa/rppx1/algorithms/awb.h
+
+diff --git a/src/ipa/rppx1/algorithms/awb.cpp b/src/ipa/rppx1/algorithms/awb.cpp
+new file mode 100644
+index 000000000..5e23b8814
+--- /dev/null
++++ b/src/ipa/rppx1/algorithms/awb.cpp
+@@ -0,0 +1,266 @@
++/* SPDX-License-Identifier: LGPL-2.1-or-later */
++/*
++ * Copyright (C) 2026, Ideas On Board
++ *
++ * AWB control algorithm
++ */
++
++#include "awb.h"
++
++#include <libcamera/base/log.h>
++
++#include <libcamera/geometry.h>
++
++#include <libcamera/ipa/core_ipa_interface.h>
++
++#include "libcamera/internal/vector.h"
++
++#include "libipa/fixedpoint.h"
++
++/**
++ * \file awb.h
++ */
++
++namespace libcamera {
++
++namespace ipa::rppx1::algorithms {
++
++LOG_DEFINE_CATEGORY(RppX1Awb)
++
++class RppX1AwbStats final : public AwbStats
++{
++public:
++	RppX1AwbStats(const RGB<double> &rgbMeans)
++		: rgbMeans_(rgbMeans)
++	{
++		rg_ = rgbMeans_.r() / rgbMeans_.g();
++		bg_ = rgbMeans_.b() / rgbMeans_.g();
++	}
++
++	double computeColourError(const RGB<double> &gains) const override
++	{
++		/*
++		 * Compute the sum of the squared colour error (non-greyness) as
++		 * it appears in the log likelihood equation.
++		 */
++		double deltaR = gains.r() * rg_ - 1.0;
++		double deltaB = gains.b() * bg_ - 1.0;
++		double delta2 = deltaR * deltaR + deltaB * deltaB;
++
++		return delta2;
++	}
++
++	RGB<double> rgbMeans() const override
++	{
++		return rgbMeans_;
++	}
++
++	bool valid() const override
++	{
++		/* Minimum mean value below which AWB can't operate. */
++		constexpr double minValue = 0.01;
++
++		return rgbMeans_.r() > minValue || rgbMeans_.g() > minValue ||
++		       rgbMeans_.b() > minValue;
++	}
++
++private:
++	RGB<double> rgbMeans_;
++	double rg_;
++	double bg_;
++};
++
++/**
++ * \copydoc libcamera::ipa::Algorithm::init
++ */
++int Awb::init(IPAContext &context, const ValueNode &tuningData)
++{
++	return awbAlgo_.init(tuningData, context.ctrlMap);
++}
++
++/**
++ * \copydoc libcamera::ipa::Algorithm::configure
++ */
++int Awb::configure(IPAContext &context,
++		   const IPACameraSensorInfo &configInfo)
++{
++	awbAlgo_.configure(context.activeState.awb);
++
++	/*
++	 * Define the measurement window for AWB as a centered rectangle
++	 * covering 3/4 of the image width and height.
++	 */
++	context.configuration.awb.measureWindow.h_offs = configInfo.outputSize.width / 8;
++	context.configuration.awb.measureWindow.v_offs = configInfo.outputSize.height / 8;
++	context.configuration.awb.measureWindow.h_size = 3 * configInfo.outputSize.width / 4;
++	context.configuration.awb.measureWindow.v_size = 3 * configInfo.outputSize.height / 4;
++
++	context.configuration.awb.enabled = true;
++
++	return 0;
++}
++
++/**
++ * \copydoc libcamera::ipa::Algorithm::queueRequest
++ */
++void Awb::queueRequest(IPAContext &context, const uint32_t frame,
++		       IPAFrameContext &frameContext,
++		       const ControlList &controls)
++{
++	awbAlgo_.queueRequest(context.activeState.awb, frame, frameContext.awb,
++			      controls);
++}
++
++/**
++ * \copydoc libcamera::ipa::Algorithm::prepare
++ */
++void Awb::prepare(IPAContext &context, const uint32_t frame,
++		  IPAFrameContext &frameContext, RppX1Params *params)
++{
++	awbAlgo_.prepare(context.activeState.awb, frameContext.awb);
++
++	auto gain = params->block<BlockType::AwbGPre1>();
++	gain.setEnabled(true);
++
++	gain->gain_green_b = GainQ(static_cast<float>(frameContext.awb.gains.g())).quantized();
++	gain->gain_blue = GainQ(static_cast<float>(frameContext.awb.gains.b())).quantized();
++	gain->gain_red = GainQ(static_cast<float>(frameContext.awb.gains.r())).quantized();
++	gain->gain_green_r = GainQ(static_cast<float>(frameContext.awb.gains.g())).quantized();
++
++	/* If we have already set the AWB measurement parameters, return. */
++	if (frame > 0)
++		return;
++
++	auto awb = params->block<BlockType::WbMeasPost>();
++	awb.setEnabled(true);
++
++	/* Configure the measure window for AWB. */
++	awb->wnd = context.configuration.awb.measureWindow;
++
++	/* Number of frames to use to estimate the means (0 means 1 frame). */
++	awb->frames = 0;
++
++	awb->mode = RPPX1_WBMEAS_MODE_YCBCR;
++
++	/* Set the reference Cr and Cb (AWB target) to white. */
++	awb->ref_cb_max_b = UQ<0, 24>(0.5f).quantized();
++	awb->ref_cr_max_r = UQ<0, 24>(0.5f).quantized();
++
++	/*
++	 * Filter out pixels based on luminance and chrominance values.
++	 * The acceptable luma values are specified as a [16, 250]
++	 * range, while the acceptable chroma values are specified with
++	 * a minimum of 16 and a maximum Cb+Cr sum of 250.
++	 */
++	awb->ymax_cmp = true;
++	awb->min_y_max_g = UQ<0, 24>(16.f / 255.f).quantized();
++	awb->max_y = UQ<0, 24>(250.f / 255.f).quantized();
++
++	awb->min_c = UQ<0, 24>(16.f / 255.f).quantized();
++	awb->max_csum = UQ<0, 24>(250.f / 255.f).quantized();
++
++	/*
++	 * The suggested coefficients in YCbCr mode are those set forth
++	 * in ITU-R BT.709.
++	 *
++	 * \todo These should be in a common place like colours.{h,cpp}.
++	 * \todo The ordering of the coefficients should be investigated more.
++	 */
++
++	/* Y coefficients */
++	awb->ccor_coeff[0][2] = Q<4, 12>(0.2126f).quantized();
++	awb->ccor_coeff[0][0] = Q<4, 12>(0.7152f).quantized();
++	awb->ccor_coeff[0][1] = Q<4, 12>(0.0722f).quantized();
++	/* Cb coefficients */
++	awb->ccor_coeff[1][2] = Q<4, 12>(-0.1146f).quantized();
++	awb->ccor_coeff[1][0] = Q<4, 12>(-0.3854f).quantized();
++	awb->ccor_coeff[1][1] = Q<4, 12>(0.5f).quantized();
++	/* Cr coefficients */
++	awb->ccor_coeff[2][2] = Q<4, 12>(0.5f).quantized();
++	awb->ccor_coeff[2][0] = Q<4, 12>(-0.4542f).quantized();
++	awb->ccor_coeff[2][1] = Q<4, 12>(-0.0458f).quantized();
++	/* The recommended offsets are (0, 0.5, 0.5) */
++	awb->ccor_offs[0] = Q<1, 24>(0.0).quantized();
++	awb->ccor_offs[1] = Q<1, 24>(0.5).quantized();
++	awb->ccor_offs[2] = Q<1, 24>(0.5).quantized();
++
++	LOG(RppX1Awb, Debug)
++		<< "window: " << Rectangle(awb->wnd.h_offs, awb->wnd.v_offs, awb->wnd.h_size, awb->wnd.v_size);
++}
++
++/**
++ * \copydoc libcamera::ipa::Algorithm::process
++ */
++void Awb::process(IPAContext &context,
++		  [[maybe_unused]] const uint32_t frame,
++		  IPAFrameContext &frameContext,
++		  const RppX1Stats *stats,
++		  ControlList &metadata)
++{
++	const auto awb = stats->block<StatsType::WbMeasPost>();
++	if (!awb)
++		return;
++
++	LOG(RppX1Awb, Debug) << "measured-pixels: " << awb->cnt;
++
++	if (awb->cnt == 0)
++		return;
++
++	RppX1AwbStats awbStats = calculateRgbMeans(frameContext, *awb);
++
++	awbAlgo_.process(context.activeState.awb, frameContext.awb, awbStats,
++			 0, metadata);
++}
++
++RppX1AwbStats Awb::calculateRgbMeans(const IPAFrameContext &frameContext,
++				     const rppx1_wbmeas_stats &awb) const
++{
++	/* Get the YCbCr mean values */
++	Vector<double, 3> yuvMeans({
++		UQ<0, 24>(awb.mean_y_or_g).value(),
++		UQ<0, 24>(awb.mean_cb_or_b).value(),
++		UQ<0, 24>(awb.mean_cr_or_r).value(),
++	});
++
++	LOG(RppX1Awb, Debug)
++		<< "yuv-means: ("
++		<< awb.mean_y_or_g << ','
++		<< awb.mean_cb_or_b << ','
++		<< awb.mean_cr_or_r << ')'
++		<< " -> " << yuvMeans;
++
++	/*
++	 * The inverse of the coefficients set in `prepare()`.
++	 */
++	static const Matrix<double, 3, 3> rec709rgb = { {
++		1.0,  0.0,     1.5748,
++		1.0, -0.1873, -0.4681,
++		1.0,  1.8556,  0.0,
++	} };
++	static const Vector<double, 3> offsets = { { 0.0, 0.5, 0.5 } };
++
++	auto rgbMeans = rec709rgb * (yuvMeans - offsets);
++
++	/*
++	 * Due to hardware rounding errors in the YCbCr means, the
++	 * calculated RGB means may be negative. This would lead to
++	 * negative gains, messing up calculation. Prevent this by
++	 * clamping the means to positive values.
++	 */
++	rgbMeans = rgbMeans.max(0.0);
++
++	/*
++	 * The ISP computes the AWB means after applying the colour gains,
++	 * divide by the gains that were used to get the raw means from the
++	 * sensor. Apply a minimum value to avoid divisions by near-zero.
++	 */
++	rgbMeans /= frameContext.awb.gains.max(0.01);
++
++	return RppX1AwbStats(rgbMeans);
++}
++
++REGISTER_IPA_ALGORITHM(Awb, "Awb")
++
++} /* namespace ipa::rppx1::algorithms */
++
++} /* namespace libcamera */
+diff --git a/src/ipa/rppx1/algorithms/awb.h b/src/ipa/rppx1/algorithms/awb.h
+new file mode 100644
+index 000000000..18d77d962
+--- /dev/null
++++ b/src/ipa/rppx1/algorithms/awb.h
+@@ -0,0 +1,48 @@
++/* SPDX-License-Identifier: LGPL-2.1-or-later */
++/*
++ * Copyright (C) 2026, Ideas On Board
++ *
++ * AWB control algorithm
++ */
++
++#pragma once
++
++#include "libipa/awb.h"
++#include "libipa/fixedpoint.h"
++
++#include "algorithm.h"
++
++namespace libcamera {
++
++namespace ipa::rppx1::algorithms {
++
++class RppX1AwbStats;
++
++class Awb : public Algorithm
++{
++public:
++	int init(IPAContext &context, const ValueNode &tuningData) override;
++	int configure(IPAContext &context, const IPACameraSensorInfo &configInfo) override;
++	void queueRequest(IPAContext &context, const uint32_t frame,
++			  IPAFrameContext &frameContext,
++			  const ControlList &controls) override;
++	void prepare(IPAContext &context, const uint32_t frame,
++		     IPAFrameContext &frameContext,
++		     RppX1Params *params) override;
++	void process(IPAContext &context, const uint32_t frame,
++		     IPAFrameContext &frameContext,
++		     const RppX1Stats *stats,
++		     ControlList &metadata) override;
++
++private:
++	using GainQ = UQ<6, 12>;
++
++	RppX1AwbStats calculateRgbMeans(const IPAFrameContext &frameContext,
++					const rppx1_wbmeas_stats &awb) const;
++
++	AwbAlgorithm<GainQ> awbAlgo_;
++};
++
++} /* namespace ipa::rppx1::algorithms */
++
++} /* namespace libcamera */
+diff --git a/src/ipa/rppx1/algorithms/meson.build b/src/ipa/rppx1/algorithms/meson.build
+index 394ea9510..4a2c1b52d 100644
+--- a/src/ipa/rppx1/algorithms/meson.build
++++ b/src/ipa/rppx1/algorithms/meson.build
+@@ -2,5 +2,6 @@
+ 
+ rppx1_ipa_algorithms = files([
+     'agc.cpp',
++    'awb.cpp',
+     'blc.cpp',
+ ])
+diff --git a/src/ipa/rppx1/ipa_context.h b/src/ipa/rppx1/ipa_context.h
+index f6408e73b..24fbbfaa2 100644
+--- a/src/ipa/rppx1/ipa_context.h
++++ b/src/ipa/rppx1/ipa_context.h
+@@ -17,6 +17,7 @@
+ #include <libcamera/ipa/core_ipa_interface.h>
+ 
+ #include <libipa/agc.h>
++#include <libipa/awb.h>
+ #include <libipa/camera_sensor_helper.h>
+ #include <libipa/fc_queue.h>
+ 
+@@ -28,12 +29,19 @@ struct IPASessionConfiguration {
+ 	struct Agc : ipa::agc::Session {
+ 		rppx1_window measureWindow;
+ 	} agc;
++
++	struct {
++		struct rppx1_window measureWindow;
++		bool enabled;
++	} awb;
+ };
+ 
+ struct IPAActiveState {
+ 	struct Agc : ipa::agc::ActiveState {
+ 		controls::AeMeteringModeEnum meteringMode;
+ 	} agc;
++
++	ipa::awb::ActiveState awb;
+ };
+ 
+ struct IPAFrameContext : public FrameContext {
+@@ -46,6 +54,8 @@ struct IPAFrameContext : public FrameContext {
+ 		controls::AeMeteringModeEnum meteringMode;
+ 		bool updateMetering;
+ 	} agc;
++
++	ipa::awb::FrameContext awb;
+ };
+ 
+ struct IPAContext {
+diff --git a/src/ipa/rppx1/params.h b/src/ipa/rppx1/params.h
+index 45adf4361..478d443a3 100644
+--- a/src/ipa/rppx1/params.h
++++ b/src/ipa/rppx1/params.h
+@@ -16,9 +16,11 @@ namespace libcamera {
+ namespace ipa::rppx1 {
+ 
+ enum class BlockType : uint16_t {
++	AwbGPre1,
+ 	BlsPre1,
+ 	ExmPre1,
+ 	HistPost,
++	WbMeasPost,
+ };
+ 
+ namespace details {
+@@ -35,9 +37,11 @@ struct block_type {
+ 			RPPX1_PARAMS_BLOCK_TYPE_##id;			\
+ 	};
+ 
++RPPX1_DEFINE_BLOCK_TYPE(AwbGPre1, awbg, AWBG_PRE1)
+ RPPX1_DEFINE_BLOCK_TYPE(BlsPre1, bls, BLS_PRE1)
+ RPPX1_DEFINE_BLOCK_TYPE(ExmPre1, exm, EXM_PRE1)
+ RPPX1_DEFINE_BLOCK_TYPE(HistPost, hist, HIST_POST)
++RPPX1_DEFINE_BLOCK_TYPE(WbMeasPost, wbmeas, WBMEAS_POST)
+ 
+ struct params_traits {
+ 	using id_type = BlockType;
+diff --git a/src/ipa/rppx1/stats.h b/src/ipa/rppx1/stats.h
+index 2925e2bbf..2c2a6e377 100644
+--- a/src/ipa/rppx1/stats.h
++++ b/src/ipa/rppx1/stats.h
+@@ -18,6 +18,7 @@ namespace ipa::rppx1 {
+ enum class StatsType : uint16_t {
+ 	ExmPre1,
+ 	HistPost,
++	WbMeasPost,
+ };
+ 
+ namespace details {
+@@ -36,6 +37,7 @@ struct stats_type {
+ 
+ RPPX1_DEFINE_STATS_TYPE(ExmPre1, exm, EXM_PRE1)
+ RPPX1_DEFINE_STATS_TYPE(HistPost, hist, HIST_POST)
++RPPX1_DEFINE_STATS_TYPE(WbMeasPost, wbmeas, WBMEAS_POST)
+ 
+ struct stats_traits {
+ 	using id_type = StatsType;
+-- 
+2.43.0
+

@@ -1,0 +1,38 @@
+From b10ae7866d3e67c67aaab0e2e9b5c130d89139c6 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Barnab=C3=A1s=20P=C5=91cze?=
+ <barnabas.pocze@ideasonboard.com>
+Date: Fri, 18 Sep 2026 14:09:29 +0200
+Subject: [PATCH] ipa: libipa: fixedpoint: Shift unsigned type for scaling
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Avoid shifting into the potential sign bit of `T`. The same is already
+done in `toFloat()`.
+
+Signed-off-by: Barnabás Pőcze <barnabas.pocze@ideasonboard.com>
+Reviewed-by: Kieran Bingham <kieran.bingham@ideasonboard.com>
+Reviewed-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+
+Upstream-Status: Submitted [https://patchwork.libcamera.org/patch/28339/]
+
+---
+ src/ipa/libipa/fixedpoint.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/ipa/libipa/fixedpoint.h b/src/ipa/libipa/fixedpoint.h
+index ed8aca9f1..537bc774a 100644
+--- a/src/ipa/libipa/fixedpoint.h
++++ b/src/ipa/libipa/fixedpoint.h
+@@ -78,7 +78,7 @@ public:
+ 		 * properly cast negative values. See
+ 		 * https://embeddeduse.com/2013/08/25/casting-a-negative-float-to-an-unsigned-int/
+ 		 */
+-		return static_cast<UT>(static_cast<T>(std::round(v * (1 << F)))) & bitMask;
++		return static_cast<UT>(static_cast<T>(std::round(v * (UT{ 1 } << F)))) & bitMask;
+ 	}
+ };
+ 
+-- 
+2.43.0
+

@@ -1,0 +1,65 @@
+From 43299c026370cd5e226c651d55b64f29957d9f2f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Barnab=C3=A1s=20P=C5=91cze?=
+ <barnabas.pocze@ideasonboard.com>
+Date: Fri, 18 Sep 2026 14:09:36 +0200
+Subject: [PATCH] ipa: libipa: gamma: Accept const segment lengths
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The segment lengths are not modified, so accept `const` qualified
+arrays, etc.
+
+Signed-off-by: Barnabás Pőcze <barnabas.pocze@ideasonboard.com>
+Reviewed-by: Kieran Bingham <kieran.bingham@ideasonboard.com>
+
+Upstream-Status: Submitted [https://patchwork.libcamera.org/patch/28346/]
+
+---
+ src/ipa/libipa/gamma.cpp          | 2 +-
+ src/ipa/libipa/gamma.h            | 2 +-
+ src/ipa/rkisp1/algorithms/goc.cpp | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/src/ipa/libipa/gamma.cpp b/src/ipa/libipa/gamma.cpp
+index ce66f15d6..20807ac60 100644
+--- a/src/ipa/libipa/gamma.cpp
++++ b/src/ipa/libipa/gamma.cpp
+@@ -109,7 +109,7 @@ const float kDefaultGamma = 2.2f;
+  * @return 0 on success, a negative error code otherwise
+  */
+ int GammaAlgorithmBase::init(ControlInfoMap::Map &controls, const ValueNode &tuningData,
+-			     std::span<unsigned int> segments)
++			     std::span<const unsigned int> segments)
+ {
+ 	/*
+ 	 * If the caller doesn't pass in a segment list we simply construct the
+diff --git a/src/ipa/libipa/gamma.h b/src/ipa/libipa/gamma.h
+index e5ac3f96f..a8872a6c7 100644
+--- a/src/ipa/libipa/gamma.h
++++ b/src/ipa/libipa/gamma.h
+@@ -47,7 +47,7 @@ public:
+ 	}
+ 
+ 	int init(ControlInfoMap::Map &controls, const ValueNode &tuningData,
+-		 std::span<unsigned int> segments = {});
++		 std::span<const unsigned int> segments = {});
+ 
+ 	void configure(gamma::ActiveState &state);
+ 	void queueRequest(gamma::ActiveState &state, const uint32_t frame,
+diff --git a/src/ipa/rkisp1/algorithms/goc.cpp b/src/ipa/rkisp1/algorithms/goc.cpp
+index 269ae1ea0..f6961ce17 100644
+--- a/src/ipa/rkisp1/algorithms/goc.cpp
++++ b/src/ipa/rkisp1/algorithms/goc.cpp
+@@ -50,7 +50,7 @@ int GammaOutCorrection::init(IPAContext &context, const ValueNode &tuningData)
+ 		return -EINVAL;
+ 	}
+ 
+-	std::array<unsigned int, kNumLutSegments> segments = {
++	static constexpr std::array<unsigned int, kNumLutSegments> segments = {
+ 		 64,  64,  64,  64, 128, 128, 128, 128,
+ 		256, 256, 256, 512, 512, 512, 512, 512
+ 	};
+-- 
+2.43.0
+

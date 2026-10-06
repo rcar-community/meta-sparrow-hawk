@@ -1,0 +1,55 @@
+From 1d33aa5b104574100421671e0ef6059f4a0c5747 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Barnab=C3=A1s=20P=C5=91cze?=
+ <barnabas.pocze@ideasonboard.com>
+Date: Fri, 18 Sep 2026 14:09:32 +0200
+Subject: [PATCH] ipa: libipa: awb: Log rgb means immediately
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Log the rgb means immediately upon enter `process()`, and also log
+whether it is valid or not.
+
+Signed-off-by: Barnabás Pőcze <barnabas.pocze@ideasonboard.com>
+Reviewed-by: Kieran Bingham <kieran.bingham@ideasonboard.com>
+Reviewed-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+
+Upstream-Status: Submitted [https://patchwork.libcamera.org/patch/28342/]
+
+---
+ src/ipa/libipa/awb.cpp | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
+
+diff --git a/src/ipa/libipa/awb.cpp b/src/ipa/libipa/awb.cpp
+index 0e312690b..8d465a4f8 100644
+--- a/src/ipa/libipa/awb.cpp
++++ b/src/ipa/libipa/awb.cpp
+@@ -367,7 +367,13 @@ void AwbAlgorithmBase::process(awb::ActiveState &state,
+ 			       const AwbStats &stats, unsigned int lux,
+ 			       ControlList &metadata)
+ {
+-	if (!stats.valid())
++	const bool valid = stats.valid();
++
++	LOG(Awb, Debug) << std::showpoint
++			<< "means: " << stats.rgbMeans()
++			<< " (" << (!valid ? "in" : "") << "valid)";
++
++	if (!valid)
+ 		return;
+ 
+ 	auto awbResult = impl_->calculateAwb(stats, lux, { currentMode_->ctLo,
+@@ -394,8 +400,8 @@ void AwbAlgorithmBase::process(awb::ActiveState &state,
+ 					      static_cast<float>(frameContext.gains.b()) });
+ 	metadata.set(controls::ColourTemperature, frameContext.colourTemperature);
+ 
+-	LOG(Awb, Debug) << std::showpoint << "Means " << stats.rgbMeans()
+-			<< ", gains " << state.automatic.gains
++	LOG(Awb, Debug) << std::showpoint
++			<< "gains " << state.automatic.gains
+ 			<< ", temp " << state.automatic.colourTemperature << "K";
+ }
+ 
+-- 
+2.43.0
+

@@ -1,0 +1,24 @@
+From: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+Subject: [PATCH] ipa: rppx1: lsc: Use IPACameraSensorInfo::activeArea
+
+The series was written before IPACameraSensorInfo::activeAreaSize was
+replaced by IPACameraSensorInfo::activeArea (commit 6ebe4fdbe). Use
+activeArea.size() so that the LSC algorithm builds on current master.
+
+Upstream-Status: Inappropriate [temporary workaround until the series is rebased]
+Signed-off-by: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+---
+ src/ipa/rppx1/algorithms/lsc.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/src/ipa/rppx1/algorithms/lsc.cpp
++++ b/src/ipa/rppx1/algorithms/lsc.cpp
+@@ -108,7 +108,7 @@
+ 				.keys = { "r", "gr", "gb", "b" },
+ 				.numHSamples = RPPX1_LSC_SAMPLES_MAX,
+ 				.numVSamples = RPPX1_LSC_SAMPLES_MAX,
+-				.sensorSize = context.sensorInfo.activeAreaSize
++				.sensorSize = context.sensorInfo.activeArea.size()
+ 			     });
+ }
+ 
