@@ -11,7 +11,7 @@ inherit deploy
 
 DEPENDS += " \
     u-boot-mkimage-native dtc-native \
-    virtual/kernel arm-trusted-firmware initramfs-image \
+    virtual/kernel arm-trusted-firmware \
 "
 
 SRC_URI = " \
@@ -47,5 +47,6 @@ python __anonymous () {
         d.setVarFlag("do_compile", "noexec", "1")
         d.setVarFlag("do_install", "noexec", "1")
     else:
+        d.appendVar("DEPENDS", " initramfs-image")
         d.appendVarFlag("do_compile", "depends", " initramfs-image:do_image_complete")
 }
