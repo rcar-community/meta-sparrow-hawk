@@ -11,6 +11,7 @@ PR = "r0"
 PACKAGES = " \
     packagegroup-renesas-bsp-tools \
     packagegroup-renesas-bsp-demo \
+    packagegroup-renesas-bsp-ai-tools \
 "
 
 RDEPENDS:packagegroup-renesas-bsp-tools = " \
@@ -43,4 +44,14 @@ RDEPENDS:packagegroup-renesas-bsp-demo = " \
     python3-numpy \
     python3-sqlite3 \
     opencv \
+"
+
+# Development tools and libraries for the AI runtime
+RDEPENDS:packagegroup-renesas-bsp-ai-tools = " \
+    git gcc g++ make curl cmake openssl libffi libnsl2 \
+    binutils patch zlib-dev libffi-dev openssl-dev bzip2 \
+    readline sqlite3 ncurses tar opencv \
+    libgomp \
+    udev-rules bsp-config \
+    packagegroup-opencv-sdk \
 "

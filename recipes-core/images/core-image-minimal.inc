@@ -13,13 +13,7 @@ IMAGE_INSTALL:append:sparrow-hawk = " \
     example-apps \
 "
 # For AI runtime
-IMAGE_INSTALL:append = "\
-    git gcc g++ make curl cmake openssl libffi libnsl2 \
-    binutils patch zlib-dev libffi-dev openssl-dev bzip2 \
-    readline sqlite3 ncurses tar patch opencv \
-    libgomp \
-    udev-rules bsp-config \
-"
+IMAGE_INSTALL:append = " packagegroup-renesas-bsp-ai-tools"
 IMAGE_FEATURES += "dev-pkgs tools-sdk"
 
 # Qos user packages only supports 64bit.
