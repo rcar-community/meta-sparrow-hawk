@@ -13,12 +13,14 @@ PACKAGES = " \
     packagegroup-graphics-renesas-gles \
     packagegroup-graphics-oss-wayland \
     packagegroup-graphics-oss-opencl \
+    packagegroup-graphics-oss-vulkan \
 "
 
 RDEPENDS:packagegroup-renesas-graphics = " \
     packagegroup-graphics-renesas-gles \
     packagegroup-graphics-oss-wayland \
     packagegroup-graphics-oss-opencl \
+    packagegroup-graphics-oss-vulkan \
 "
 
 # GFX package
@@ -38,4 +40,9 @@ RDEPENDS:packagegroup-graphics-oss-wayland = " \
 
 RDEPENDS:packagegroup-graphics-oss-opencl = " \
     clinfo \
+"
+
+RDEPENDS:packagegroup-graphics-oss-vulkan = " \
+    vulkan-loader \
+    vulkan-tools \
 "

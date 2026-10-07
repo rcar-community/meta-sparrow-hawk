@@ -1,0 +1,30 @@
+Subject: [PATCH] cube: Allow overriding wayland-scanner and wayland-protocols path
+
+When cross compiling, pkg-config returns the wayland-scanner of the target
+sysroot, which cannot be executed on the build host. Use the values given
+by -DWAYLAND_SCANNER_EXECUTABLE and -DWAYLAND_PROTOCOLS_PATH when they are
+set, and look them up with pkg-config only otherwise.
+
+Upstream-Status: Inappropriate [OE specific]
+---
+diff --git a/cube/CMakeLists.txt b/cube/CMakeLists.txt
+index 71267a4..f29ab02 100644
+--- a/cube/CMakeLists.txt
++++ b/cube/CMakeLists.txt
+@@ -81,10 +81,14 @@ if (CMAKE_SYSTEM_NAME MATCHES "Linux|BSD")
+     if(BUILD_WSI_WAYLAND_SUPPORT)
+         pkg_check_modules(WAYLAND_CLIENT REQUIRED IMPORTED_TARGET wayland-client)
+ 
+-        pkg_get_variable(WAYLAND_SCANNER_EXECUTABLE wayland-scanner wayland_scanner)
++        if(NOT WAYLAND_SCANNER_EXECUTABLE)
++            pkg_get_variable(WAYLAND_SCANNER_EXECUTABLE wayland-scanner wayland_scanner)
++        endif()
+         message(STATUS "WAYLAND_SCANNER_EXECUTABLE = ${WAYLAND_SCANNER_EXECUTABLE}")
+ 
+-        pkg_get_variable(WAYLAND_PROTOCOLS_PATH wayland-protocols pkgdatadir)
++        if(NOT WAYLAND_PROTOCOLS_PATH)
++            pkg_get_variable(WAYLAND_PROTOCOLS_PATH wayland-protocols pkgdatadir)
++        endif()
+         message(STATUS "WAYLAND_PROTOCOLS_PATH = ${WAYLAND_PROTOCOLS_PATH}")
+         set(XDG_SHELL_PROTOCOL ${WAYLAND_PROTOCOLS_PATH}/stable/xdg-shell/xdg-shell.xml)
+         add_custom_command(COMMENT "Generating xdg-shell protocol dispatch data"
