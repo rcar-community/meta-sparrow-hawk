@@ -1,0 +1,134 @@
+From: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+Subject: [PATCH] media: rcar-isp: Add NV12M capture format
+
+The ISP output DMA supports YUV420 by outputting the chrominance
+component only on odd lines (PIXEL_BPP.LINE_EN_COMPc = 2), see the
+Output DMA section of the R-Car V4H hardware manual. Add NV12M as a
+capture format, using the same configuration as NV16M except for the
+chrominance LINE_EN setting and the chrominance plane size.
+
+The chrominance lines are addressed using the frame line number, so
+only odd lines of a plane covering the whole frame height are written.
+Program half of the plane stride and move the chrominance base address
+back by the same amount to get a densely packed NV12 chrominance plane
+which fits in the buffer.
+
+Signed-off-by: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+---
+diff --git a/drivers/media/platform/renesas/rcar-isp/core-io.c b/drivers/media/platform/renesas/rcar-isp/core-io.c
+index 820af506f896..70fbab74f103 100644
+--- a/drivers/media/platform/renesas/rcar-isp/core-io.c
++++ b/drivers/media/platform/renesas/rcar-isp/core-io.c
+@@ -737,6 +737,18 @@ static void risp_io_capture_try_format(struct rcar_isp_core_io *io,
+ 		pix->plane_fmt[1].bytesperline = ALIGN(pix->width, 256);
+ 		pix->plane_fmt[1].sizeimage = pix->plane_fmt[1].bytesperline * pix->height;
+ 		break;
++	case V4L2_PIX_FMT_NV12M:
++		/*
++		 * The chrominance stride programmed in the hardware is half of
++		 * bytesperline and must be a multiple of 256.
++		 */
++		pix->quantization = V4L2_QUANTIZATION_LIM_RANGE;
++		pix->num_planes = 2;
++		pix->plane_fmt[0].bytesperline = ALIGN(pix->width, 512);
++		pix->plane_fmt[0].sizeimage = pix->plane_fmt[0].bytesperline * pix->height;
++		pix->plane_fmt[1].bytesperline = ALIGN(pix->width, 512);
++		pix->plane_fmt[1].sizeimage = pix->plane_fmt[1].bytesperline * pix->height / 2;
++		break;
+ 	default:
+ 		pix->pixelformat = V4L2_PIX_FMT_XBGR32;
+ 		pix->quantization = V4L2_QUANTIZATION_FULL_RANGE;
+@@ -760,6 +772,9 @@ static int risp_io_capture_enum_fmt(struct file *file, void *priv,
+ 	case 1:
+ 		f->pixelformat = V4L2_PIX_FMT_XBGR32;
+ 		break;
++	case 2:
++		f->pixelformat = V4L2_PIX_FMT_NV12M;
++		break;
+ 	default:
+ 		return -EINVAL;
+ 	}
+@@ -816,6 +831,7 @@ static int risp_io_capture_enum_framesizes(struct file *file, void *fh,
+ 
+ 	switch (fsize->pixel_format) {
+ 	case V4L2_PIX_FMT_NV16M:
++	case V4L2_PIX_FMT_NV12M:
+ 	case V4L2_PIX_FMT_XBGR32:
+ 		break;
+ 	default:
+diff --git a/drivers/media/platform/renesas/rcar-isp/core.c b/drivers/media/platform/renesas/rcar-isp/core.c
+index f3dc52c13612..17a4f7d4fc33 100644
+--- a/drivers/media/platform/renesas/rcar-isp/core.c
++++ b/drivers/media/platform/renesas/rcar-isp/core.c
+@@ -126,12 +126,24 @@ static void risp_core_job_run_output(struct rcar_isp_core *core,
+ 		mem = vb2_dma_contig_plane_dma_addr(&buf->vb.vb2_buf, 0);
+ 		risp_core_write(core, reg, mem);
+ 
+-		/* Only NV16 uses 2 planes. */
+-		if (fmt->fmt.pix_mp.pixelformat != V4L2_PIX_FMT_NV16M)
++		/* Only NV16 and NV12 use 2 planes. */
++		if (fmt->fmt.pix_mp.pixelformat != V4L2_PIX_FMT_NV16M &&
++		    fmt->fmt.pix_mp.pixelformat != V4L2_PIX_FMT_NV12M)
+ 			continue;
+ 
+ 		reg = ISPCORE_DMA_IMAGE_FRAME_BASE_ADDRESS_COMP1(0, frame);
+ 		mem = vb2_dma_contig_plane_dma_addr(&buf->vb.vb2_buf, 1);
++
++		/*
++		 * The ISP addresses the chrominance lines using the frame line
++		 * number, and only odd lines are written for NV12. With a
++		 * stride of half the plane stride, odd line 2n + 1 lands at
++		 * n * stride + stride / 2, so move the base back by stride / 2
++		 * to get a densely packed chrominance plane.
++		 */
++		if (fmt->fmt.pix_mp.pixelformat == V4L2_PIX_FMT_NV12M)
++			mem -= fmt->fmt.pix_mp.plane_fmt[1].bytesperline / 2;
++
+ 		risp_core_write(core, reg, mem);
+ 	}
+ }
+@@ -343,6 +355,15 @@ static int risp_core_config_output(struct rcar_isp_core *core,
+ 	for (unsigned int frame = 0; frame < 4; frame++) {
+ 		switch (pix->pixelformat) {
+ 		case V4L2_PIX_FMT_NV16M:
++		case V4L2_PIX_FMT_NV12M: {
++			/*
++			 * NV12 is NV16 with the chrominance output only on odd
++			 * lines (LINE_EN = 2, see the YUV420 settings of the
++			 * Output DMA description in the hardware manual).
++			 */
++			unsigned int chroma_line_en =
++				pix->pixelformat == V4L2_PIX_FMT_NV12M ? 2 : 3;
++
+ 			risp_core_write(core,
+ 					ISPCORE_DMA_IMAGE_FRAME_MODE(index, frame),
+ 					1);
+@@ -356,7 +377,7 @@ static int risp_core_config_output(struct rcar_isp_core *core,
+ 					ISPCORE_DMA_IMAGE_FRAME_PIXEL_BPP(index, frame),
+ 					0 << 28 | 0 << 24 |
+ 					0 << 20 | 0 << 16 |
+-					3 << 12 | 0 << 8 |
++					chroma_line_en << 12 | 0 << 8 |
+ 					3 << 4  | 0 << 0);
+ 
+ 			risp_core_write(core,
+@@ -364,8 +385,11 @@ static int risp_core_config_output(struct rcar_isp_core *core,
+ 					pix->plane_fmt[0].bytesperline);
+ 			risp_core_write(core,
+ 					ISPCORE_DMA_IMAGE_FRAME_STRIDE_COMP1(index, frame),
++					pix->pixelformat == V4L2_PIX_FMT_NV12M ?
++					pix->plane_fmt[1].bytesperline / 2 :
+ 					pix->plane_fmt[1].bytesperline);
+ 			break;
++		}
+ 		case V4L2_PIX_FMT_XBGR32:
+ 			risp_core_write(core,
+ 					ISPCORE_DMA_IMAGE_FRAME_MODE(index, frame),
+@@ -438,6 +462,7 @@ static u32 risp_core_pix2bus(const struct rcar_isp_core_io *io)
+ 	case V4L2_PIX_FMT_XBGR32:
+ 		return MEDIA_BUS_FMT_RGB888_1X24;
+ 	case V4L2_PIX_FMT_NV16M:
++	case V4L2_PIX_FMT_NV12M:
+ 		return MEDIA_BUS_FMT_YUYV12_1X24;
+ 	default:
+ 		return 0;
