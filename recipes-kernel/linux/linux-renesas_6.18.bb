@@ -27,6 +27,8 @@ SRC_URI:append:sparrow-hawk = " \
     file://0003-arm64-dts-renesas-r8a779g0-Add-qos-node.patch \
     file://0004-arm64-dts-renesas-sparrow-hawk-Add-pcie-ep-dtbo.patch \
     file://0005-media-renesas-vin-Add-VIDIOC_ENUM_FRAMESIZES-for-med.patch \
+    file://0006-media-rcar-isp-Add-NV12M-capture-format.patch \
+    file://0007-media-rcar-isp-Honour-requested-bytesperline-on-RAW-.patch \
 "
 # Patchset for power management
 SRC_URI:append:sparrow-hawk = " \
