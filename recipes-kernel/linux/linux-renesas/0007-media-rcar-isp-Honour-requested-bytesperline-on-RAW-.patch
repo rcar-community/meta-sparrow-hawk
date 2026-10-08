@@ -1,0 +1,58 @@
+From: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+Subject: [PATCH] media: rcar-isp: Honour requested bytesperline on RAW input
+
+The RAW input video device always overwrote the bytesperline requested
+by userspace with width * bpp. The input buffers are however shared with
+the VIN, which may use a larger line stride (for example 3296 instead of
+3280 bytes for a 1640 pixel wide 10 bit image). The dmabuf exported by
+the ISP was then smaller than the VIN buffer size, and queueing it to
+the VIN failed with -EINVAL:
+
+  __prepare_dmabuf: invalid dmabuf length 4042752 for plane 0,
+  minimum length 4060672
+
+Use the requested bytesperline if it is larger than the minimum.
+
+Signed-off-by: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+---
+diff --git a/drivers/media/platform/renesas/rcar-isp/core-io.c b/drivers/media/platform/renesas/rcar-isp/core-io.c
+index acf5acf5ce26..dab0833f7faf 100644
+--- a/drivers/media/platform/renesas/rcar-isp/core-io.c
++++ b/drivers/media/platform/renesas/rcar-isp/core-io.c
+@@ -5,6 +5,8 @@
+  * Copyright (C) 2026 Ragnatech AB
+  */
+ 
++#include <linux/sizes.h>
++
+ #include <media/v4l2-ctrls.h>
+ #include <media/v4l2-event.h>
+ #include <media/v4l2-ioctl.h>
+@@ -328,6 +330,7 @@ static const struct risp_io_input_format {
+ static void risp_io_input_try_format(struct rcar_isp_core_io *io,
+ 				     struct v4l2_pix_format_mplane *pix)
+ {
++	unsigned int bytesperline;
+ 	unsigned int bpp = 0;
+ 
+ 	v4l_bound_align_image(&pix->width, 128, 5120, 2,
+@@ -348,9 +351,17 @@ static void risp_io_input_try_format(struct rcar_isp_core_io *io,
+ 	pix->field = V4L2_FIELD_NONE;
+ 	pix->colorspace = V4L2_COLORSPACE_RAW;
+ 
++	/*
++	 * Honour the line stride requested by userspace, the buffers are
++	 * shared with the VIN which may use a larger stride than the minimum.
++	 */
++	bytesperline = pix->width * bpp;
++	if (pix->plane_fmt[0].bytesperline > bytesperline)
++		bytesperline = min(pix->plane_fmt[0].bytesperline, SZ_64K);
++
+ 	pix->num_planes = 1;
+-	pix->plane_fmt[0].bytesperline = pix->width * bpp;
+-	pix->plane_fmt[0].sizeimage = pix->plane_fmt[0].bytesperline * pix->height;
++	pix->plane_fmt[0].bytesperline = bytesperline;
++	pix->plane_fmt[0].sizeimage = bytesperline * pix->height;
+ }
+ 
+ static int risp_io_input_enum_fmt(struct file *file, void *priv,
