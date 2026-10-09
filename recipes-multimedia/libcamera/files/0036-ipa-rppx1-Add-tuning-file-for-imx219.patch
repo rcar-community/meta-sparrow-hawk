@@ -1,0 +1,51 @@
+From c6d17b5e4efa9b541faac494d847194399a923bd Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Niklas=20S=C3=B6derlund?=
+ <niklas.soderlund+renesas@ragnatech.se>
+Date: Tue, 29 Sep 2026 15:53:38 +0200
+Subject: [PATCH 36/38] ipa: rppx1: Add tuning file for imx219
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Add a tuning file for the RaspberryPi camera module v2.
+For now, it is a copy of `uncalibrated.yaml`.
+
+Signed-off-by: Niklas Söderlund <niklas.soderlund+renesas@ragnatech.se>
+
+Upstream-Status: Pending
+
+---
+ src/ipa/rppx1/data/imx219.yaml | 11 +++++++++++
+ src/ipa/rppx1/data/meson.build |  1 +
+ 2 files changed, 12 insertions(+)
+ create mode 100644 src/ipa/rppx1/data/imx219.yaml
+
+diff --git a/src/ipa/rppx1/data/imx219.yaml b/src/ipa/rppx1/data/imx219.yaml
+new file mode 100644
+index 00000000..3057df83
+--- /dev/null
++++ b/src/ipa/rppx1/data/imx219.yaml
+@@ -0,0 +1,11 @@
++# SPDX-License-Identifier: CC0-1.0
++%YAML 1.1
++---
++version: 1
++algorithms:
++  - Agc:
++  - Awb:
++  - BlackLevelCorrection:
++  - Ccm:
++  - GammaOutCorrection:
++...
+diff --git a/src/ipa/rppx1/data/meson.build b/src/ipa/rppx1/data/meson.build
+index 31ade985..5aad3268 100644
+--- a/src/ipa/rppx1/data/meson.build
++++ b/src/ipa/rppx1/data/meson.build
+@@ -1,6 +1,7 @@
+ # SPDX-License-Identifier: CC0-1.0
+ 
+ conf_files = files([
++    'imx219.yaml',
+     'imx708.yaml',
+     'uncalibrated.yaml',
+ ])

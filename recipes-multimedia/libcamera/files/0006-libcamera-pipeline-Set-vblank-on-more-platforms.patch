@@ -1,0 +1,163 @@
+From 4da57fc7e30efe9d8d16bbdd2ae6c84293ae9b0b Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Barnab=C3=A1s=20P=C5=91cze?=
+ <barnabas.pocze@ideasonboard.com>
+Date: Wed, 29 Jul 2026 14:47:35 +0200
+Subject: [PATCH 06/38] libcamera: pipeline: Set vblank on more platforms
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The common `AgcAlgorithm` provides the desired vblank value the given
+frame, so adjust `agc::prepareControls()` accordingly, and propagate
+the vblank value to the sensors in the pipeline handlers.
+
+Signed-off-by: Barnabás Pőcze <barnabas.pocze@ideasonboard.com>
+
+Upstream-Status: Pending
+
+---
+ src/ipa/ipu3/ipu3.cpp                        | 3 +--
+ src/ipa/libipa/agc.cpp                       | 5 ++---
+ src/ipa/libipa/agc.h                         | 9 +++++----
+ src/ipa/mali-c55/mali-c55.cpp                | 3 +--
+ src/ipa/rkisp1/rkisp1.cpp                    | 4 +---
+ src/ipa/softisp/softisp.cpp                  | 3 +--
+ src/libcamera/pipeline/ipu3/ipu3.cpp         | 1 +
+ src/libcamera/pipeline/mali-c55/mali-c55.cpp | 1 +
+ src/libcamera/pipeline/simple/simple.cpp     | 1 +
+ 9 files changed, 14 insertions(+), 16 deletions(-)
+
+diff --git a/src/ipa/ipu3/ipu3.cpp b/src/ipa/ipu3/ipu3.cpp
+index 30d52cfc..e4333539 100644
+--- a/src/ipa/ipu3/ipu3.cpp
++++ b/src/ipa/ipu3/ipu3.cpp
+@@ -551,8 +551,7 @@ void IPAIPU3::setControls(unsigned int frame)
+ 	IPAFrameContext &frameContext = context_.frameContexts.get(frame);
+ 
+ 	ControlList ctrls(context_.sensorControls);
+-	agc::prepareControls(ctrls, context_.camHelper.get(),
+-			     frameContext.agc.exposure, frameContext.agc.gain);
++	agc::prepareControls(ctrls, context_.camHelper.get(), frameContext.agc);
+ 
+ 	ControlList lensCtrls(lensCtrls_);
+ 	lensCtrls.set(V4L2_CID_FOCUS_ABSOLUTE,
+diff --git a/src/ipa/libipa/agc.cpp b/src/ipa/libipa/agc.cpp
+index 646ece21..5e9eb9e6 100644
+--- a/src/ipa/libipa/agc.cpp
++++ b/src/ipa/libipa/agc.cpp
+@@ -56,11 +56,10 @@ namespace agc {
+ 
+ /**
+  * \fn prepareControls(ControlList &controls, const CameraSensorHelper *sensor,
+- *                     uint32_t exposure, double gain)
++ *                     const FrameContext &frameContext)
+  * \param[out] controls The controls list to populate
+  * \param[in] sensor The CameraSensorHelper
+- * \param[in] exposure The exposure (in lines)
+- * \param[in] gain The analogue gain
++ * \param[in] frameContext The agc frame context
+  *
+  * This function sets \a V4L2_CID_EXPOSURE and \a V4L2_CID_ANALOGUE_GAIN
+  * in \a controls. The gain is mapped to the gain code if \a sensor is provided,
+diff --git a/src/ipa/libipa/agc.h b/src/ipa/libipa/agc.h
+index 4914c9ce..3ca36aea 100644
+--- a/src/ipa/libipa/agc.h
++++ b/src/ipa/libipa/agc.h
+@@ -107,13 +107,14 @@ extractControls(const ControlList &controls, const CameraSensorHelper *sensor)
+ 
+ inline void
+ prepareControls(ControlList &controls, const CameraSensorHelper *sensor,
+-		uint32_t exposure, double gain)
++		const FrameContext &frameContext)
+ {
+-	controls.set(V4L2_CID_EXPOSURE, static_cast<int32_t>(exposure));
++	controls.set(V4L2_CID_EXPOSURE, static_cast<int32_t>(frameContext.exposure));
+ 	controls.set(V4L2_CID_ANALOGUE_GAIN,
+ 		     static_cast<int32_t>(sensor
+-					  ? sensor->gainCode(gain)
+-					  : static_cast<uint32_t>(gain)));
++					  ? sensor->gainCode(frameContext.gain)
++					  : static_cast<uint32_t>(frameContext.gain)));
++	controls.set(V4L2_CID_VBLANK, static_cast<int32_t>(frameContext.vblank));
+ }
+ 
+ } /* namespace agc */
+diff --git a/src/ipa/mali-c55/mali-c55.cpp b/src/ipa/mali-c55/mali-c55.cpp
+index 9a2918cf..9541417c 100644
+--- a/src/ipa/mali-c55/mali-c55.cpp
++++ b/src/ipa/mali-c55/mali-c55.cpp
+@@ -134,8 +134,7 @@ int IPAMaliC55::init(const IPASettings &settings, const IPAConfigInfo &ipaConfig
+ void IPAMaliC55::setControls(const IPAFrameContext &frameContext)
+ {
+ 	ControlList ctrls(context_.sensorControls);
+-	agc::prepareControls(ctrls, context_.camHelper.get(),
+-			     frameContext.agc.exposure, frameContext.agc.gain);
++	agc::prepareControls(ctrls, context_.camHelper.get(), frameContext.agc);
+ 
+ 	setSensorControls.emit(ctrls);
+ }
+diff --git a/src/ipa/rkisp1/rkisp1.cpp b/src/ipa/rkisp1/rkisp1.cpp
+index 79ab7338..cefaf40a 100644
+--- a/src/ipa/rkisp1/rkisp1.cpp
++++ b/src/ipa/rkisp1/rkisp1.cpp
+@@ -367,9 +367,7 @@ void IPARkISP1::setControls(unsigned int frame)
+ 		<< ", gain " << frameContext.agc.gain << ", vblank " << vblank;
+ 
+ 	ControlList ctrls(context_.sensorControls);
+-	agc::prepareControls(ctrls, context_.camHelper.get(),
+-			     exposure, frameContext.agc.gain);
+-	ctrls.set(V4L2_CID_VBLANK, static_cast<int32_t>(vblank));
++	agc::prepareControls(ctrls, context_.camHelper.get(), frameContext.agc);
+ 
+ 	setSensorControls.emit(frame, ctrls);
+ }
+diff --git a/src/ipa/softisp/softisp.cpp b/src/ipa/softisp/softisp.cpp
+index 8acfcd1a..fbb3f330 100644
+--- a/src/ipa/softisp/softisp.cpp
++++ b/src/ipa/softisp/softisp.cpp
+@@ -249,8 +249,7 @@ void IPASoftIsp::processStats(const uint32_t frame,
+ 	metadataReady.emit(frame, metadata);
+ 
+ 	ControlList ctrls(context_.sensorControls);
+-	agc::prepareControls(ctrls, context_.camHelper.get(),
+-			     frameContext.agc.exposure, frameContext.agc.gain);
++	agc::prepareControls(ctrls, context_.camHelper.get(), frameContext.agc);
+ 	setSensorControls.emit(ctrls);
+ }
+ 
+diff --git a/src/libcamera/pipeline/ipu3/ipu3.cpp b/src/libcamera/pipeline/ipu3/ipu3.cpp
+index 14cab9e5..46af776e 100644
+--- a/src/libcamera/pipeline/ipu3/ipu3.cpp
++++ b/src/libcamera/pipeline/ipu3/ipu3.cpp
+@@ -1084,6 +1084,7 @@ int PipelineHandlerIPU3::registerCameras()
+ 		std::unordered_map<uint32_t, DelayedControls::ControlParams> params = {
+ 			{ V4L2_CID_ANALOGUE_GAIN, { delays.gainDelay, false } },
+ 			{ V4L2_CID_EXPOSURE, { delays.exposureDelay, false } },
++			{ V4L2_CID_VBLANK, { delays.vblankDelay, true } },
+ 		};
+ 
+ 		data->delayedCtrls_ =
+diff --git a/src/libcamera/pipeline/mali-c55/mali-c55.cpp b/src/libcamera/pipeline/mali-c55/mali-c55.cpp
+index 73a03373..8225472c 100644
+--- a/src/libcamera/pipeline/mali-c55/mali-c55.cpp
++++ b/src/libcamera/pipeline/mali-c55/mali-c55.cpp
+@@ -1909,6 +1909,7 @@ bool PipelineHandlerMaliC55::registerMemoryInputCamera(MediaLink *link)
+ 	std::unordered_map<uint32_t, DelayedControls::ControlParams> params = {
+ 		{ V4L2_CID_ANALOGUE_GAIN, { delays.gainDelay, false } },
+ 		{ V4L2_CID_EXPOSURE, { delays.exposureDelay, false } },
++		{ V4L2_CID_VBLANK, { delays.vblankDelay, true } },
+ 	};
+ 
+ 	data->delayedCtrls_ =
+diff --git a/src/libcamera/pipeline/simple/simple.cpp b/src/libcamera/pipeline/simple/simple.cpp
+index 35c29cec..6444df72 100644
+--- a/src/libcamera/pipeline/simple/simple.cpp
++++ b/src/libcamera/pipeline/simple/simple.cpp
+@@ -569,6 +569,7 @@ SimpleCameraData::SimpleCameraData(SimplePipelineHandler *pipe,
+ 	std::unordered_map<uint32_t, DelayedControls::ControlParams> params = {
+ 		{ V4L2_CID_ANALOGUE_GAIN, { delays.gainDelay, false } },
+ 		{ V4L2_CID_EXPOSURE, { delays.exposureDelay, false } },
++		{ V4L2_CID_VBLANK, { delays.vblankDelay, true } },
+ 	};
+ 	delayedCtrls_ = std::make_unique<DelayedControls>(sensor_->device(), params);
+ 

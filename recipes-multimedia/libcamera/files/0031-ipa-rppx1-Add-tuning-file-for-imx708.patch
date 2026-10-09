@@ -1,0 +1,47 @@
+From 7ff416dfc926f260655f618f9969f04b0099c8f2 Mon Sep 17 00:00:00 2001
+From: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+Date: Tue, 1 Sep 2026 15:28:11 +0200
+Subject: [PATCH 31/38] ipa: rppx1: Add tuning file for imx708
+
+Add a tuning file for the RaspberryPi camera module v3.
+For now, it is a copy of `uncalibrated.yaml`.
+
+Signed-off-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+
+Upstream-Status: Pending
+
+---
+ src/ipa/rppx1/data/imx708.yaml | 11 +++++++++++
+ src/ipa/rppx1/data/meson.build |  1 +
+ 2 files changed, 12 insertions(+)
+ create mode 100644 src/ipa/rppx1/data/imx708.yaml
+
+diff --git a/src/ipa/rppx1/data/imx708.yaml b/src/ipa/rppx1/data/imx708.yaml
+new file mode 100644
+index 00000000..3057df83
+--- /dev/null
++++ b/src/ipa/rppx1/data/imx708.yaml
+@@ -0,0 +1,11 @@
++# SPDX-License-Identifier: CC0-1.0
++%YAML 1.1
++---
++version: 1
++algorithms:
++  - Agc:
++  - Awb:
++  - BlackLevelCorrection:
++  - Ccm:
++  - GammaOutCorrection:
++...
+diff --git a/src/ipa/rppx1/data/meson.build b/src/ipa/rppx1/data/meson.build
+index b1851144..31ade985 100644
+--- a/src/ipa/rppx1/data/meson.build
++++ b/src/ipa/rppx1/data/meson.build
+@@ -1,6 +1,7 @@
+ # SPDX-License-Identifier: CC0-1.0
+ 
+ conf_files = files([
++    'imx708.yaml',
+     'uncalibrated.yaml',
+ ])
+ 

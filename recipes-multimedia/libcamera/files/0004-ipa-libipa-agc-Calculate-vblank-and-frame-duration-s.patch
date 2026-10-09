@@ -1,0 +1,198 @@
+From 02bc6c9214ec258d3dad77f62011d861eea47511 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Barnab=C3=A1s=20P=C5=91cze?=
+ <barnabas.pocze@ideasonboard.com>
+Date: Tue, 25 Aug 2026 16:35:03 +0200
+Subject: [PATCH 04/38] ipa: libipa: agc: Calculate vblank and frame duration
+ sooner
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Calculating the vblank and frame duration is problematic in `process()`
+because at the moment it is calculated for an already finished frame
+based on the new suggested exposure time.
+
+Instead, move the calculation to `prepare()` where the frame's
+exposure and gain are finalized.
+
+Signed-off-by: Barnabás Pőcze <barnabas.pocze@ideasonboard.com>
+
+Upstream-Status: Pending
+
+---
+ src/ipa/ipu3/algorithms/agc.cpp     |  2 +-
+ src/ipa/libipa/agc.cpp              | 36 ++++++++++++++---------------
+ src/ipa/libipa/agc.h                |  6 ++---
+ src/ipa/mali-c55/algorithms/agc.cpp |  2 +-
+ src/ipa/rkisp1/algorithms/agc.cpp   |  2 +-
+ src/ipa/softisp/algorithms/agc.cpp  |  2 +-
+ 6 files changed, 24 insertions(+), 26 deletions(-)
+
+diff --git a/src/ipa/ipu3/algorithms/agc.cpp b/src/ipa/ipu3/algorithms/agc.cpp
+index ccf65da3..afe80dc0 100644
+--- a/src/ipa/ipu3/algorithms/agc.cpp
++++ b/src/ipa/ipu3/algorithms/agc.cpp
+@@ -111,7 +111,7 @@ void Agc::prepare(IPAContext &context, [[maybe_unused]] const uint32_t frame,
+ 		  IPAFrameContext &frameContext,
+ 		  [[maybe_unused]] ipu3_uapi_params *params)
+ {
+-	agc_.prepare(context.activeState.agc, frameContext.agc);
++	agc_.prepare(context.configuration.agc, context.activeState.agc, frameContext.agc);
+ }
+ 
+ Histogram Agc::parseStatistics(const ipu3_uapi_stats_3a *stats,
+diff --git a/src/ipa/libipa/agc.cpp b/src/ipa/libipa/agc.cpp
+index e38e04bb..1e5b96a9 100644
+--- a/src/ipa/libipa/agc.cpp
++++ b/src/ipa/libipa/agc.cpp
+@@ -650,6 +650,7 @@ void AgcAlgorithm::queueRequest(const agc::Session &session, agc::ActiveState &s
+ 
+ /**
+  * \brief Prepare a frame
++ * \param[in] session The agc session configuration
+  * \param[in] state The agc active state
+  * \param[in] frameContext The agc frame context
+  *
+@@ -659,11 +660,10 @@ void AgcAlgorithm::queueRequest(const agc::Session &session, agc::ActiveState &s
+  * \ref agc::FrameContext::gain "frameContext.gain" will be finalized
+  * and may be used by the caller (see agc::prepareControls()).
+  *
+- * \todo Finalize \ref agc::FrameContext::vblank "frameContext.vblank" as well
+- *
+  * \sa Algorithm::prepare()
+  */
+-void AgcAlgorithm::prepare(agc::ActiveState &state, agc::FrameContext &frameContext)
++void AgcAlgorithm::prepare(const agc::Session &session, agc::ActiveState &state,
++			   agc::FrameContext &frameContext)
+ {
+ 	uint32_t activeAutoExposure = state.automatic.exposure;
+ 	double activeAutoGain = state.automatic.gain;
+@@ -694,6 +694,8 @@ void AgcAlgorithm::prepare(agc::ActiveState &state, agc::FrameContext &frameCont
+ 	}
+ 
+ 	frameContext.yTarget = state.automatic.yTarget;
++
++	processFrameDuration(session, frameContext);
+ }
+ 
+ /**
+@@ -724,7 +726,6 @@ void AgcAlgorithm::process(const agc::Session &session, agc::ActiveState &state,
+ 			   ControlList &metadata)
+ {
+ 	if (!params) {
+-		processFrameDuration(session, frameContext, frameContext.minFrameDuration);
+ 		fillMetadata(session, frameContext, metadata);
+ 		return;
+ 	}
+@@ -828,13 +829,6 @@ void AgcAlgorithm::process(const agc::Session &session, agc::ActiveState &state,
+ 		<< "quantization-gain: " << state.automatic.quantizationGain << ", "
+ 		<< "digital-gain: " << state.automatic.digitalGain;
+ 
+-	/*
+-	 * Expand the target frame duration so that we do not run faster than
+-	 * the minimum frame duration when we have short exposures.
+-	 */
+-	processFrameDuration(session, frameContext,
+-			     std::max(frameContext.minFrameDuration, newExposureTime));
+-
+ 	fillMetadata(session, frameContext, metadata);
+ }
+ 
+@@ -842,22 +836,26 @@ void AgcAlgorithm::process(const agc::Session &session, agc::ActiveState &state,
+  * \brief Process frame duration and compute vblank
+  * \param[in] session The session parameters
+  * \param[in] frameContext The current frame context
+- * \param[in] frameDuration The target frame duration
+  *
+- * Compute and populate vblank from the target frame duration.
++ * Compute and populate vblank for \a frameContext.
+  */
+ void AgcAlgorithm::processFrameDuration(const agc::Session &session,
+-					agc::FrameContext &frameContext,
+-					utils::Duration frameDuration)
++					agc::FrameContext &frameContext)
+ {
+ 	const utils::Duration &lineDuration = session.lineDuration;
+ 
+-	frameContext.vblank =
+-		(frameDuration / lineDuration) - session.sensor.outputSize.height;
++	/*
++	 * Expand the target frame duration so that we do not run faster than
++	 * the minimum frame duration when we have short exposures.
++	 */
++	const auto frameLength = std::max<uint32_t>(
++		frameContext.minFrameDuration / lineDuration,
++		frameContext.exposure);
++
++	frameContext.vblank = frameLength - session.sensor.outputSize.height;
+ 
+ 	/* Update frame duration accounting for line length quantization. */
+-	frameContext.frameDuration =
+-		(session.sensor.outputSize.height + frameContext.vblank) * lineDuration;
++	frameContext.frameDuration = frameLength * lineDuration;
+ }
+ 
+ void AgcAlgorithm::fillMetadata(const agc::Session &session,
+diff --git a/src/ipa/libipa/agc.h b/src/ipa/libipa/agc.h
+index a5700d26..4914c9ce 100644
+--- a/src/ipa/libipa/agc.h
++++ b/src/ipa/libipa/agc.h
+@@ -146,7 +146,8 @@ public:
+ 	void queueRequest(const agc::Session &session, agc::ActiveState &state,
+ 			  agc::FrameContext &frameContext, const ControlList &controls);
+ 
+-	void prepare(agc::ActiveState &state, agc::FrameContext &frameContext);
++	void prepare(const agc::Session &session, agc::ActiveState &state,
++		     agc::FrameContext &frameContext);
+ 
+ 	void process(const agc::Session &session, agc::ActiveState &state,
+ 		     agc::FrameContext &frameContext, std::optional<ProcessParams> &&params,
+@@ -154,8 +155,7 @@ public:
+ 
+ private:
+ 	void processFrameDuration(const agc::Session &session,
+-				  agc::FrameContext &frameContext,
+-				  utils::Duration frameDuration);
++				  agc::FrameContext &frameContext);
+ 	void fillMetadata(const agc::Session &session,
+ 			  const agc::FrameContext &frameContext,
+ 			  ControlList &metadata);
+diff --git a/src/ipa/mali-c55/algorithms/agc.cpp b/src/ipa/mali-c55/algorithms/agc.cpp
+index 2c747da8..5684b4df 100644
+--- a/src/ipa/mali-c55/algorithms/agc.cpp
++++ b/src/ipa/mali-c55/algorithms/agc.cpp
+@@ -207,7 +207,7 @@ void Agc::fillWeightsArrayBuffer(MaliC55Params *params, const enum MaliC55Blocks
+ void Agc::prepare(IPAContext &context, const uint32_t frame,
+ 		  IPAFrameContext &frameContext, MaliC55Params *params)
+ {
+-	agc_.prepare(context.activeState.agc, frameContext.agc);
++	agc_.prepare(context.configuration.agc, context.activeState.agc, frameContext.agc);
+ 
+ 	if (frame > 0)
+ 		return;
+diff --git a/src/ipa/rkisp1/algorithms/agc.cpp b/src/ipa/rkisp1/algorithms/agc.cpp
+index 1f1d6c96..34e186d8 100644
+--- a/src/ipa/rkisp1/algorithms/agc.cpp
++++ b/src/ipa/rkisp1/algorithms/agc.cpp
+@@ -209,7 +209,7 @@ void Agc::queueRequest(IPAContext &context,
+ void Agc::prepare(IPAContext &context, const uint32_t frame,
+ 		  IPAFrameContext &frameContext, RkISP1Params *params)
+ {
+-	agc_.prepare(context.activeState.agc, frameContext.agc);
++	agc_.prepare(context.configuration.agc, context.activeState.agc, frameContext.agc);
+ 
+ 	if (context.configuration.compress.supported) {
+ 		frameContext.compress.enable = true;
+diff --git a/src/ipa/softisp/algorithms/agc.cpp b/src/ipa/softisp/algorithms/agc.cpp
+index ea234bc2..7d2a53b3 100644
+--- a/src/ipa/softisp/algorithms/agc.cpp
++++ b/src/ipa/softisp/algorithms/agc.cpp
+@@ -74,7 +74,7 @@ void Agc::queueRequest(IPAContext &context, [[maybe_unused]] const uint32_t fram
+ void Agc::prepare(IPAContext &context, [[maybe_unused]] const uint32_t frame,
+ 		  IPAFrameContext &frameContext, [[maybe_unused]] DebayerParams *params)
+ {
+-	agc_.prepare(context.activeState.agc, frameContext.agc);
++	agc_.prepare(context.configuration.agc, context.activeState.agc, frameContext.agc);
+ }
+ 
+ void Agc::process(IPAContext &context,

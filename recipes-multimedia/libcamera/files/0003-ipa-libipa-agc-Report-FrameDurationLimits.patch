@@ -1,0 +1,35 @@
+From 817b64d38f05b8407f35c414b8aaad351067e848 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Barnab=C3=A1s=20P=C5=91cze?=
+ <barnabas.pocze@ideasonboard.com>
+Date: Thu, 24 Sep 2026 17:48:48 +0200
+Subject: [PATCH 03/38] ipa: libipa: agc: Report `FrameDurationLimits`
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+`FrameDurationLimits` can be reported in metadata, to signal the exact
+limits that were used when processing the frame. This was missing from
+the agc algorithm, so add it.
+
+Signed-off-by: Barnabás Pőcze <barnabas.pocze@ideasonboard.com>
+
+Upstream-Status: Pending
+
+---
+ src/ipa/libipa/agc.cpp | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/ipa/libipa/agc.cpp b/src/ipa/libipa/agc.cpp
+index a177dba9..e38e04bb 100644
+--- a/src/ipa/libipa/agc.cpp
++++ b/src/ipa/libipa/agc.cpp
+@@ -869,6 +869,9 @@ void AgcAlgorithm::fillMetadata(const agc::Session &session,
+ 	metadata.set(controls::ExposureTime,
+ 		     utils::Duration(session.lineDuration * frameContext.exposure).get<std::micro>());
+ 	metadata.set(controls::FrameDuration, frameContext.frameDuration.get<std::micro>());
++	metadata.set(controls::FrameDurationLimits,
++		     { static_cast<int64_t>(frameContext.minFrameDuration.get<std::micro>()),
++		       static_cast<int64_t>(frameContext.maxFrameDuration.get<std::micro>()) });
+ 	metadata.set(controls::ExposureTimeMode, frameContext.autoExposureEnabled
+ 						 ? controls::ExposureTimeModeAuto
+ 						 : controls::ExposureTimeModeManual);

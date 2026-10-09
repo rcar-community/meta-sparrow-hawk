@@ -12,27 +12,50 @@ CVE_PRODUCT = ""
 
 DEPENDS = "chrpath-native gnutls libevent libyaml python3-jinja2-native python3-ply-native python3-pyyaml-native"
 DEPENDS:append = " libdrm libpisp libsdl2 python3-pybind11 udev tiff"
-PV = "v0.6.0+upstream+git${SRCPV}"
+PV = "v0.7.2+upstream+git${SRCPV}"
 SRC_URI = "git://gitlab.freedesktop.org/camera/libcamera.git;protocol=https;branch=master"
 # nooelint: oelint.file.upstreamstatus oelint.file.patchsignedoff
 SRC_URI:append = " \
-    file://0001-libcamera-ipa_manager-Create-IPA-by-name.patch \
-    file://0002-ipa-ipa_module-Remove-pipelineName.patch \
-    file://0003-ipa-Allow-pipelines-to-have-differently-named-IPA.patch \
-    file://0004-ipa-rkisp1-Add-settings-for-DreamChip-RPPX1-ISP.patch \
-    file://0005-libcamera-pipeline-Add-R-Car-Gen4-ISP-pipeline.patch \
-    file://0006-fixup-libcamera-pipeline-Add-R-Car-Gen4-ISP-pipeline.patch \
-    file://0007-ipa-rkisp1-Add-basic-CCM-calibration-for-imx219.patch \
-    file://0008-ipa-rkisp1-Add-tuning-file-for-imx708.patch \
-    file://0009-ipa-rkisp1-imx708-Add-gamma-correction.patch \
-    file://0010-ipa-rkisp1-imx708-Add-CCM-tuning.patch \
-    file://0011-ipa-rkisp1-imx708-Populate-AGC-tuning.patch \
-    file://0012-ipa-rkisp1-imx708-Populate-AWB-tuning-parameters.patch \
-    file://0013-utils-rkisp1-Add-a-script-to-port-LSC-tables.patch \
-    file://0014-ipa-rkisp1-imx708-Add-LSC-tables-from-VC4-tuning-fil.patch \
-    file://0015-ipa-rkisp1-imx219-Regenerate-LSC-tables-from-VC4-tun.patch \
+    file://0001-ipa-libipa-agc-Keep-frame-duration-limits-ordered.patch \
+    file://0002-ipa-libipa-agc-Retrieve-FrameDurationLimits-earlier.patch \
+    file://0003-ipa-libipa-agc-Report-FrameDurationLimits.patch \
+    file://0004-ipa-libipa-agc-Calculate-vblank-and-frame-duration-s.patch \
+    file://0005-ipa-libipa-agc-Take-parameters-from-active-state-for.patch \
+    file://0006-libcamera-pipeline-Set-vblank-on-more-platforms.patch \
+    file://0007-ipa-libipa-agc-Rework-frame-duration-limit-calculati.patch \
+    file://0008-ipa-camera_sensor_helper-Introduce-exposure-margin.patch \
+    file://0009-ipa-libipa-agc-Take-exposure-margin-into-account.patch \
+    file://0010-ipa-libipa-fixedpoint-Shift-unsigned-type-for-scalin.patch \
+    file://0011-ipa-libipa-quantized-Make-floating-point-type-custom.patch \
+    file://0012-ipa-libipa-quantized-Use-double-when-necessary.patch \
+    file://0013-ipa-libipa-awb-Log-rgb-means-immediately.patch \
+    file://0014-ipa-libipa-awb_bayes-Fix-initial-max-value.patch \
+    file://0015-libcamera-controls-Fix-ColourTemperature-direction.patch \
+    file://0016-ipa-libipa-gamma-Static-assert-lookup-node-count.patch \
+    file://0017-ipa-libipa-gamma-Accept-const-segment-lengths.patch \
+    file://0018-ipa-libipa-gamma-Use-std-optional-for-segment-length.patch \
+    file://0019-include-linux-Update-to-Linux-7.3-rc3.patch \
+    file://0020-libcamera-pipeline-Add-R-Car-Gen4-ISP-pipeline.patch \
+    file://0021-ipa-rppx1-Add.patch \
+    file://0022-ipa-rppx1-blc-Add.patch \
+    file://0023-ipa-rppx1-agc-Add.patch \
+    file://0024-ipa-rppx1-awb-Add.patch \
+    file://0025-ipa-rppx1-lux-Add.patch \
+    file://0026-ipa-rppx1-ccm-Add.patch \
+    file://0027-ipa-rppx1-goc-Add.patch \
+    file://0028-ipa-rppx1-gsl-Add.patch \
+    file://0029-ipa-rppx1-lsc-Add.patch \
+    file://0030-ipa-rppx1-Add-uncalibrated-tuning-file.patch \
+    file://0031-ipa-rppx1-Add-tuning-file-for-imx708.patch \
+    file://0032-ipa-rppx1-imx708-Add-CCM-tuning.patch \
+    file://0033-ipa-rppx1-imx708-Populate-AGC-tuning.patch \
+    file://0034-ipa-rppx1-imx708-Populate-AWB-tuning-parameters.patch \
+    file://0035-ipa-rppx1-imx708-Add-LSC-tables-from-VC4-tuning-file.patch \
+    file://0036-ipa-rppx1-Add-tuning-file-for-imx219.patch \
+    file://0037-ipa-rppx1-imx219-Add-basic-AGC-AWB-CCM-tuning.patch \
+    file://0038-ipa-rppx1-imx219-Add-LSC-tuning.patch \
 "
-SRCREV = "f4c3dee21770b9b8817c80265b9f81eda1833731"
+SRCREV = "0f0450158f4eaa37de633520822a9c4a1c25c5ea"
 S = "${WORKDIR}/git"
 
 PACKAGECONFIG[pycamera] = "-Dpycamera=enabled,-Dpycamera=disabled,python3 python3-pybind11"
@@ -45,11 +68,11 @@ FILES:${PN}-gst += "${libdir}/gstreamer-1.0"
 FILES:${PN}-pycamera += "${PYTHON_SITEPACKAGES_DIR}/libcamera"
 
 BBCLASSEXTEND = ""
-LIBCAMERA_PIPELINES = "rcar-gen4,rkisp1"
+LIBCAMERA_PIPELINES = "rcar-gen4"
 EXTRA_OEMESON := "\
     --prefix=/usr/ \
     -Dpipelines=${LIBCAMERA_PIPELINES} \
-    -Dipas=rkisp1 \
+    -Dipas=rppx1 \
     -Dcam=enabled \
     -Dpycamera=enabled \
     -Dtest=false \

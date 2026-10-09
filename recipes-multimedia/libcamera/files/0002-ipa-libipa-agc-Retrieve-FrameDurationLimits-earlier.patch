@@ -1,0 +1,69 @@
+From 1b89c4402c761f8b2835de2f2c2c20438de2dae9 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Barnab=C3=A1s=20P=C5=91cze?=
+ <barnabas.pocze@ideasonboard.com>
+Date: Wed, 26 Aug 2026 15:57:38 +0200
+Subject: [PATCH 02/38] ipa: libipa: agc: Retrieve `FrameDurationLimits`
+ earlier
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The frame duration limits will be used to clamp the manually provided
+exposure time. Handle them earlier so that they are available.
+
+Signed-off-by: Barnabás Pőcze <barnabas.pocze@ideasonboard.com>
+Reviewed-by: Stefan Klug <stefan.klug@ideasonboard.com>
+Reviewed-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+
+Upstream-Status: Pending
+
+---
+ src/ipa/libipa/agc.cpp | 28 ++++++++++++++--------------
+ 1 file changed, 14 insertions(+), 14 deletions(-)
+
+diff --git a/src/ipa/libipa/agc.cpp b/src/ipa/libipa/agc.cpp
+index c20d0ad2..a177dba9 100644
+--- a/src/ipa/libipa/agc.cpp
++++ b/src/ipa/libipa/agc.cpp
+@@ -591,6 +591,20 @@ void AgcAlgorithm::queueRequest(const agc::Session &session, agc::ActiveState &s
+ 		}
+ 	}
+ 
++	const auto &frameDurationLimits = controls.get(controls::FrameDurationLimits);
++	if (frameDurationLimits) {
++		/* Limit the control value to the limits in ControlInfo */
++		state.minFrameDuration = std::clamp<utils::Duration>(
++			std::chrono::microseconds((*frameDurationLimits).front()),
++			session.minFrameDuration, session.maxFrameDuration);
++
++		state.maxFrameDuration = std::clamp<utils::Duration>(
++			std::chrono::microseconds((*frameDurationLimits).back()),
++			state.minFrameDuration, session.maxFrameDuration);
++	}
++	frameContext.minFrameDuration = state.minFrameDuration;
++	frameContext.maxFrameDuration = state.maxFrameDuration;
++
+ 	const auto &exposure = controls.get(controls::ExposureTime);
+ 	if (exposure && !state.autoExposureEnabled) {
+ 		state.manual.exposure = *exposure * 1.0us / session.lineDuration;
+@@ -632,20 +646,6 @@ void AgcAlgorithm::queueRequest(const agc::Session &session, agc::ActiveState &s
+ 	if (exposureValue)
+ 		state.exposureValue = *exposureValue;
+ 	frameContext.exposureValue = state.exposureValue;
+-
+-	const auto &frameDurationLimits = controls.get(controls::FrameDurationLimits);
+-	if (frameDurationLimits) {
+-		/* Limit the control value to the limits in ControlInfo */
+-		state.minFrameDuration = std::clamp<utils::Duration>(
+-			std::chrono::microseconds((*frameDurationLimits).front()),
+-			session.minFrameDuration, session.maxFrameDuration);
+-
+-		state.maxFrameDuration = std::clamp<utils::Duration>(
+-			std::chrono::microseconds((*frameDurationLimits).back()),
+-			state.minFrameDuration, session.maxFrameDuration);
+-	}
+-	frameContext.minFrameDuration = state.minFrameDuration;
+-	frameContext.maxFrameDuration = state.maxFrameDuration;
+ }
+ 
+ /**
