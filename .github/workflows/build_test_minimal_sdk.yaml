@@ -27,13 +27,6 @@ jobs:
       - name: Run build
         shell: bash
         run: |
-          # WA for Ubuntu 24.04
-          UBUNTU_VERSION="$(cat /etc/os-release | grep VERSION_ID | cut -d'"' -f2)"
-          if [[ "${UBUNTU_VERSION}" == "24.04" ]]; then
-            sudo sysctl -w kernel.unprivileged_userns_clone=1
-            sudo apparmor_parser -R /etc/apparmor.d/unprivileged_userns
-          fi
-
           ./build.sh --console --rm-work --sdk
 
       - name: Upload build logs

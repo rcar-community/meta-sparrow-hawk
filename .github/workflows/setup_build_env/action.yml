@@ -24,6 +24,15 @@ runs:
         pip3 install websockets
         df -h
 
+    - name: WA for Ubuntu 24.04
+      shell: bash
+      run: |
+        UBUNTU_VERSION="$(cat /etc/os-release | grep VERSION_ID | cut -d'"' -f2)"
+        if [[ "${UBUNTU_VERSION}" == "24.04" ]]; then
+          sudo sysctl -w kernel.unprivileged_userns_clone=1
+          sudo apparmor_parser -R /etc/apparmor.d/unprivileged_userns
+        fi
+
     - name: Check disk and memory
       shell: bash
       run: |
