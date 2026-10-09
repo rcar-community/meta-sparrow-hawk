@@ -1,12 +1,17 @@
 name: Upload build logs
 description: Upload bitbake logs to investigate build failures
+inputs:
+  suffix:
+    description: Suffix to make the artifact name unique, e.g. in a matrix job
+    required: false
+    default: ''
 runs:
   using: "composite"
   steps:
     - name: Upload logs
       uses: actions/upload-artifact@v7
       with:
-        name: bitbake-logs-${{ github.workflow }}-${{ github.run_attempt }}
+        name: bitbake-logs-${{ github.workflow }}-${{ github.run_attempt }}${{ inputs.suffix }}
         path: |
           build/build-sparrow-hawk/tmp/log/cooker/
           build/build-sparrow-hawk/tmp/work/*/*/*/temp/log.do_*
