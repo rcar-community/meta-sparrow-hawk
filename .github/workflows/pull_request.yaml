@@ -12,15 +12,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  Release:
-    name: Release
+  Build:
+    name: Build
     if: github.repository_owner == 'rcar-community'
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
 
-      - name: Setup build envrionment
+      - name: Setup build environment
         uses: ./.github/workflows/setup_build_env
 
       - name: Run build
