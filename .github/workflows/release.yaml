@@ -37,6 +37,10 @@ jobs:
           ./build.sh --console --sbom --rm-work
           ./build.sh --weston --sbom --rm-work
 
+      - name: Upload build logs
+        if: failure()
+        uses: ./.github/workflows/upload_build_logs
+
       - name: Generate zip archive to release
         shell: bash
         run: |
