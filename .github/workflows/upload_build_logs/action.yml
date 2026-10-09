@@ -1,0 +1,15 @@
+name: Upload build logs
+description: Upload bitbake logs to investigate build failures
+runs:
+  using: "composite"
+  steps:
+    - name: Upload logs
+      uses: actions/upload-artifact@v7
+      with:
+        name: bitbake-logs-${{ github.workflow }}-${{ github.run_attempt }}
+        path: |
+          build/build-sparrow-hawk/tmp/log/cooker/
+          build/build-sparrow-hawk/tmp/work/*/*/*/temp/log.do_*
+          build/build-sparrow-hawk/tmp/work/*/*/*/temp/run.do_*
+        if-no-files-found: warn
+        retention-days: 14

@@ -36,3 +36,6 @@ jobs:
 
           ./build.sh --console --rm-work --sdk
 
+      - name: Upload build logs
+        if: failure()
+        uses: ./.github/workflows/upload_build_logs
