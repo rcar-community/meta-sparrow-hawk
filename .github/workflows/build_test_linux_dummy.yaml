@@ -37,3 +37,6 @@ jobs:
           ./build.sh --console --rm-work --kernel-version dummy
           # ./build.sh --weston --rm-work --build-rootfs-only
 
+      - name: Upload build logs
+        if: failure()
+        uses: ./.github/workflows/upload_build_logs

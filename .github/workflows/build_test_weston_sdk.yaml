@@ -36,3 +36,6 @@ jobs:
 
           ./build.sh --weston --rm-work --sdk
 
+      - name: Upload build logs
+        if: failure()
+        uses: ./.github/workflows/upload_build_logs
