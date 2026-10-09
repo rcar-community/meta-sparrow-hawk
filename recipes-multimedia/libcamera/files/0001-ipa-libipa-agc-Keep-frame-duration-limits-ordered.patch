@@ -1,0 +1,37 @@
+From 9f5eb159f5cb10155d90bad7d4d5025e225b4a48 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Barnab=C3=A1s=20P=C5=91cze?=
+ <barnabas.pocze@ideasonboard.com>
+Date: Tue, 25 Aug 2026 17:44:59 +0200
+Subject: [PATCH 01/38] ipa: libipa: agc: Keep frame duration limits ordered
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The frame duration limits from controls are already clamped to the session
+limits, but that does not prevent a situation where min > max. Use the just
+computed `state.minFrameDuration` as the lower bound when clamping the max
+value in order to avoid this possibility.
+
+Signed-off-by: Barnabás Pőcze <barnabas.pocze@ideasonboard.com>
+Reviewed-by: Stefan Klug <stefan.klug@ideasonboard.com>
+Reviewed-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+
+Upstream-Status: Pending
+
+---
+ src/ipa/libipa/agc.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/ipa/libipa/agc.cpp b/src/ipa/libipa/agc.cpp
+index 51b05e3c..c20d0ad2 100644
+--- a/src/ipa/libipa/agc.cpp
++++ b/src/ipa/libipa/agc.cpp
+@@ -642,7 +642,7 @@ void AgcAlgorithm::queueRequest(const agc::Session &session, agc::ActiveState &s
+ 
+ 		state.maxFrameDuration = std::clamp<utils::Duration>(
+ 			std::chrono::microseconds((*frameDurationLimits).back()),
+-			session.minFrameDuration, session.maxFrameDuration);
++			state.minFrameDuration, session.maxFrameDuration);
+ 	}
+ 	frameContext.minFrameDuration = state.minFrameDuration;
+ 	frameContext.maxFrameDuration = state.maxFrameDuration;

@@ -1,0 +1,74 @@
+From ef4f6ac589324dbd08d71035d90ac0b4ea2015fc Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Barnab=C3=A1s=20P=C5=91cze?=
+ <barnabas.pocze@ideasonboard.com>
+Date: Fri, 31 Jul 2026 14:19:18 +0200
+Subject: [PATCH 05/38] ipa: libipa: agc: Take parameters from active state for
+ calculation
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The `frameContext` is of an already completed frame, its exposure/gain/etc
+is of no real concern for future frames, so take the most recent settings
+from the active state. This is still not ideal, but better than the
+previous status quo.
+
+Signed-off-by: Barnabás Pőcze <barnabas.pocze@ideasonboard.com>
+Reviewed-by: Stefan Klug <stefan.klug@ideasonboard.com>
+Reviewed-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+
+Upstream-Status: Pending
+
+---
+ src/ipa/libipa/agc.cpp | 20 +++++++++-----------
+ 1 file changed, 9 insertions(+), 11 deletions(-)
+
+diff --git a/src/ipa/libipa/agc.cpp b/src/ipa/libipa/agc.cpp
+index 1e5b96a9..646ece21 100644
+--- a/src/ipa/libipa/agc.cpp
++++ b/src/ipa/libipa/agc.cpp
+@@ -743,24 +743,22 @@ void AgcAlgorithm::process(const agc::Session &session, agc::ActiveState &state,
+ 	double minAnalogueGain;
+ 	double maxAnalogueGain;
+ 
+-	/* \todo This uses the configuration from an already completed frame. */
+-
+-	if (frameContext.autoExposureEnabled) {
++	if (state.autoExposureEnabled) {
+ 		minExposureTime = session.minExposureTime;
+-		maxExposureTime = std::clamp(frameContext.maxFrameDuration,
++		maxExposureTime = std::clamp(state.maxFrameDuration,
+ 					     session.minExposureTime,
+ 					     session.maxExposureTime);
+ 	} else {
+-		minExposureTime = lineDuration * frameContext.exposure;
++		minExposureTime = lineDuration * state.manual.exposure;
+ 		maxExposureTime = minExposureTime;
+ 	}
+ 
+-	if (frameContext.autoGainEnabled) {
++	if (state.autoGainEnabled) {
+ 		minAnalogueGain = session.minAnalogueGain;
+ 		maxAnalogueGain = session.maxAnalogueGain;
+ 	} else {
+-		minAnalogueGain = frameContext.gain;
+-		maxAnalogueGain = frameContext.gain;
++		minAnalogueGain = state.manual.gain;
++		maxAnalogueGain = state.manual.gain;
+ 	}
+ 
+ 	std::visit(utils::overloaded{
+@@ -806,10 +804,10 @@ void AgcAlgorithm::process(const agc::Session &session, agc::ActiveState &state,
+ 				.traits = params->traits,
+ 				.yHist = params->yHist,
+ 				.effectiveExposureValue = effectiveExposureValue,
+-				.constraintModeIndex = frameContext.constraintMode,
+-				.exposureModeIndex = frameContext.exposureMode,
++				.constraintModeIndex = state.constraintMode,
++				.exposureModeIndex = state.exposureMode,
+ 				.lux = params->lux,
+-				.exposureCompensation = std::pow(2.0, frameContext.exposureValue),
++				.exposureCompensation = std::pow(2.0, state.exposureValue),
+ 			});
+ 
+ 			/* Update the estimated exposure and gain. */

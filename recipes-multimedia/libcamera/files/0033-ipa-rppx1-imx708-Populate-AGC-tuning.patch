@@ -1,0 +1,74 @@
+From 441460a1d43a4b41a7e1569c6fd75976f980f90b Mon Sep 17 00:00:00 2001
+From: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+Date: Tue, 1 Sep 2026 15:32:48 +0200
+Subject: [PATCH 33/38] ipa: rppx1: imx708: Populate AGC tuning
+
+Populate the AGC algorithm tuning paramters.
+
+Define a set of standard Metering and Constraint modes.
+
+Use the default 0.5 luminance target.
+
+Signed-off-by: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
+
+Upstream-Status: Pending
+
+---
+ src/ipa/rppx1/data/imx708.yaml | 44 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
+
+diff --git a/src/ipa/rppx1/data/imx708.yaml b/src/ipa/rppx1/data/imx708.yaml
+index 3fcd3c56..dfa9bf52 100644
+--- a/src/ipa/rppx1/data/imx708.yaml
++++ b/src/ipa/rppx1/data/imx708.yaml
+@@ -4,6 +4,50 @@
+ version: 1
+ algorithms:
+   - Agc:
++      AeMeteringMode:
++        MeteringCentreWeighted: [
++          0,     0,   0,     0, 0,
++          0, 0.375, 0.5, 0.375, 0,
++          0, 0.500,   1, 0.500, 0,
++          0, 0.375, 0.5, 0.375, 0,
++          0,     0,   0,     0, 0,
++        ]
++        MeteringSpot: [
++          0,     0,     0,     0, 0,
++          0, 0.125, 0.250, 0.125, 0,
++          0, 0.250, 1.000, 0.250, 0,
++          0, 0.125, 0.250, 0.125, 0,
++          0,     0,     0,     0, 0,
++        ]
++        MeteringMatrix: [
++          1, 1, 1, 1, 1,
++          1, 1, 1, 1, 1,
++          1, 1, 1, 1, 1,
++          1, 1, 1, 1, 1,
++          1, 1, 1, 1, 1,
++        ]
++      AeExposureMode:
++        ExposureNormal:
++          exposureTime: [ 100, 10000, 30000, 60000, 120000 ]
++          gain: [ 1.0, 2.0, 4.0, 6.0, 6.0 ]
++        ExposureShort:
++          exposureTime: [ 100, 5000, 10000, 20000, 120000 ]
++          gain: [ 1.0, 2.0, 4.0, 6.0, 6.0 ]
++      AeConstraintMode:
++        ConstraintNormal:
++          lower:
++            qLo: 0.98
++            qHi: 1.0
++            yTarget: [0, 0.2, 1000, 0.2]
++        ConstraintHighlight:
++          lower:
++            qLo: 0.98
++            qHi: 1.0
++            yTarget: [0, 0.2, 1000, 0.2]
++          upper:
++            qLo: 0.98
++            qHi: 1.0
++            yTarget: [0, 0.8, 1000, 0.8]
+   - Awb:
+   - BlackLevelCorrection:
+   - Ccm:

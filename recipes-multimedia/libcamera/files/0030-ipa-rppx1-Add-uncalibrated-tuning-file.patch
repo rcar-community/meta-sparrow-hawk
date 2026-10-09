@@ -1,0 +1,50 @@
+From 8f32511ca32cd6b793f65960dcb79a5a2c5751a6 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Barnab=C3=A1s=20P=C5=91cze?=
+ <barnabas.pocze@ideasonboard.com>
+Date: Mon, 31 Aug 2026 12:44:53 +0200
+Subject: [PATCH 30/38] ipa: rppx1: Add uncalibrated tuning file
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Enable algorithms that don't need any specific tuning data.
+
+Signed-off-by: Barnabás Pőcze <barnabas.pocze@ideasonboard.com>
+
+Upstream-Status: Submitted [https://patchwork.libcamera.org/patch/28359/]
+
+---
+ src/ipa/rppx1/data/meson.build       |  1 +
+ src/ipa/rppx1/data/uncalibrated.yaml | 11 +++++++++++
+ 2 files changed, 12 insertions(+)
+ create mode 100644 src/ipa/rppx1/data/uncalibrated.yaml
+
+diff --git a/src/ipa/rppx1/data/meson.build b/src/ipa/rppx1/data/meson.build
+index d1eb3217..b1851144 100644
+--- a/src/ipa/rppx1/data/meson.build
++++ b/src/ipa/rppx1/data/meson.build
+@@ -1,6 +1,7 @@
+ # SPDX-License-Identifier: CC0-1.0
+ 
+ conf_files = files([
++    'uncalibrated.yaml',
+ ])
+ 
+ install_data(conf_files,
+diff --git a/src/ipa/rppx1/data/uncalibrated.yaml b/src/ipa/rppx1/data/uncalibrated.yaml
+new file mode 100644
+index 00000000..3057df83
+--- /dev/null
++++ b/src/ipa/rppx1/data/uncalibrated.yaml
+@@ -0,0 +1,11 @@
++# SPDX-License-Identifier: CC0-1.0
++%YAML 1.1
++---
++version: 1
++algorithms:
++  - Agc:
++  - Awb:
++  - BlackLevelCorrection:
++  - Ccm:
++  - GammaOutCorrection:
++...
