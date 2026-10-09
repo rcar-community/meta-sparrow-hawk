@@ -3,72 +3,11 @@ description: Setup build environment for Sparrow Hawk BSP
 runs:
   using: "composite"
   steps:
-    - name: Aggressive cleanup
-      # Based on https://github.com/NobuoTsukamoto/my_actions_test/blob/8f1ad38e225730322f196da7d958d0cfd49eca01/.github/workflows/test_contains.yml
-      shell: bash
-      run: |
-        df -h
-        sudo rm -rf "/home/work/*" || true
-        sudo rm -rf "/opt/*" || true
-        sudo rm -rf "/usr/local/share/*" || true
-        sudo rm -rf "/usr/share/dotnet" || true
-        sudo rm -rf "$AGENT_TOOLSDIRECTORY" || true
-        sudo rm -rf "/usr/local/lib/android" || true
-        sudo rm -rf "/usr/lib/jvm" || true
-        sudo rm -rf "/usr/share/swift" || true
-        sudo rm -rf "/usr/local/julia*" || true
-        sudo rm -rf "/usr/share/kotlinc" || true
-        sudo rm -rf "/usr/share/miniconda" || true
-        sudo rm -rf "/usr/share/sbt" || true
-        sudo rm -rf "/usr/local/sqlpackage" || true
-        sudo rm -rf "/usr/bin/yq" || true
-        sudo rm -rf "/usr/local/bin/terraform" || true
-        sudo rm -rf "/usr/local/bin/stack" || true
-        sudo rm -rf "/usr/local/bin/aliyun" || true
-        sudo rm -rf "/usr/local/bin/pulumi" || true
-        sudo rm -rf "/usr/local/bin/pulumi-language-dotnet" || true
-        sudo rm -rf "/usr/local/bin/azcopy" || true
-        sudo rm -rf "/usr/local/aws-cli" || true
-        sudo rm -rf "/usr/local/bin/bicep" || true
-        sudo rm -rf "/usr/local/bin/rebar3" || true
-        sudo rm -rf "/usr/local/bin/phpunit" || true
-        sudo rm -rf "/usr/local/bin/packer" || true
-        sudo rm -rf "/usr/local/bin/bicep" || true
-        sudo rm -rf "/usr/local/bin/docker-compose" || true
-        sudo rm -rf "/usr/local/bin/minikube" || true
-        sudo rm -rf "/usr/local/bin/kustomize" || true
-        sudo rm -rf "/usr/local/bin/kubectl" || true
-        sudo rm -rf "/usr/local/bin/kind" || true
-        sudo rm -rf "/usr/local/bin/helm" || true
-        sudo rm -rf "/usr/local/bin/azcopy_11.3.1" || true
-        sudo rm -rf "/usr/local/bin/bicep" || true
-        sudo rm -rf "/usr/local/bin/.ghcup" || true
-        sudo rm -rf "/usr/local/bin/phpunit" || true
-        sudo rm -rf "/usr/local/bin/pulumi-*" || true
-        sudo rm -rf "/usr/local/bin/oc" || true
-        sudo rm -rf "/usr/local/bin/ctest" || true
-        sudo rm -rf "/usr/local/bin/cmake-gui" || true
-        sudo rm -rf "/usr/local/bin/ccmake" || true
-        sudo rm -rf "/usr/local/bin/cpack" || true
-        sudo rm -rf "/usr/local/bin/oras" || true
-        sudo rm -rf "/home/.dotnet/tools" || true
-        sudo rm -rf "/home/linuxbrew" || true
-        sudo rm -rf "/home/.nvm" || true
-        sudo rm -rf "/home/perflog" || true
-        sudo rm -rf "/etc/skel/.dotnet/tools" || true
-        sudo rm -rf "/usr/share/apache-maven-3.8.8" || true
-        sudo rm -rf "/usr/share/gradle-8.7" || true
-        sudo rm -rf "/usr/local/.ghcup" || true
-        sudo rm -rf "/usr/bin/composer" || true
-        sudo rm -rf "/usr/libexec/docker/cli-plugins" || true
-        sudo rm -rf "/usr/bin/docker-credential-ecr-login" || true
-        sudo rm -rf "/usr/local/lib/lein" || true
-        sudo docker image prune --all --force
-        sudo npm uninstall bazel || true
-        sudo npm uninstall bazelisk || true
-        rustup self uninstall -y
-        ls -al /usr/local/share
-        df -h
+    - name: Free runner space
+      uses: justinthelaw/maximize-github-runner-space@c66ba0f3ad90f3f74aa2250d8ea645080be24da3 # v0.12.3
+      with:
+        swapfile-size: 8GiB
+
     - name: Setup package
       shell: bash
       run: |
@@ -77,8 +16,6 @@ runs:
           build-essential chrpath cpio debianutils diffstat file gawk gcc git iputils-ping \
           libacl1 liblz4-tool locales python3 python3-git python3-jinja2 python3-pexpect \
           python3-pip python3-subunit socat texinfo unzip wget xz-utils zstd device-tree-compiler
-        sudo apt-get install -y \
-          lvm2
         # Clean up apt
         sudo apt autoremove -y
         sudo apt clean -y
@@ -86,21 +23,6 @@ runs:
         # For using --sstate-mirror option
         pip3 install websockets
         df -h
-
-    - name: Maximize build space
-      uses: easimon/maximize-build-space@c28619d8999a147d5e09c1199f84ff6af6ad5794 # master as of 2026-10-09
-      with:
-        root-reserve-mb: 8192
-        swap-size-mb: 8192
-
-        remove-dotnet: 'true'
-        remove-android: 'true'
-        remove-haskell: 'true'
-        remove-codeql: 'true'
-        remove-docker-images: 'true'
-
-    - name: Checkout repository
-      uses: actions/checkout@v7
 
     - name: Check disk and memory
       shell: bash
