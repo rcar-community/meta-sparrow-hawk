@@ -47,10 +47,6 @@ jobs:
       - name: Run build
         shell: bash
         run: |
-          # WA for Ubuntu 24.04
-          sudo sysctl -w kernel.unprivileged_userns_clone=1
-          sudo apparmor_parser -R /etc/apparmor.d/unprivileged_userns
-
           ./build.sh --console --rm-work --kernel-version dummy
 
       - name: Upload build logs
