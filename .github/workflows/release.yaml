@@ -1,4 +1,4 @@
-name: Relase Yocto BSP for Sparrow-hawk
+name: Release Yocto BSP for Sparrow-hawk
 run-name: Release Yocto BSP for Sparrow-hawk
 on:
   push:
@@ -21,7 +21,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
-      - name: Setup build envrionment
+      - name: Setup build environment
         uses: ./.github/workflows/setup_build_env
 
       - name: Run build
