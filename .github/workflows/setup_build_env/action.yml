@@ -88,7 +88,7 @@ runs:
         df -h
 
     - name: Maximize build space
-      uses: easimon/maximize-build-space@master
+      uses: easimon/maximize-build-space@c28619d8999a147d5e09c1199f84ff6af6ad5794 # master as of 2026-10-09
       with:
         root-reserve-mb: 8192
         swap-size-mb: 8192
@@ -100,7 +100,7 @@ runs:
         remove-docker-images: 'true'
 
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v7
 
     - name: Check disk and memory
       shell: bash
