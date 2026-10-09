@@ -6,6 +6,7 @@ on:
       - 'scarthgap'
       - '*-dev'
       - '*-next'
+      - 'ci-test/**'
   workflow_dispatch:
 
 concurrency:
