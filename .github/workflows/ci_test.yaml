@@ -1,0 +1,58 @@
+name: CI test for workflow changes
+run-name: CI test for workflow changes
+on:
+  push:
+    branches:
+      - 'ci-test/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  Environment:
+    name: Environment check
+    if: github.repository_owner == 'rcar-community'
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup build envrionment
+        uses: ./.github/workflows/setup_build_env
+
+      - name: Create dummy bitbake logs
+        shell: bash
+        run: |
+          WORK=build/build-sparrow-hawk/tmp
+          mkdir -p ${WORK}/log/cooker/sparrow-hawk ${WORK}/work/dummy/dummy/1.0/temp
+          echo "dummy cooker log" > ${WORK}/log/cooker/sparrow-hawk/console-latest.log
+          echo "dummy task log" > ${WORK}/work/dummy/dummy/1.0/temp/log.do_compile
+          echo "dummy run script" > ${WORK}/work/dummy/dummy/1.0/temp/run.do_compile
+
+      - name: Upload build logs
+        uses: ./.github/workflows/upload_build_logs
+
+  Build:
+    name: Build using linux-dummy
+    if: github.repository_owner == 'rcar-community'
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup build envrionment
+        uses: ./.github/workflows/setup_build_env
+
+      - name: Run build
+        shell: bash
+        run: |
+          # WA for Ubuntu 24.04
+          sudo sysctl -w kernel.unprivileged_userns_clone=1
+          sudo apparmor_parser -R /etc/apparmor.d/unprivileged_userns
+
+          ./build.sh --console --rm-work --kernel-version dummy
+
+      - name: Upload build logs
+        if: failure()
+        uses: ./.github/workflows/upload_build_logs
