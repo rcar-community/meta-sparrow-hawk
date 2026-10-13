@@ -44,5 +44,6 @@ EXTRA_IMAGE_FEATURES += "package-management"
 EXTRA_IMAGE_FEATURES:append = " ssh-server-openssh"
 
 # Fix SDK build error with apt package manger
-TOOLCHAIN_TARGET_TASK:remove = "target-sdk-provides-dummy"
+# Remove it only for deb: rpm needs target-sdk-provides-dummy to provide /bin/sed for kernel-devsrc
+TOOLCHAIN_TARGET_TASK:remove = "${@bb.utils.contains('PACKAGE_CLASSES', 'package_deb', 'target-sdk-provides-dummy', '', d)}"
 
