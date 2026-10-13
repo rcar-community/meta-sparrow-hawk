@@ -1,2 +1,2 @@
-DUMMYPROVIDES:sparrow-hawk:append = " /bin/sed"
+DUMMYPROVIDES:append:sparrow-hawk = " /bin/sed"
 
