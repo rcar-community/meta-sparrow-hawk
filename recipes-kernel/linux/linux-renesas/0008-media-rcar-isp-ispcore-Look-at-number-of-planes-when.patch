@@ -1,0 +1,32 @@
+From 7dcefc8c116caf573e4ca4b9ef6b64eae01291a3 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Niklas=20S=C3=B6derlund?=
+ <niklas.soderlund+renesas@ragnatech.se>
+Date: Mon, 19 Oct 2026 21:35:41 +0200
+Subject: [PATCH 8/9] media: rcar-isp: ispcore: Look at number of planes when
+ programming
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Instead of expanding a list of formats that uses two planes look at the
+format information directly.
+
+Signed-off-by: Niklas Söderlund <niklas.soderlund+renesas@ragnatech.se>
+---
+ drivers/media/platform/renesas/rcar-isp/core.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/drivers/media/platform/renesas/rcar-isp/core.c b/drivers/media/platform/renesas/rcar-isp/core.c
+index 27e2573130f1..83344d35adb9 100644
+--- a/drivers/media/platform/renesas/rcar-isp/core.c
++++ b/drivers/media/platform/renesas/rcar-isp/core.c
+@@ -126,8 +126,7 @@ static void risp_core_job_run_output(struct rcar_isp_core *core,
+ 		mem = vb2_dma_contig_plane_dma_addr(&buf->vb.vb2_buf, 0);
+ 		risp_core_write(core, reg, mem);
+ 
+-		/* Only NV16 uses 2 planes. */
+-		if (fmt->fmt.pix_mp.pixelformat != V4L2_PIX_FMT_NV16M)
++		if (fmt->fmt.pix_mp.num_planes != 2)
+ 			continue;
+ 
+ 		reg = ISPCORE_DMA_IMAGE_FRAME_BASE_ADDRESS_COMP1(0, frame);
