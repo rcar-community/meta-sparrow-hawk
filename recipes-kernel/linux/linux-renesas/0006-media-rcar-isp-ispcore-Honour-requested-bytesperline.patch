@@ -1,5 +1,11 @@
+From e61789fc9f79fdfa64caf1f2a5addb6cfd8b8d4c Mon Sep 17 00:00:00 2001
 From: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
-Subject: [PATCH] media: rcar-isp: Honour requested bytesperline on RAW input
+Date: Mon, 19 Oct 2026 21:35:39 +0200
+Subject: [PATCH 6/9] media: rcar-isp: ispcore: Honour requested bytesperline
+ on RAW input
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
 The RAW input video device always overwrote the bytesperline requested
 by userspace with width * bpp. The input buffers are however shared with
@@ -14,9 +20,14 @@ the VIN failed with -EINVAL:
 Use the requested bytesperline if it is larger than the minimum.
 
 Signed-off-by: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+[Niklas: Use max(min(..)) instead of if statement]
+Signed-off-by: Niklas Söderlund <niklas.soderlund+renesas@ragnatech.se>
 ---
+ drivers/media/platform/renesas/rcar-isp/core-io.c | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
 diff --git a/drivers/media/platform/renesas/rcar-isp/core-io.c b/drivers/media/platform/renesas/rcar-isp/core-io.c
-index acf5acf5ce26..dab0833f7faf 100644
+index 820af506f896..835f872722a5 100644
 --- a/drivers/media/platform/renesas/rcar-isp/core-io.c
 +++ b/drivers/media/platform/renesas/rcar-isp/core-io.c
 @@ -5,6 +5,8 @@
@@ -28,31 +39,30 @@ index acf5acf5ce26..dab0833f7faf 100644
  #include <media/v4l2-ctrls.h>
  #include <media/v4l2-event.h>
  #include <media/v4l2-ioctl.h>
-@@ -328,6 +330,7 @@ static const struct risp_io_input_format {
- static void risp_io_input_try_format(struct rcar_isp_core_io *io,
+@@ -329,6 +331,7 @@ static void risp_io_input_try_format(struct rcar_isp_core_io *io,
  				     struct v4l2_pix_format_mplane *pix)
  {
-+	unsigned int bytesperline;
  	unsigned int bpp = 0;
++	unsigned int bpl;
  
  	v4l_bound_align_image(&pix->width, 128, 5120, 2,
-@@ -348,9 +351,17 @@ static void risp_io_input_try_format(struct rcar_isp_core_io *io,
- 	pix->field = V4L2_FIELD_NONE;
- 	pix->colorspace = V4L2_COLORSPACE_RAW;
+ 			      &pix->height, 128, 4096, 2, 0);
+@@ -345,11 +348,17 @@ static void risp_io_input_try_format(struct rcar_isp_core_io *io,
+ 		bpp = risp_io_input_formats[0].bpp;
+ 	}
  
 +	/*
 +	 * Honour the line stride requested by userspace, the buffers are
 +	 * shared with the VIN which may use a larger stride than the minimum.
 +	 */
-+	bytesperline = pix->width * bpp;
-+	if (pix->plane_fmt[0].bytesperline > bytesperline)
-+		bytesperline = min(pix->plane_fmt[0].bytesperline, SZ_64K);
++	bpl = max(pix->width * bpp, min(pix->plane_fmt[0].bytesperline, SZ_64K));
 +
+ 	pix->field = V4L2_FIELD_NONE;
+ 	pix->colorspace = V4L2_COLORSPACE_RAW;
+ 
  	pix->num_planes = 1;
 -	pix->plane_fmt[0].bytesperline = pix->width * bpp;
--	pix->plane_fmt[0].sizeimage = pix->plane_fmt[0].bytesperline * pix->height;
-+	pix->plane_fmt[0].bytesperline = bytesperline;
-+	pix->plane_fmt[0].sizeimage = bytesperline * pix->height;
++	pix->plane_fmt[0].bytesperline = bpl;
+ 	pix->plane_fmt[0].sizeimage = pix->plane_fmt[0].bytesperline * pix->height;
  }
  
- static int risp_io_input_enum_fmt(struct file *file, void *priv,

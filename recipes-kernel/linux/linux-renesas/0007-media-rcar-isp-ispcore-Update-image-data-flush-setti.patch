@@ -1,0 +1,87 @@
+From aa29001b36c2bdb145410d5d5e10ab9efb6fbc7d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Niklas=20S=C3=B6derlund?=
+ <niklas.soderlund+renesas@ragnatech.se>
+Date: Mon, 19 Oct 2026 21:35:40 +0200
+Subject: [PATCH 7/9] media: rcar-isp: ispcore: Update image data flush
+ settings
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Later versions of the datasheet have an updated chapter on how the image
+out flush settings depends on proper stride settings. Update the bytes
+per line calculation and flush out settings to match the datasheet
+clarification.
+
+Signed-off-by: Niklas Söderlund <niklas.soderlund+renesas@ragnatech.se>
+---
+ .../media/platform/renesas/rcar-isp/core-io.c | 28 +++++++++++++++++--
+ .../media/platform/renesas/rcar-isp/core.c    |  2 +-
+ 2 files changed, 26 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/media/platform/renesas/rcar-isp/core-io.c b/drivers/media/platform/renesas/rcar-isp/core-io.c
+index 835f872722a5..93079fdc0ec5 100644
+--- a/drivers/media/platform/renesas/rcar-isp/core-io.c
++++ b/drivers/media/platform/renesas/rcar-isp/core-io.c
+@@ -726,6 +726,28 @@ static const struct v4l2_pix_format_mplane risp_io_capture_default_format = {
+ 	},
+ };
+ 
++static unsigned int risp_io_calture_bytesperline(unsigned int width, unsigned int bpp)
++{
++	/*
++	 * The datasheet specifies strict alignment and padding rules to be able
++	 * to flush out all the pixels. Each line must be 256 byte aligned and
++	 * at the end of the frame at least one extra line of space must be
++	 * available.
++	 *
++	 * As we can't extend the buffer with one extra line we need to work
++	 * with stride setting to satisfy both constraints. Fortunately the
++	 * datasheet gives us a calculation for this.
++	 *
++	 *   FLUSH[pixels] = ALIGN(WIDTH[pixels], 256)
++	 *
++	 *   PADDING[bytes] = ALIGN(BPP[bytes] * WIDTH[pixels], 256) - BPP[bytes] * WIDTH[pixels] + BPP[bytes] * FLUSH[pixels]
++	 */
++	unsigned int data = bpp * width;
++	unsigned int padding = ALIGN(data, 256) - data + bpp * ALIGN(width, 256);
++
++	return data + padding;
++}
++
+ static void risp_io_capture_try_format(struct rcar_isp_core_io *io,
+ 				       struct v4l2_pix_format_mplane *pix)
+ {
+@@ -741,16 +763,16 @@ static void risp_io_capture_try_format(struct rcar_isp_core_io *io,
+ 	case V4L2_PIX_FMT_NV16M:
+ 		pix->quantization = V4L2_QUANTIZATION_LIM_RANGE;
+ 		pix->num_planes = 2;
+-		pix->plane_fmt[0].bytesperline = ALIGN(pix->width, 256);
++		pix->plane_fmt[0].bytesperline = risp_io_calture_bytesperline(pix->width, 1);
+ 		pix->plane_fmt[0].sizeimage = pix->plane_fmt[0].bytesperline * pix->height;
+-		pix->plane_fmt[1].bytesperline = ALIGN(pix->width, 256);
++		pix->plane_fmt[1].bytesperline = pix->plane_fmt[0].bytesperline;
+ 		pix->plane_fmt[1].sizeimage = pix->plane_fmt[1].bytesperline * pix->height;
+ 		break;
+ 	default:
+ 		pix->pixelformat = V4L2_PIX_FMT_XBGR32;
+ 		pix->quantization = V4L2_QUANTIZATION_FULL_RANGE;
+ 		pix->num_planes = 1;
+-		pix->plane_fmt[0].bytesperline = ALIGN(pix->width * 4, 256);
++		pix->plane_fmt[0].bytesperline = risp_io_calture_bytesperline(pix->width, 4);
+ 		pix->plane_fmt[0].sizeimage = pix->plane_fmt[0].bytesperline * pix->height;
+ 		break;
+ 	}
+diff --git a/drivers/media/platform/renesas/rcar-isp/core.c b/drivers/media/platform/renesas/rcar-isp/core.c
+index f3dc52c13612..27e2573130f1 100644
+--- a/drivers/media/platform/renesas/rcar-isp/core.c
++++ b/drivers/media/platform/renesas/rcar-isp/core.c
+@@ -398,7 +398,7 @@ static int risp_core_config_output(struct rcar_isp_core *core,
+ 
+ 	/* Set image out flush EOF. */
+ 	risp_core_write(core, ISPCORE_DMA_IMAGE_FLUSH_OUT_REG(index),
+-			pix->plane_fmt[0].bytesperline <<
++			ALIGN(pix->width, 256) <<
+ 			ISPCORE_DMA_IMAGE_FLUSH_OUT_PADDING_PIXEL_EOF_SHIFT);
+ 
+ 	/* Enable DMA and set burst length. */
