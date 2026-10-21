@@ -115,6 +115,23 @@ jobs:
             echo "TAG_NAME=next-release" >> $GITHUB_ENV
           fi
 
+      - name: Install GitHub CLI
+        shell: bash
+        run: sudo apt install -y gh
+
+      - name: Delete stale draft releases
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          # Draft releases are not found by "gh release view", delete them by id
+          gh api repos/${{ github.repository }}/releases --paginate \
+            -q '.[] | select(.draft and .tag_name == "${{ env.TAG_NAME }}") | .id' |
+          while read -r id; do
+            echo "Deleting stale draft release: ${id}"
+            gh api -X DELETE repos/${{ github.repository }}/releases/${id}
+          done
+
       - name: Delete release tag if it exists
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
