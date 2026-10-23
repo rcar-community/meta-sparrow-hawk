@@ -29,6 +29,9 @@ SRC_URI:append = "\
 "
 SRC_URI:append = " file://0002-mtd-spi-nor-ids-Add-Winbond-W77T51NW.patch"
 
+# Lift reserved-memory restriction (U-Boot runs before TF-A)
+SRC_URI:append = " file://0003-arm64-dts-renesas-r8a779g3-Remove-reserved-memory-nod.patch"
+
 SRC_URI:append = "\
     file://nfs_cmd.cfg \
     file://mmc_boot.cfg \

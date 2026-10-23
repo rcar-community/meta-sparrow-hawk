@@ -1,0 +1,81 @@
+From: Marek Vasut <marek.vasut+renesas@mailbox.org>
+Subject: [PATCH] arm64: dts: renesas: r8a779g3: Remove reserved memory node on
+ Retronix R-Car V4H Sparrow Hawk board
+
+Retronix R-Car V4H Sparrow Hawk board does start TF-A from U-Boot, that
+means U-Boot should have full unrestricted access to all DRAM.
+
+Linux kernel commit ed8444006df9 ("arm64: dts: renesas: sparrow-hawk:
+Reserve first 128 MiB of DRAM"), which landed in Linux 7.1.y and which
+is also part of U-Boot 2026.07 and newer upstream DTs, introduced a new
+reserved-memory node to prevent Linux kernel from accessing the first
+128 MiB of DRAM, which is used by TF-A. This restriction is also imposed
+on U-Boot because it is part of the upstream DT, however, U-Boot should
+not be restricted, because U-Boot executes before TF-A and U-Boot does
+start TF-A, therefore the reserved memory that would be used by TF-A is
+still entirely free to be used by U-Boot when U-Boot is executing.
+
+Remove the reserved-memory node from U-Boot control DT for this board
+to lift the reserved memory restriction.
+
+LMB map and TFTP attempt into the reserved memory, before:
+"
+=> bdinfo
+...
+lmb_dump_all:
+ memory.count = 0x2
+ memory[0]      [0x40000000-0xbfffffff], 0x80000000 bytes, flags: none
+ memory[1]      [0x480000000-0x7ffffffff], 0x380000000 bytes, flags: none
+ reserved.count = 0x3
+ reserved[0]    [0x40000000-0x47ffffff], 0x8000000 bytes, flags: no-map
+ reserved[1]    [0xbaf10d30-0xbfffffff], 0x50ef2d0 bytes, flags: no-overwrite
+ reserved[2]    [0x7ffffd000-0x7ffffffff], 0x3000 bytes, flags: no-notify, no-overwrite
+...
+=> tftp 0x40040000 192.168.1.1:test.bin
+...
+Loading: *
+TFTP error: trying to overwrite reserved memory...
+...
+"
+
+LMB map and TFTP attempt into the reserved memory, after:
+"
+=> bdinfo
+...
+lmb_dump_all:
+ memory.count = 0x2
+ memory[0]      [0x40000000-0xbfffffff], 0x80000000 bytes, flags: none
+ memory[1]      [0x480000000-0x7ffffffff], 0x380000000 bytes, flags: none
+ reserved.count = 0x2
+ reserved[0]    [0xbaf10d50-0xbfffffff], 0x50ef2b0 bytes, flags: no-overwrite
+ reserved[1]    [0x7ffffd000-0x7ffffffff], 0x3000 bytes, flags: no-notify, no-overwrite
+...
+=> tftp 0x40040000 192.168.1.1:test.bin
+...
+Loading: ##################################################  13.7 MiB
+         16.6 MiB/s
+done
+Bytes transferred = 14367056 (db3950 hex)
+...
+"
+
+Upstream-Status: Submitted [u-boot@lists.u-boot-project.org, Message-ID: <20261023002722.279852-1-marek.vasut+renesas@mailbox.org>]
+Signed-off-by: Marek Vasut <marek.vasut+renesas@mailbox.org>
+---
+ arch/arm/dts/r8a779g3-sparrow-hawk-u-boot.dtsi | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/dts/r8a779g3-sparrow-hawk-u-boot.dtsi b/arch/arm/dts/r8a779g3-sparrow-hawk-u-boot.dtsi
+--- a/arch/arm/dts/r8a779g3-sparrow-hawk-u-boot.dtsi
++++ b/arch/arm/dts/r8a779g3-sparrow-hawk-u-boot.dtsi
+@@ -7,6 +7,10 @@
+ 
+ #include "r8a779g0-u-boot.dtsi"
+ 
++/ {
++	/delete-node/ reserved-memory;
++};
++
+ /* Page 31 / FAN */
+ &gpio1 {
+ 	pwm-fan-hog {
