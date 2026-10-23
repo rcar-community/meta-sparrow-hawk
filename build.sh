@@ -85,7 +85,7 @@ fi
 git -C poky checkout -B scarthgap yocto-5.0.20
 git -C meta-openembedded checkout -B scarthgap 0f00f8b9a21950640da8c5707343e5540133f86e
 if [[ "${IS_BUILD_INSIDE_REPO}" == "no" ]]; then
-    git -C meta-sparrow-hawk checkout -B scarthgap v2026-10-16
+    git -C meta-sparrow-hawk checkout -B scarthgap v2026-10-23
 fi
 
 cd $WORK
