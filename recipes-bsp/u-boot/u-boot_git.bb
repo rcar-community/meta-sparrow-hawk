@@ -8,7 +8,7 @@ COMPATIBLE_MACHINE = "(sparrow-hawk)"
 DEPENDS += "lzop-native srecord-native"
 DEPENDS += "bc-native dtc-native python3-pyelftools-native gnutls-native"
 
-UBOOT_URL = "git://github.com/u-boot/u-boot"
+UBOOT_URL = "git://git.u-boot-project.org/u-boot/u-boot.git"
 BRANCH = "main"
 SRCREV = "5508406582f6f7120dce0c4b3059819a41788db2"
 LICENSE = "GPL-2.0-or-later"
