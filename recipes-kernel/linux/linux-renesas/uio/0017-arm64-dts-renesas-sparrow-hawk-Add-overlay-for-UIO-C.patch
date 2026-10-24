@@ -44,7 +44,7 @@ index 000000000000..76f063fa0228
 +		cma@60000000 {
 +			compatible = "shared-dma-pool";
 +			reusable;
-+			reg = <0x00000000 0x60000000 0x0 0x40000000>;
++			reg = <0x00000000 0x60000000 0x0 0x58000000>;
 +			linux,cma-default;
 +		};
 +	
