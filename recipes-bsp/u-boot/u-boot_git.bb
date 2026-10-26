@@ -34,10 +34,7 @@ SRC_URI:append = " file://0003-arm64-dts-renesas-r8a779g3-Remove-reserved-memory
 
 SRC_URI:append = "\
     file://nfs_cmd.cfg \
-    file://mmc_boot.cfg \
     file://preboot.cfg \
-    file://env_source_file.cfg \
-    file://sparrowhawk.env;subdir=git/board/renesas/sparrowhawk/ \
 "
 
 do_deploy:append() {
