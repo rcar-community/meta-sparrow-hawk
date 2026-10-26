@@ -1,0 +1,54 @@
+name: Build test for Sparrow-hawk (kas)
+run-name: Build test for Sparrow-hawk (kas)
+on:
+  push:
+    branches:
+      - '*-dev'
+      - '*-next'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  Build:
+    name: Build (${{ matrix.name }})
+    if: github.repository_owner == 'rcar-community'
+    runs-on: ubuntu-24.04-arm
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: minimal
+            commands: |
+              ./build-with-kas.sh --minimal --rm-work
+          - name: weston
+            commands: |
+              ./build-with-kas.sh --weston --rm-work
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup build environment
+        uses: ./.github/workflows/setup_build_env
+
+      - name: Install kas
+        shell: bash
+        run: pip3 install --break-system-packages kas
+
+      - name: Run build
+        shell: bash
+        run: ${{ matrix.commands }}
+
+      - name: Upload build logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bitbake-logs-${{ github.workflow }}-${{ github.run_attempt }}-${{ matrix.name }}
+          path: |
+            kas-work/build/tmp/log/cooker/
+            kas-work/build/tmp/work/*/*/*/temp/log.do_*
+            kas-work/build/tmp/work/*/*/*/temp/run.do_*
+          if-no-files-found: warn
+          retention-days: 14
