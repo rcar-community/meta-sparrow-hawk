@@ -114,11 +114,17 @@ SPDX_PRETTY = "1"
 # optional. if "1", output spdx files includes [file-information section](https://spdx.github.io/spdx-spec/v2.3/file-information/).
 SPDX_INCLUDE_SOURCES = "1"
 
-# optional. if "1", bitbake will create source files archive for each package.
-SPDX_ARCHIVE_SOURCES = "1"
-
 # optional. if "1", bitbake will create output binary archive for each package.
 SPDX_ARCHIVE_PACKAGED = "1"
+
+# required. enable to archive the source of GPL/LGPL/AGPL packages
+# into tmp/deploy/sources.
+INHERIT += "archiver"
+
+# optional. archive the original source, patches and recipe.
+ARCHIVER_MODE[src] = "original"
+ARCHIVER_MODE[diff] = "1"
+ARCHIVER_MODE[recipe] = "1"
 EOS
 else # Disable SBOM build to reduce build time
 cat << EOS >> conf/local.conf
