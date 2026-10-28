@@ -43,6 +43,7 @@ jobs:
           zip -r ${GITHUB_WORKSPACE}/build/build-sparrow-hawk/tmp/deploy/ipl-burning.zip ./ipl-burning
           cd ${GITHUB_WORKSPACE}/build/build-sparrow-hawk/tmp/deploy
           zip -ry -s 1900m deploy_spdx_split.zip spdx/
+          zip -ry -s 1900m deploy_sources_split.zip sources/
           cd $GITHUB_WORKSPACE
 
       - name: Prepare release message
@@ -173,6 +174,7 @@ jobs:
           files: |
             ./build/build-sparrow-hawk/tmp/deploy/images/deploy_sparrow-hawk.z*
             ./build/build-sparrow-hawk/tmp/deploy/deploy_spdx_split.z*
+            ./build/build-sparrow-hawk/tmp/deploy/deploy_sources_split.z*
             ./build/build-sparrow-hawk/tmp/deploy/ipl-burning.zip
             ./build/build-sparrow-hawk/tmp/deploy/images/*/core-image-*-sparrow-hawk.rootfs.wic.*
           body_path: ${{ github.workspace }}-release_msg.txt
