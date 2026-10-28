@@ -1,5 +1,7 @@
 DESCRIPTION = "PowerVR GPU user module"
-LICENSE = "CLOSED"
+LICENSE = "Renesas-GFX"
+LIC_FILES_CHKSUM = "file://rcar-gfx-License.txt;md5=7619a81bd8552964abfea3c94d8e7582"
+NO_GENERIC_LICENSE[Renesas-GFX] = "rcar-gfx-License.txt"
 
 require include/rcar-gfx-common.inc
 
@@ -13,7 +15,10 @@ RDEPENDS:${PN} = " \
 PN = "gles-user-module"
 PR = "r0"
 
-SRC_URI:r8a779g3 = "${GFX_LIBRARY_URL};sha256sum=${GFX_LIBRARY_SHA256}"
+SRC_URI:r8a779g3 = " \
+    ${GFX_LIBRARY_URL};sha256sum=${GFX_LIBRARY_SHA256} \
+    ${GFX_LICENSE_URL};downloadfilename=rcar-gfx-License.txt;subdir=rogue;sha256sum=${GFX_LICENSE_SHA256} \
+"
 
 SRC_URI:append:rcar-gen4 = " \
     file://rc.pvr.service \
@@ -25,7 +30,6 @@ S = "${WORKDIR}/rogue"
 inherit systemd
 SYSTEMD_SERVICE:${PN} = "rc.pvr.service"
 
-do_populate_lic[noexec] = "1"
 do_compile[noexec] = "1"
 
 do_install() {
