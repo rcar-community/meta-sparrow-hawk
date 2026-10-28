@@ -289,6 +289,10 @@ DISTRO_FEATURES:append = " pam"
 # To build gstreamer plugins
 LICENSE_FLAGS_ACCEPTED = "commercial"
 
+# Install license manifest and license texts into rootfs
+COPY_LIC_MANIFEST = "1"
+COPY_LIC_DIRS = "1"
+
 # Remove ptest to reduce the build time
 # Remove x11 to avoid error after removing mesa
 DISTRO_FEATURES:remove = "ptest x11"
