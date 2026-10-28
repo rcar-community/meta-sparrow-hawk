@@ -15,7 +15,14 @@
   License: Proprietary
   LicensePath: ./License/LICENCE.r8a779g_pcie_phy
 
-- python-embed-amd64
+- python-embed-amd64 (Windows only, used by run.bat)
+  Origin: python-3.13.4-embed-amd64.zip from https://www.python.org/ftp/python/3.13.4/
+  Modification: "import site" is enabled in python313._pth, and get-pip.py is added.
   License: PSF License
   License Text: ./python-embed-amd64/LICENSE.txt
+  Note: This package is redistributed as obtained from python.org and is not
+        covered by the other entries of this index. It contains third-party
+        components (e.g. OpenSSL, libffi, SQLite, Microsoft Visual C++ runtime).
+        Refer to the upstream license information for their terms:
+        https://docs.python.org/3.13/license.html
 
