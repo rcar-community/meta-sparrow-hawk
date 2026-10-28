@@ -1,5 +1,7 @@
 SUMMARY = "Binary firmware for Sparrow hawk board"
-LICENSE = "CLOSED"
+LICENSE = "Firmware-r8a779g_pcie_phy"
+LIC_FILES_CHKSUM = "file://LICENCE.r8a779g_pcie_phy;md5=0b20e76a9a004b83c4a1c87e2153bbad"
+NO_GENERIC_LICENSE[Firmware-r8a779g_pcie_phy] = "LICENCE.r8a779g_pcie_phy"
 PR = "r0"
 
 PACKAGE_ARCH = "${MACHINE_ARCH}"
@@ -12,6 +14,8 @@ SRC_URI:append:sparrow-hawk = " \
     ${PCIE_FIRMWARE} \
     ${PCIE_FIRMWARE_LIC} \
 "
+
+S = "${WORKDIR}"
 
 do_compile[noexec] = "1"
 FILES:${PN}:sparrow-hawk += "/usr/lib/firmware/"
