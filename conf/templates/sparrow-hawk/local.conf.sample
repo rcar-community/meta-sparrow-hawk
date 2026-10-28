@@ -292,6 +292,10 @@ BBMASK = "kernel-module-gles|gles-user-module"
 # Allow non-commercial to be built
 LICENSE_FLAGS_ACCEPTED = "non-commercial"
 
+# Install license manifest and license texts into rootfs
+COPY_LIC_MANIFEST = "1"
+COPY_LIC_DIRS = "1"
+
 # Reproducible Builds
 # Set Timestamps at the build start
 export SOURCE_DATE_EPOCH = "${@time.strftime('%s', time.localtime())}"
