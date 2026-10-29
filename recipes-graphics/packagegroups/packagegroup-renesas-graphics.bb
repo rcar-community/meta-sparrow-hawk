@@ -1,5 +1,5 @@
 SUMMARY = "Renesas package group for Wayland/Weston and OpenGL ES"
-LICENSE = "CLOSED & MIT"
+LICENSE = "MIT"
 
 COMPATIBLE_MACHINE = "(rcar-gen4)"
 PACKAGE_ARCH = "${MACHINE_ARCH}"
