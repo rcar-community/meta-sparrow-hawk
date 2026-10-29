@@ -93,6 +93,15 @@ jobs:
           | U-Boot                      | ${UBOOT_VER}  |
           | Trusted Firmware-A          | ${ATF_VER}    |
 
+          ## License and source code
+
+          - The full text of the license of each package is included in the SPDX files in \`deploy_spdx_split.zip\`.
+          - The source code, the patches and the recipes of the GPL/LGPL/AGPL packages are provided in \`deploy_sources_split.zip\`. The sources are stored per recipe in \`sources/<architecture>/<recipe>-<version>/\`.
+          - The graphics user-space libraries (\`gles-user-module\`) are provided under the Renesas-GFX license:
+            - Redistribution and use in binary form are permitted without modification.
+            - No reverse engineering, decompilation, or disassembly is permitted.
+            - Any redistribution and use are licensed for use only with Renesas Electronics's devices.
+
           EOS
 
       - name: Prepare release tag
