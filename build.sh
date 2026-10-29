@@ -126,6 +126,18 @@ ARCHIVER_MODE[src] = "original"
 ARCHIVER_MODE[diff] = "1"
 ARCHIVER_MODE[recipe] = "1"
 EOS
+# The native and cross recipes are not distributed. The SDK installer
+# includes nativesdk and cross-canadian (gcc, binutils) recipes.
+if [[ "${IS_BUILD_SDK}" == "yes" ]]; then
+    COPYLEFT_RECIPE_TYPES="target nativesdk cross-canadian"
+else
+    COPYLEFT_RECIPE_TYPES="target"
+fi
+cat << EOS >> conf/local.conf
+
+# optional. archive the source only of the recipes included in the output.
+COPYLEFT_RECIPE_TYPES = "${COPYLEFT_RECIPE_TYPES}"
+EOS
 else # Disable SBOM build to reduce build time
 cat << EOS >> conf/local.conf
 # Disable create-spdx
