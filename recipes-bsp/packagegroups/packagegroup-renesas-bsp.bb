@@ -30,6 +30,7 @@ RDEPENDS:packagegroup-renesas-bsp-tools = " \
     nvme-cli \
     can-utils \
     expand-rootfs \
+    watchdog-config \
     pciutils \
     usbutils \
     libgpiod \
