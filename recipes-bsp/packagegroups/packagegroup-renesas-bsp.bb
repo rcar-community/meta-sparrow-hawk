@@ -53,6 +53,6 @@ RDEPENDS:packagegroup-renesas-bsp-ai-tools = " \
     binutils patch zlib-dev libffi-dev openssl-dev bzip2 \
     readline sqlite3 ncurses tar opencv \
     libgomp \
-    udev-rules bsp-config \
+    udev-rules \
     packagegroup-opencv-sdk \
 "
