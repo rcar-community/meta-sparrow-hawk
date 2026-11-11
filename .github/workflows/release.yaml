@@ -20,6 +20,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+        with:
+          # The release notes list the commits since the previous release tag
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Setup build environment
         uses: ./.github/workflows/setup_build_env
@@ -44,65 +48,13 @@ jobs:
           cd ${GITHUB_WORKSPACE}/build/build-sparrow-hawk/tmp/deploy
           zip -ry -s 1900m deploy_spdx_split.zip spdx/
           zip -ry -s 1900m deploy_sources_split.zip sources/
-          cd $GITHUB_WORKSPACE
-
-      - name: Prepare release message
-        shell: bash
-        run: |
-          OUTPUT="${{ github.workspace }}-release_msg.txt"
-          BRANCH="${{ github.ref_name }}"
-
-          # Set Header message
-          if [[ "$BRANCH" == *-dev ]]; then
-            echo '## Note: This is the latest development build.' > ${OUTPUT}
-          else
-            echo '## Yocto layer information' > ${OUTPUT}
-          fi
-
-          # Body
-          cat << 'EOS' >> ${OUTPUT}
-
-          | Layer | Repository | Commit |
-          | --- | --- | --- |
-          EOS
-          for layer in $(ls build/ | grep -v build-); do 
-            URL=$(git -C build/${layer}/ remote -v | head -1 | awk '{print $2}')
-            COMMIT=$(git -C build/${layer}/ log -n1 --pretty="format:%H")
-            echo "| ${layer} | ${URL} | ${COMMIT} |"  >> ${OUTPUT}
+          # The package lists are published as they are. The next release
+          # downloads them to compare the packages with this release.
+          for img in minimal weston; do
+            cp -L ${GITHUB_WORKSPACE}/build/build-sparrow-hawk/tmp/deploy/images/sparrow-hawk/core-image-${img}-sparrow-hawk.rootfs.manifest \
+                ${GITHUB_WORKSPACE}/build/build-sparrow-hawk/tmp/deploy/core-image-${img}-sparrow-hawk.manifest
           done
-          # meta-sparrow-hawk
-          layer="meta-sparrow-hawk"
-          URL=$(git -C ./ remote -v | head -1 | awk '{print $2}')
-          COMMIT=$(git -C ./ log -n1 --pretty="format:%H")
-          echo "| ${layer} | ${URL} | ${COMMIT} |"  >> ${OUTPUT}
-
-          # software version list
-          YOCTO_VER=$(grep ^DISTRO_VERSION ./build/poky/meta-poky/conf/distro/poky.conf | cut -d'"' -f2)
-          UBOOT_VER=$(grep ^PV ./recipes-bsp/u-boot/u-boot_git.bb | cut -d'"' -f2 | cut -d'+' -f1)
-          KERNEL_VER=$(ls ./build/build-sparrow-hawk/tmp/deploy/images/sparrow-hawk/Image--* | sed -e 's/.*--//' -e 's/+git.*//')
-          GCC_VER=$(ls -d build/build-sparrow-hawk/tmp/work-shared/gcc-* | grep -oP 'gcc-\K[0-9]+\.[0-9]+\.[0-9]+')
-          ATF_VER=$(grep ^PV ./recipes-bsp/arm-trusted-firmware/arm-trusted-firmware_git.bb | cut -d'"' -f2 | cut -d'+' -f1)
-          cat << EOS >> ${OUTPUT}
-
-          | Software                    | Version       |
-          | --------------------------- | ------------- |
-          | Yocto Project               | ${YOCTO_VER}  |
-          | Aarch64-poky-linux-gcc(GCC) | ${GCC_VER}    |
-          | Linux kernel                | ${KERNEL_VER} |
-          | Userland 64/32bit           | 64            |
-          | U-Boot                      | ${UBOOT_VER}  |
-          | Trusted Firmware-A          | ${ATF_VER}    |
-
-          ## License and source code
-
-          - The full text of the license of each package is included in the SPDX files in \`deploy_spdx_split.zip\`.
-          - The source code, the patches and the recipes of the GPL/LGPL/AGPL packages are provided in \`deploy_sources_split.zip\`. The sources are stored per recipe in \`sources/<architecture>/<recipe>-<version>/\`.
-          - The graphics user-space libraries (\`gles-user-module\`) are provided under the Renesas-GFX license:
-            - Redistribution and use in binary form are permitted without modification.
-            - No reverse engineering, decompilation, or disassembly is permitted.
-            - Any redistribution and use are licensed for use only with Renesas Electronics's devices.
-
-          EOS
+          cd $GITHUB_WORKSPACE
 
       - name: Prepare release tag
         env:
@@ -128,6 +80,15 @@ jobs:
       - name: Install GitHub CLI
         shell: bash
         run: sudo apt install -y gh
+
+      - name: Prepare release message
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          BRANCH="${{ github.ref_name }}" TAG_NAME="${{ env.TAG_NAME }}" \
+              ./scripts/gen_release_notes.sh "${{ github.workspace }}-release_msg.txt"
+          cat "${{ github.workspace }}-release_msg.txt" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Delete stale draft releases
         env:
@@ -185,6 +146,7 @@ jobs:
             ./build/build-sparrow-hawk/tmp/deploy/deploy_spdx_split.z*
             ./build/build-sparrow-hawk/tmp/deploy/deploy_sources_split.z*
             ./build/build-sparrow-hawk/tmp/deploy/ipl-burning.zip
+            ./build/build-sparrow-hawk/tmp/deploy/core-image-*-sparrow-hawk.manifest
             ./build/build-sparrow-hawk/tmp/deploy/images/*/core-image-*-sparrow-hawk.rootfs.wic.*
           body_path: ${{ github.workspace }}-release_msg.txt
         env:
