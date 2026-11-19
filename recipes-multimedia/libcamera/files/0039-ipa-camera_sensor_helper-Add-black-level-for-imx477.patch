@@ -1,0 +1,25 @@
+From: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+Subject: [PATCH 39/39] ipa: camera_sensor_helper: Add black level for imx477
+
+The RPP-X1 BlackLevelCorrection algorithm requires the camera sensor
+helper to provide the black level, and fails to initialize otherwise,
+which makes the whole IPA initialization fail.
+
+Set the imx477 black level to 4096 (16-bit scale), the value used by the
+Raspberry Pi tuning files for the imx477.
+
+Upstream-Status: Pending
+
+---
+diff --git a/src/ipa/libipa/camera_sensor_helper.cpp b/src/ipa/libipa/camera_sensor_helper.cpp
+index 3e13a84..8f0cc8a 100644
+--- a/src/ipa/libipa/camera_sensor_helper.cpp
++++ b/src/ipa/libipa/camera_sensor_helper.cpp
+@@ -702,6 +702,7 @@ public:
+ 	{
+ 		gain_ = AnalogueGainLinear{ 0, 1024, -1, 1024 };
+ 		exposureMargin_ = 22;
++		blackLevel_ = 4096;
+ 	}
+ };
+ REGISTER_CAMERA_SENSOR_HELPER("imx477", CameraSensorHelperImx477)
