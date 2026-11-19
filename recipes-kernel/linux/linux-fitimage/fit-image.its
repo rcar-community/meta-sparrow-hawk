@@ -123,9 +123,29 @@
 				algo = "crc32";
 			};
 		};
+		fdt-j1-imx477 {
+			description = "Flattened Device Tree Overlay";
+			data = /incbin/("./r8a779g3-sparrow-hawk-camera-j1-imx477.dtbo");
+			type = "flat_dt";
+			arch = "arm64";
+			compression = "none";
+			hash-1 {
+				algo = "crc32";
+			};
+		};
 		fdt-j2-imx708 {
 			description = "Flattened Device Tree Overlay";
 			data = /incbin/("./r8a779g3-sparrow-hawk-camera-j2-imx708.dtbo");
+			type = "flat_dt";
+			arch = "arm64";
+			compression = "none";
+			hash-1 {
+				algo = "crc32";
+			};
+		};
+		fdt-j2-imx477 {
+			description = "Flattened Device Tree Overlay";
+			data = /incbin/("./r8a779g3-sparrow-hawk-camera-j2-imx477.dtbo");
 			type = "flat_dt";
 			arch = "arm64";
 			compression = "none";
@@ -245,8 +265,14 @@
 		j1-imx708 {
 			fdt = "fdt-j1-imx708";
 		};
+		j1-imx477 {
+			fdt = "fdt-j1-imx477";
+		};
 		j2-imx708 {
 			fdt = "fdt-j2-imx708";
+		};
+		j2-imx477 {
+			fdt = "fdt-j2-imx477";
 		};
 		fan-argon40 {
 			fdt = "fdt-fan-argon40";

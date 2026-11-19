@@ -31,6 +31,8 @@ SRC_URI:append:sparrow-hawk = " \
     file://0007-media-rcar-isp-ispcore-Update-image-data-flush-setti.patch \
     file://0008-media-rcar-isp-ispcore-Look-at-number-of-planes-when.patch \
     file://0009-media-rcar-isp-ispcore-Add-NV12M-support.patch \
+    file://0010-media-i2c-Add-IMX477-driver.patch \
+    file://0011-arm64-dts-renesas-sparrow-hawk-Add-IMX477-camera-overlays.patch \
 "
 # Patchset for power management
 SRC_URI:append:sparrow-hawk = " \
@@ -66,6 +68,8 @@ KERNEL_DEVICETREE:append:sparrow-hawk = " \
     renesas/r8a779g3-sparrow-hawk-camera-j2-imx462.dtbo \
     renesas/r8a779g3-sparrow-hawk-camera-j1-imx708.dtbo \
     renesas/r8a779g3-sparrow-hawk-camera-j2-imx708.dtbo \
+    renesas/r8a779g3-sparrow-hawk-camera-j1-imx477.dtbo \
+    renesas/r8a779g3-sparrow-hawk-camera-j2-imx477.dtbo \
     renesas/r8a779g3-sparrow-hawk-fan-pwm.dtbo \
     renesas/r8a779g3-sparrow-hawk-fan-argon40.dtbo \
     renesas/r8a779g3-sparrow-hawk-pcie-ep.dtbo \

@@ -1,0 +1,280 @@
+From: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+Date: Thu, 19 Nov 2026 19:47:23 +0900
+Subject: [PATCH] arm64: dts: renesas: sparrow-hawk: Add IMX477 camera overlays
+
+Add device tree overlays for the Raspberry Pi HQ Camera (IMX477) on the
+camera connectors J1 and J2. The sensor is connected with 2 data lanes and
+the link frequency is 450 MHz.
+
+Upstream-Status: Inappropriate [no upstream]
+
+---
+  arch/arm64/boot/dts/renesas/Makefile               |   6 ++
+  .../r8a779g3-sparrow-hawk-camera-j1-imx477.dtso    | 114 +++++++++++++++++++++
+  .../r8a779g3-sparrow-hawk-camera-j2-imx477.dtso    | 114 +++++++++++++++++++++
+  3 files changed, 234 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/renesas/Makefile b/arch/arm64/boot/dts/renesas/Makefile
+index b586ef15a73e..5fd6687daa25 100644
+--- a/arch/arm64/boot/dts/renesas/Makefile
++++ b/arch/arm64/boot/dts/renesas/Makefile
+@@ -105,6 +105,9 @@ dtb-$(CONFIG_ARCH_R8A779G0) += r8a779g3-sparrow-hawk-camera-j1-imx462.dtb
+ dtb-$(CONFIG_ARCH_R8A779G0) += r8a779g3-sparrow-hawk-camera-j1-imx708.dtbo
+ r8a779g3-sparrow-hawk-camera-j1-imx708-dtbs := r8a779g3-sparrow-hawk.dtb r8a779g3-sparrow-hawk-camera-j1-imx708.dtbo
+ dtb-$(CONFIG_ARCH_R8A779G0) += r8a779g3-sparrow-hawk-camera-j1-imx708.dtb
++dtb-$(CONFIG_ARCH_R8A779G0) += r8a779g3-sparrow-hawk-camera-j1-imx477.dtbo
++r8a779g3-sparrow-hawk-camera-j1-imx477-dtbs := r8a779g3-sparrow-hawk.dtb r8a779g3-sparrow-hawk-camera-j1-imx477.dtbo
++dtb-$(CONFIG_ARCH_R8A779G0) += r8a779g3-sparrow-hawk-camera-j1-imx477.dtb
+ dtb-$(CONFIG_ARCH_R8A779G0) += r8a779g3-sparrow-hawk-camera-j2-imx219.dtbo
+ r8a779g3-sparrow-hawk-camera-j2-imx219-dtbs := r8a779g3-sparrow-hawk.dtb r8a779g3-sparrow-hawk-camera-j2-imx219.dtbo
+ dtb-$(CONFIG_ARCH_R8A779G0) += r8a779g3-sparrow-hawk-camera-j2-imx219.dtb
+@@ -114,6 +117,9 @@ dtb-$(CONFIG_ARCH_R8A779G0) += r8a779g3-sparrow-hawk-camera-j2-imx462.dtb
+ dtb-$(CONFIG_ARCH_R8A779G0) += r8a779g3-sparrow-hawk-camera-j2-imx708.dtbo
+ r8a779g3-sparrow-hawk-camera-j2-imx708-dtbs := r8a779g3-sparrow-hawk.dtb r8a779g3-sparrow-hawk-camera-j2-imx708.dtbo
+ dtb-$(CONFIG_ARCH_R8A779G0) += r8a779g3-sparrow-hawk-camera-j2-imx708.dtb
++dtb-$(CONFIG_ARCH_R8A779G0) += r8a779g3-sparrow-hawk-camera-j2-imx477.dtbo
++r8a779g3-sparrow-hawk-camera-j2-imx477-dtbs := r8a779g3-sparrow-hawk.dtb r8a779g3-sparrow-hawk-camera-j2-imx477.dtbo
++dtb-$(CONFIG_ARCH_R8A779G0) += r8a779g3-sparrow-hawk-camera-j2-imx477.dtb
+ dtb-$(CONFIG_ARCH_R8A779G0) += r8a779g3-sparrow-hawk-fan-argon40.dtbo
+ r8a779g3-sparrow-hawk-fan-argon40-dtbs := r8a779g3-sparrow-hawk.dtb r8a779g3-sparrow-hawk-fan-argon40.dtbo
+ dtb-$(CONFIG_ARCH_R8A779G0) += r8a779g3-sparrow-hawk-fan-argon40.dtb
+diff --git a/arch/arm64/boot/dts/renesas/r8a779g3-sparrow-hawk-camera-j1-imx477.dtso b/arch/arm64/boot/dts/renesas/r8a779g3-sparrow-hawk-camera-j1-imx477.dtso
+new file mode 100644
+index 000000000000..0191eaf253a9
+--- /dev/null
++++ b/arch/arm64/boot/dts/renesas/r8a779g3-sparrow-hawk-camera-j1-imx477.dtso
+@@ -0,0 +1,114 @@
++// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++/*
++ * Device Tree Overlay for an IMX477 camera sensor on connector J1 on R-Car V4H
++ * ES3.0 Sparrow Hawk board.
++ *
++ * Copyright 2025 Ideas On Board Oy
++ * Author: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
++ */
++
++/dts-v1/;
++/plugin/;
++
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/media/video-interfaces.h>
++
++&{/} {
++	clk_cam_j1: clk-cam-j1 {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <24000000>;
++	};
++
++	/* Page 29 / CSI_IF_CN / J1 */
++	reg_cam_j1: reg-cam-j1 {
++		compatible = "regulator-fixed";
++		regulator-name = "cam-J1";
++		enable-active-high;
++		gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
++	};
++};
++
++&i2c1 {
++	#address-cells = <1>;
++	#size-cells = <0>;
++	status = "okay";
++
++	imx477: sensor@1a {
++		compatible = "sony,imx477";
++		reg = <0x1a>;
++		status = "okay";
++
++		clocks = <&clk_cam_j1>;
++
++		VANA-supply = <&reg_cam_j1>;
++		VDIG-supply = <&reg_cam_j1>;
++		VDDL-supply = <&reg_cam_j1>;
++
++		port {
++			imx477_j1_out: endpoint {
++				remote-endpoint = <&csi40_in>;
++				clock-lanes = <0>;
++				data-lanes = <1 2>;
++				link-frequencies = /bits/ 64 <450000000>;
++			};
++		};
++	};
++};
++
++/* Page 29 / CSI_IF_CN */
++&csi40 {
++	status = "okay";
++
++	ports {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		port@0 {
++			reg = <0>;
++
++			csi40_in: endpoint {
++				bus-type = <MEDIA_BUS_TYPE_CSI2_DPHY>;
++				clock-lanes = <0>;
++				data-lanes = <1 2>;
++				remote-endpoint = <&imx477_j1_out>;
++			};
++		};
++	};
++};
++
++&isp0 {
++	status = "okay";
++};
++
++&vin00 {
++	status = "okay";
++};
++
++&vin01 {
++	status = "okay";
++};
++
++&vin02 {
++	status = "okay";
++};
++
++&vin03 {
++	status = "okay";
++};
++
++&vin04 {
++	status = "okay";
++};
++
++&vin05 {
++	status = "okay";
++};
++
++&vin06 {
++	status = "okay";
++};
++
++&vin07 {
++	status = "okay";
++};
+diff --git a/arch/arm64/boot/dts/renesas/r8a779g3-sparrow-hawk-camera-j2-imx477.dtso b/arch/arm64/boot/dts/renesas/r8a779g3-sparrow-hawk-camera-j2-imx477.dtso
+new file mode 100644
+index 000000000000..561cdbd1e989
+--- /dev/null
++++ b/arch/arm64/boot/dts/renesas/r8a779g3-sparrow-hawk-camera-j2-imx477.dtso
+@@ -0,0 +1,114 @@
++// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++/*
++ * Device Tree Overlay for an IMX477 camera sensor on connector J2 on R-Car V4H
++ * ES3.0 Sparrow Hawk board.
++ *
++ * Copyright 2025 Ideas On Board Oy
++ * Author: Jacopo Mondi <jacopo.mondi@ideasonboard.com>
++ */
++
++/dts-v1/;
++/plugin/;
++
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/media/video-interfaces.h>
++
++&{/} {
++	clk_cam_j2: clk-cam-j2 {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <24000000>;
++	};
++
++	/* Page 29 / CSI_IF_CN / J2 */
++	reg_cam_j2: reg-cam-j2 {
++		compatible = "regulator-fixed";
++		regulator-name = "cam-J2";
++		enable-active-high;
++		gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
++	};
++};
++
++&i2c2 {
++	#address-cells = <1>;
++	#size-cells = <0>;
++	status = "okay";
++
++	imx477: sensor@1a {
++		compatible = "sony,imx477";
++		reg = <0x1a>;
++		status = "okay";
++
++		clocks = <&clk_cam_j2>;
++
++		VANA-supply = <&reg_cam_j2>;
++		VDIG-supply = <&reg_cam_j2>;
++		VDDL-supply = <&reg_cam_j2>;
++
++		port {
++			imx477_j2_out: endpoint {
++				remote-endpoint = <&csi41_in>;
++				clock-lanes = <0>;
++				data-lanes = <1 2>;
++				link-frequencies = /bits/ 64 <450000000>;
++			};
++		};
++	};
++};
++
++/* Page 29 / CSI_IF_CN */
++&csi41 {
++	status = "okay";
++
++	ports {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		port@0 {
++			reg = <0>;
++
++			csi41_in: endpoint {
++				bus-type = <MEDIA_BUS_TYPE_CSI2_DPHY>;
++				clock-lanes = <0>;
++				data-lanes = <1 2>;
++				remote-endpoint = <&imx477_j2_out>;
++			};
++		};
++	};
++};
++
++&isp1 {
++	status = "okay";
++};
++
++&vin08 {
++	status = "okay";
++};
++
++&vin09 {
++	status = "okay";
++};
++
++&vin10 {
++	status = "okay";
++};
++
++&vin11 {
++	status = "okay";
++};
++
++&vin12 {
++	status = "okay";
++};
++
++&vin13 {
++	status = "okay";
++};
++
++&vin14 {
++	status = "okay";
++};
++
++&vin15 {
++	status = "okay";
++};

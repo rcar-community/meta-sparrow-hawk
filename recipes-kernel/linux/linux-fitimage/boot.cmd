@@ -21,6 +21,9 @@ if i2c probe 0x1a; then
     if test 0x${chip_id} -eq 0x0708; then
         echo IMX708 is detected;
         setenv j1_conf '#j1-imx708'
+    elif test 0x${chip_id} -eq 0x0477; then
+        echo IMX477 is detected;
+        setenv j1_conf '#j1-imx477'
     else
         echo Fallback to IMX462;
         setenv j1_conf '#j1-imx462'
@@ -38,6 +41,9 @@ if i2c probe 0x1a; then
     if test 0x${chip_id} -eq 0x0708; then
         echo IMX708 is detected;
         setenv j2_conf '#j2-imx708'
+    elif test 0x${chip_id} -eq 0x0477; then
+        echo IMX477 is detected;
+        setenv j2_conf '#j2-imx477'
     else
         echo Fallback to IMX462;
         setenv j2_conf '#j2-imx462'
