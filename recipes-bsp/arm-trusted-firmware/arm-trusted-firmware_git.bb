@@ -8,10 +8,15 @@ PACKAGE_ARCH = "${MACHINE_ARCH}"
 
 inherit deploy
 
-PV:rcar-gen4:sparrow-hawk = "v2.15.0+upstream+git${SRCPV}"
+PV:rcar-gen4:sparrow-hawk = "v2.16~rc0+upstream+git${SRCPV}"
 BRANCH:rcar-gen4:sparrow-hawk = "master"
 SRC_URI = "git://github.com/ARM-software/arm-trusted-firmware.git;branch=${BRANCH};protocol=https"
-SRCREV:rcar-gen4:sparrow-hawk = "da738d5eae93af342fdc4995dd3c05acb4c9d757"
+SRCREV:rcar-gen4:sparrow-hawk = "9347b8bbd8d56da5cfbf7d9f1af3ca4f6d6e3920"
+
+# libfdt is provided by the contrib/dtc submodule since v2.16
+SRC_URI += "git://git.kernel.org/pub/scm/utils/dtc/dtc.git;protocol=https;branch=main;name=dtc;destsuffix=git/contrib/dtc"
+SRCREV_dtc = "8f48565e5cfedc74d3f7512f1e0188e9d85dc1de"
+SRCREV_FORMAT = "default_dtc"
 
 S = "${WORKDIR}/git"
 
