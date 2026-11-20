@@ -7,6 +7,7 @@ COMPATIBLE_MACHINE = "sparrow-hawk"
 
 SRC_URI = " \
     file://toggle_gpio_GP2_12.py \
+    file://watch_gpio_GP1_06.py \
 "
 FILES:${PN}:append = "/usr/bin/example-apps"
 
@@ -16,5 +17,6 @@ do_install () {
     cd ${WORKDIR}
     install -d ${D}/${USRBINPATH}/example-apps/
     install -m 0755 ${WORKDIR}/toggle_gpio_GP2_12.py ${D}/${USRBINPATH}/example-apps
+    install -m 0755 ${WORKDIR}/watch_gpio_GP1_06.py ${D}/${USRBINPATH}/example-apps
 }
 
