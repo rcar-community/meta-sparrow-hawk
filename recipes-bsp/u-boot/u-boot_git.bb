@@ -10,27 +10,18 @@ DEPENDS += "bc-native dtc-native python3-pyelftools-native gnutls-native"
 
 UBOOT_URL = "git://git.u-boot-project.org/u-boot/u-boot.git"
 BRANCH = "main"
-SRCREV = "5508406582f6f7120dce0c4b3059819a41788db2"
+SRCREV = "ee1b3477e3af6af1ae9b8f98bc84d2cc6f32a3a6"
 LICENSE = "GPL-2.0-or-later"
 LIC_FILES_CHKSUM = "file://Licenses/README;md5=2ca5f2c35c8cc335f0a19756634782f1"
 
 SRC_URI = "${UBOOT_URL};branch=${BRANCH};protocol=https"
 
-PV = "v2026.10+git${SRCPV}"
+PV = "v2027.01-rc3+git${SRCPV}"
 
 UBOOT_SREC_SUFFIX = "srec"
 UBOOT_SREC ?= "u-boot-elf.${UBOOT_SREC_SUFFIX}"
 UBOOT_SREC_IMAGE ?= "u-boot-elf-${MACHINE}-${PV}-${PR}.${UBOOT_SREC_SUFFIX}"
 UBOOT_SREC_SYMLINK ?= "u-boot-elf-${MACHINE}.${UBOOT_SREC_SUFFIX}"
-
-# Fix PCIe SSD issue
-SRC_URI:append = "\
-    file://0001-PCI-rcar-gen4-Limit-Max_Read_Request_Size-and-Max_Pa.patch \
-"
-SRC_URI:append = " file://0002-mtd-spi-nor-ids-Add-Winbond-W77T51NW.patch"
-
-# Lift reserved-memory restriction (U-Boot runs before TF-A)
-SRC_URI:append = " file://0003-arm64-dts-renesas-r8a779g3-Remove-reserved-memory-nod.patch"
 
 do_deploy:append() {
     if [ -n "${UBOOT_CONFIG}" ]
