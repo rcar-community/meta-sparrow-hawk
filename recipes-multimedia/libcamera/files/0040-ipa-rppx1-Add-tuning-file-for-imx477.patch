@@ -1,0 +1,211 @@
+From 5d84dcbd55f5000d9900630dbcf9e03d2a73edda Mon Sep 17 00:00:00 2001
+From: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+Date: Fri, 20 Nov 2026 21:17:32 +0900
+Subject: [PATCH] ipa: rppx1: Add tuning file for imx477
+
+Add a tuning file for the Raspberry Pi High Quality Camera (imx477)
+with the AGC, AWB and CCM parameters.
+
+The values are converted from the Raspberry Pi VC4 tuning file
+(src/ipa/rpi/vc4/data/imx477.json):
+
+ - The AGC exposure modes and constraint modes are taken as they are.
+   The metering modes are the standard ones used by the other tuning
+   files.
+ - The AWB modes, priors and transverse limits are taken as they are.
+   As done for the imx708, the colourGains are the inverse of the
+   whitepoint values of the ct_curve.
+ - The CCM matrices are identical to the ones of the VC4 file.
+
+These are not calibrated with an R-Car V4H (Sparrow Hawk) and an
+imx477 module.
+
+Upstream-Status: Pending
+Signed-off-by: Yuya Hamamachi <yuya.hamamachi.sx@renesas.com>
+---
+ src/ipa/rppx1/data/imx477.yaml | 160 +++++++++++++++++++++++++++++++++
+ src/ipa/rppx1/data/meson.build |   1 +
+ 2 files changed, 161 insertions(+)
+ create mode 100644 src/ipa/rppx1/data/imx477.yaml
+
+diff --git a/src/ipa/rppx1/data/imx477.yaml b/src/ipa/rppx1/data/imx477.yaml
+new file mode 100644
+index 0000000..cb2cbf9
+--- /dev/null
++++ b/src/ipa/rppx1/data/imx477.yaml
+@@ -0,0 +1,160 @@
++# SPDX-License-Identifier: CC0-1.0
++%YAML 1.1
++---
++version: 1
++algorithms:
++  - Agc:
++      AeMeteringMode:
++        MeteringCentreWeighted: [
++          0,     0,   0,     0, 0,
++          0, 0.375, 0.5, 0.375, 0,
++          0, 0.500,   1, 0.500, 0,
++          0, 0.375, 0.5, 0.375, 0,
++          0,     0,   0,     0, 0,
++        ]
++        MeteringSpot: [
++          0,     0,     0,     0, 0,
++          0, 0.125, 0.250, 0.125, 0,
++          0, 0.250, 1.000, 0.250, 0,
++          0, 0.125, 0.250, 0.125, 0,
++          0,     0,     0,     0, 0,
++        ]
++        MeteringMatrix: [
++          1, 1, 1, 1, 1,
++          1, 1, 1, 1, 1,
++          1, 1, 1, 1, 1,
++          1, 1, 1, 1, 1,
++          1, 1, 1, 1, 1,
++        ]
++      AeExposureMode:
++        ExposureNormal:
++          exposureTime: [ 100, 10000, 30000, 60000, 66666 ]
++          gain: [ 1, 2, 4, 6, 16 ]
++        ExposureShort:
++          exposureTime: [ 100, 5000, 10000, 20000, 66666 ]
++          gain: [ 1, 2, 4, 6, 16 ]
++        ExposureLong:
++          exposureTime: [ 100, 10000, 30000, 60000, 120000 ]
++          gain: [ 1, 2, 4, 6, 16 ]
++      AeConstraintMode:
++        ConstraintNormal:
++          lower:
++            qLo: 0.98
++            qHi: 1
++            yTarget: [ 0, 0.3, 1000, 0.3 ]
++        ConstraintHighlight:
++          lower:
++            qLo: 0.98
++            qHi: 1
++            yTarget: [ 0, 0.3, 1000, 0.3 ]
++          upper:
++            qLo: 0.98
++            qHi: 1
++            yTarget: [ 0, 0.8, 1000, 0.8 ]
++        ConstraintShadows:
++          lower:
++            qLo: 0
++            qHi: 0.5
++            yTarget: [ 0, 0.17, 1000, 0.17 ]
++  - Awb:
++      algorithm: "bayes"
++      AwbMode:
++        AwbAuto:
++          lo: 2500
++          hi: 8000
++        AwbIncandescent:
++          lo: 2500
++          hi: 3000
++        AwbTungsten:
++          lo: 3000
++          hi: 3500
++        AwbFluorescent:
++          lo: 4000
++          hi: 4700
++        AwbIndoor:
++          lo: 3000
++          hi: 5000
++        AwbDaylight:
++          lo: 5500
++          hi: 6500
++        AwbCloudy:
++          lo: 7000
++          hi: 8600
++      priors:
++        - lux: 0
++          ct: [ 2000, 3000, 13000 ]
++          probability: [ 1, 0.00001, 0.00001 ]
++        - lux: 800
++          ct: [ 2000, 6000, 13000 ]
++          probability: [ 0.00001, 2, 2 ]
++        - lux: 1500
++          ct: [ 2000, 4000, 6000, 6500, 7000, 13000 ]
++          probability: [ 0.00001, 1, 6, 7, 1, 1 ]
++      colourGains:
++        - ct: 2360
++          gains: [1.66417041, 3.23310702]
++        - ct: 2848
++          gains: [1.97199763, 2.5]
++        - ct: 2903
++          gains: [2.03873598, 2.27686703]
++        - ct: 3628
++          gains: [2.34686693, 1.79726815]
++        - ct: 3643
++          gains: [2.36518448, 1.7784101]
++        - ct: 4660
++          gains: [2.83366393, 1.47058824]
++        - ct: 5579
++          gains: [3.09885342, 1.42857143]
++        - ct: 6125
++          gains: [3.19590924, 1.4084507]
++        - ct: 6671
++          gains: [3.26264274, 1.38888889]
++        - ct: 7217
++          gains: [3.31785003, 1.36986301]
++        - ct: 7763
++          gains: [3.38983051, 1.35135135]
++        - ct: 9505
++          gains: [3.96196513, 1.27291242]
++      transversePos: 0.0238
++      transverseNeg: 0.04429
++  - BlackLevelCorrection:
++  - Ccm:
++      ccms:
++        - ct: 2850
++          ccm: [
++                 1.97469, -0.71439, -0.26031,
++                 -0.43521, 2.09769, -0.66248,
++                 -0.04826, -0.84642, 1.89468
++               ]
++        - ct: 2960
++          ccm: [
++                 2.12952, -0.91185, -0.21768,
++                 -0.38018, 1.90789, -0.52771,
++                 0.03988, -1.10079, 2.06092
++               ]
++        - ct: 3580
++          ccm: [
++                 2.03422, -0.80048, -0.23374,
++                 -0.39089, 1.97221, -0.58132,
++                 -0.08969, -0.61439, 1.70408
++               ]
++        - ct: 4559
++          ccm: [
++                 2.15423, -0.98143, -0.17279,
++                 -0.38131, 2.14763, -0.76632,
++                 -0.10069, -0.54383, 1.64452
++               ]
++        - ct: 5881
++          ccm: [
++                 2.18464, -0.95493, -0.22971,
++                 -0.36826, 2.00298, -0.63471,
++                 -0.15219, -0.38055, 1.53274
++               ]
++        - ct: 7600
++          ccm: [
++                 2.30687, -0.97295, -0.33392,
++                 -0.30872, 2.32779, -1.01908,
++                 -0.17761, -0.55891, 1.73651
++               ]
++  - GammaOutCorrection:
++...
+diff --git a/src/ipa/rppx1/data/meson.build b/src/ipa/rppx1/data/meson.build
+index 5aad326..781cdb5 100644
+--- a/src/ipa/rppx1/data/meson.build
++++ b/src/ipa/rppx1/data/meson.build
+@@ -2,6 +2,7 @@
+ 
+ conf_files = files([
+     'imx219.yaml',
++    'imx477.yaml',
+     'imx708.yaml',
+     'uncalibrated.yaml',
+ ])
+-- 
+2.43.0
+

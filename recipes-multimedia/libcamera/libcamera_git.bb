@@ -55,6 +55,8 @@ SRC_URI:append = " \
     file://0037-ipa-rppx1-imx219-Add-basic-AGC-AWB-CCM-tuning.patch \
     file://0038-ipa-rppx1-imx219-Add-LSC-tuning.patch \
     file://0039-ipa-camera_sensor_helper-Add-black-level-for-imx477.patch \
+    file://0040-ipa-rppx1-Add-tuning-file-for-imx477.patch \
+    file://0041-ipa-rppx1-imx477-Add-LSC-tuning.patch \
 "
 SRCREV = "0f0450158f4eaa37de633520822a9c4a1c25c5ea"
 S = "${WORKDIR}/git"
