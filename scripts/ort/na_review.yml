@@ -1,0 +1,3502 @@
+http://download.osgeo.org/libtiff/tiff-4.6.0.tar.gz:
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/libtiff/tif_win32_versioninfo.rc'
+  reason: REFERENCE
+  text: VALUE "LegalCopyright", "See LICENCE.md"
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/tools/tif_tools_versioninfo.rc'
+  reason: REFERENCE
+  text: VALUE "LegalCopyright", "See LICENCE.md"
+http://downloads.webmproject.org/releases/webp/libwebp-1.3.2.tar.gz:
+- category: B
+  concluded_license: NONE
+  inferred: false
+  path: '**/CONTRIBUTING.md'
+  reason: INCORRECT
+  text: '## Contributor License Agreement Contributions to this project must be accompanied by a Contributor License Ag'
+http://fontconfig.org/release/fontconfig-2.15.0.tar.gz:
+- category: B
+  concluded_license: NONE
+  inferred: false
+  path: '**/po-conf/Rules-quot'
+  reason: INCORRECT
+  text: '# This file, Rules-quot, can be copied and used freely without restrictions.'
+http://www.python.org/ftp/python/3.12.16/Python-3.12.16.tar.xz:
+- category: B
+  concluded_license: NONE
+  inferred: false
+  path: '**/Doc/library/os.path.rst'
+  reason: INCORRECT
+  text: 'some platforms, this function may return ``False`` if permission is not granted to execute :func:`os.stat` on '
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/Lib/codecs.py'
+  reason: null
+  text: (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/Lib/encodings/__init__.py'
+  reason: null
+  text: (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/Lib/encodings/ascii.py'
+  reason: null
+  text: (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/Lib/encodings/charmap.py'
+  reason: null
+  text: (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/Lib/encodings/latin_1.py'
+  reason: null
+  text: (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/Lib/encodings/mac_latin2.py'
+  reason: null
+  text: (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/Lib/encodings/mbcs.py'
+  reason: null
+  text: (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/Lib/encodings/ptcp154.py'
+  reason: null
+  text: (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/Lib/encodings/raw_unicode_escape.py'
+  reason: null
+  text: (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/Lib/encodings/undefined.py'
+  reason: null
+  text: (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/Lib/encodings/unicode_escape.py'
+  reason: null
+  text: (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/Lib/encodings/utf_16.py'
+  reason: null
+  text: (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/Lib/encodings/utf_16_be.py'
+  reason: null
+  text: (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/Lib/encodings/utf_16_le.py'
+  reason: null
+  text: (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/Lib/encodings/utf_8.py'
+  reason: null
+  text: (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/Lib/platform.py'
+  reason: null
+  text: Permission to use, copy, modify, and distribute this software and its documentation for any purpose and withou
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/Lib/trace.py'
+  reason: null
+  text: '# Permission to use, copy, modify, and distribute this Python software and # its associated documentation for '
+- category: B
+  concluded_license: NONE
+  inferred: false
+  path: '**/Makefile.pre.in'
+  reason: INCORRECT
+  text: $(INSTALL_DATA) $(srcdir)/LICENSE $(DESTDIR)$(LIBDEST)/LICENSE.txt
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/Modules/_localemodule.c'
+  reason: null
+  text: Permission to use, copy, modify, and distribute this software and its documentation for any purpose and withou
+- category: B
+  concluded_license: NONE
+  inferred: false
+  path: '**/Tools/msi/bundle/Default.wxl'
+  reason: INCORRECT
+  text: <String Id="InstallLicenseLinkText">[WixBundleName] &lt;a href="#"&gt;license terms&lt;/a&gt;.</String> <Strin
+- category: B
+  concluded_license: NONE
+  inferred: false
+  path: '**/Tools/stringbench/stringbench.py'
+  reason: INCORRECT
+  text: Python is distributed under an OSI-approved open source license that
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/Tools/unicode/python-mappings/jisx0213-2004-std.txt'
+  reason: null
+  text: '## You can use, modify, distribute this table freely.'
+http://www.thrysoee.dk/editline/libedit-20230828-3.1.tar.gz:
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/src/wcsdup.c'
+  reason: null
+  text: '* This material is provided "as is", with absolutely no warranty expressed * or implied. Any use is at your ow'
+https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.6.tar.xz:
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/arch/arm/kernel/ftrace.c'
+  reason: REFERENCE
+  text: '* For licencing details, see COPYING.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/arch/ia64/kernel/ftrace.c'
+  reason: REFERENCE
+  text: '* For licencing details, see COPYING.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/drivers/net/ethernet/chelsio/cxgb4/clip_tbl.c'
+  reason: REFERENCE
+  text: '* This program is distributed in the hope that it will be useful, but WITHOUT * ANY WARRANTY; without even the'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/drivers/net/ethernet/chelsio/cxgb4/clip_tbl.h'
+  reason: REFERENCE
+  text: '* This program is distributed in the hope that it will be useful, but WITHOUT * ANY WARRANTY; without even the'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/drivers/net/wireless/intersil/orinoco/cfg.c'
+  reason: REFERENCE
+  text: '* See copyright notice in main.c'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/drivers/net/wireless/intersil/orinoco/cfg.h'
+  reason: REFERENCE
+  text: '* See copyright notice in main.c'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/drivers/net/wireless/intersil/orinoco/fw.c'
+  reason: REFERENCE
+  text: '* See copyright notice in main.c'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/drivers/net/wireless/intersil/orinoco/fw.h'
+  reason: REFERENCE
+  text: '* See copyright notice in main.c'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/drivers/net/wireless/intersil/orinoco/hw.c'
+  reason: REFERENCE
+  text: '* See copyright notice in main.c'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/drivers/net/wireless/intersil/orinoco/hw.h'
+  reason: REFERENCE
+  text: '* See copyright notice in main.c'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/drivers/net/wireless/intersil/orinoco/main.h'
+  reason: REFERENCE
+  text: '* See copyright notice in main.c'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/drivers/net/wireless/intersil/orinoco/mic.c'
+  reason: REFERENCE
+  text: '* See copyright notice in main.c'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/drivers/net/wireless/intersil/orinoco/mic.h'
+  reason: REFERENCE
+  text: '* See copyright notice in main.c'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/drivers/net/wireless/intersil/orinoco/scan.c'
+  reason: REFERENCE
+  text: '* See copyright notice in main.c'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/drivers/net/wireless/intersil/orinoco/scan.h'
+  reason: REFERENCE
+  text: '* See copyright notice in main.c'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/drivers/net/wireless/intersil/orinoco/wext.c'
+  reason: REFERENCE
+  text: '* See copyright notice in main.c'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/drivers/net/wireless/intersil/orinoco/wext.h'
+  reason: REFERENCE
+  text: '* See copyright notice in main.c'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/fs/aio.c'
+  reason: REFERENCE
+  text: '* See ../COPYING for licensing terms.'
+https://cdn.kernel.org/pub/linux/libs/security/linux-privs/libcap2/libcap-2.69.tar.xz:
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/progs/capsh.c'
+  reason: REFERENCE
+  text: '"%s see License file for details.\n"'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/progs/getcap.c'
+  reason: REFERENCE
+  text: printf("%s see LICENSE file for details.\n"
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/progs/getpcaps.c'
+  reason: REFERENCE
+  text: printf("%s see LICENSE file for details.\n"
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/progs/setcap.c'
+  reason: REFERENCE
+  text: '"%s see LICENSE file for details.\n"'
+https://cdn.kernel.org/pub/linux/utils/util-linux/v2.39/util-linux-2.39.3.tar.xz:
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/schedutils/taskset.1'
+  reason: null
+  text: Copyright © 2004 Robert M. Love. This is free software; see the source for copying conditions. There is NO war
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/sys-utils/dmesg.c'
+  reason: null
+  text: '* This program comes with ABSOLUTELY NO WARRANTY.'
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/sys-utils/flock.1'
+  reason: null
+  text: 'Copyright © 2003\-2006 H. Peter Anvin. This is free software; see the source for copying conditions. There is '
+- category: B
+  concluded_license: NONE
+  inferred: false
+  path: '**/sys-utils/mount.8'
+  reason: INCORRECT
+  text: For filesystems created by a BSD\-like system (NetBSD, FreeBSD, OpenBSD).
+https://cmake.org/files/v3.28/cmake-3.28.3.tar.gz:
+- category: B
+  concluded_license: NONE
+  inferred: false
+  path: '**/Help/cpack_gen/dmg.rst'
+  reason: INCORRECT
+  text: non-default value, is used as the license agreement provided when
+- category: B
+  concluded_license: NONE
+  inferred: false
+  path: '**/Help/policy/CMP0133.rst'
+  reason: INCORRECT
+  text: Software License Agreement (SLA) to ``.dmg`` files using the file specified
+- category: B
+  concluded_license: NONE
+  inferred: false
+  path: '**/Help/release/3.23.rst'
+  reason: INCORRECT
+  text: :variable:`CPACK_RESOURCE_FILE_LICENSE` as the license agreement in
+https://download.gnome.org/sources//glib/2.78/glib-2.78.6.tar.xz:
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/LICENSES/LicenseRef-old-glib-tests.txt'
+  reason: null
+  text: This work is provided "as is"; redistribution and modification in whole or in part, in any medium, physical or
+https://download.gnome.org/sources//libxml2/2.12/libxml2-2.12.10.tar.xz:
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/HTMLparser.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/HTMLtree.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/SAX.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/SAX2.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/buf.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/c14n.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/catalog.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/debugXML.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/encoding.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/entities.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/error.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/fuzz/fuzz.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/fuzz/fuzz.h'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/fuzz/genSeed.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/fuzz/html.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/fuzz/regexp.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/fuzz/schema.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/fuzz/testFuzzer.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/fuzz/uri.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/fuzz/valid.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/fuzz/xinclude.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/fuzz/xml.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/fuzz/xpath.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/globals.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hash.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/HTMLparser.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/HTMLtree.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/SAX.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/SAX2.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/c14n.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/catalog.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/debugXML.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/dict.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/encoding.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/entities.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/globals.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/hash.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/list.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/nanoftp.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/nanohttp.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/parser.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/parserInternals.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/pattern.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/relaxng.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/schemasInternals.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/schematron.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/threads.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/tree.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/uri.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/valid.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/xinclude.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/xlink.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/xmlIO.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/xmlautomata.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/xmlerror.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/xmlexports.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/xmlmemory.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/xmlmodule.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/xmlreader.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/xmlregexp.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/xmlsave.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/xmlschemas.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/xmlschemastypes.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/xmlstring.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/xmlversion.h.in'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/xmlwriter.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/xpath.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/xpathInternals.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/libxml/xpointer.h'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/private/xzlib.h'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/legacy.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/libxml.h'
+  reason: REFERENCE
+  text: '* See COPYRIGHT for the status of this software'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/nanohttp.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/dlfcn/dlfcn.c'
+  reason: REFERENCE
+  text: '*** See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/dlfcn/dlfcn.h'
+  reason: REFERENCE
+  text: '*** See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/iconv/bldcsndfa/bldcsndfa.c'
+  reason: REFERENCE
+  text: '*** See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/iconv/bldcsndfa/ccsid_mibenum.dtd'
+  reason: REFERENCE
+  text: '--- See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/iconv/bldcsndfa/ccsid_mibenum.xml'
+  reason: REFERENCE
+  text: '--- See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/iconv/iconv.c'
+  reason: REFERENCE
+  text: '*** See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/iconv/iconv.h'
+  reason: REFERENCE
+  text: '*** See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/initscript.sh'
+  reason: REFERENCE
+  text: '# See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlmain.c'
+  reason: REFERENCE
+  text: '*** See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/DOCBparser.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/HTMLparser.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/HTMLtree.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/SAX.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/SAX2.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/c14n.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/catalog.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/chvalid.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/debugXML.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/dict.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/encoding.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/entities.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/globals.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/hash.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/list.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/nanoftp.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/nanohttp.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/parser.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/parserInternals.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/pattern.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/relaxng.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/schemasInternals.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/schematron.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/threads.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/transcode.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/tree.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/uri.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/valid.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/xinclude.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/xlink.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/xmlIO.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/xmlTypesC.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/xmlautomata.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/xmlerror.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/xmlexports.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/xmlmemory.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/xmlmodule.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/xmlreader.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/xmlregexp.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/xmlsave.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/xmlschemas.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/xmlschemastypes.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/xmlstdarg.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/xmlstring.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/xmlunicode.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/xmlversion.rpgle.in'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/xmlwriter.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/xpath.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/xpathInternals.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/libxmlrpg/xpointer.rpgle'
+  reason: REFERENCE
+  text: '* Copy: See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/make-bldcsndfa.sh'
+  reason: REFERENCE
+  text: '# See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/make-include.sh'
+  reason: REFERENCE
+  text: '# See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/make-rpg.sh'
+  reason: REFERENCE
+  text: '# See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/make-src.sh'
+  reason: REFERENCE
+  text: '# See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/make.sh'
+  reason: REFERENCE
+  text: '# See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/os400config.h.in'
+  reason: REFERENCE
+  text: '*** See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/rpgsupport.c'
+  reason: REFERENCE
+  text: '*** See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/rpgsupport.h'
+  reason: REFERENCE
+  text: '*** See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/transcode.c'
+  reason: REFERENCE
+  text: '*** See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/transcode.h'
+  reason: REFERENCE
+  text: '*** See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/wrappers.c'
+  reason: REFERENCE
+  text: '*** See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/wrappers.h'
+  reason: REFERENCE
+  text: '*** See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/xmlcatalog.cmd'
+  reason: REFERENCE
+  text: /* See Copyright for the status of this software. */
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/xmlcatlgcl.c'
+  reason: REFERENCE
+  text: '*** See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/xmllint.cmd'
+  reason: REFERENCE
+  text: /* See Copyright for the status of this software. */
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/os400/xmllintcl.c'
+  reason: REFERENCE
+  text: '*** See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/parser.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/parserInternals.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/pattern.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/python/libxml.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/python/types.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/relaxng.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/runsuite.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/runtest.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/runxmlconf.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/schematron.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/testModule.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/testapi.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/testchar.c'
+  reason: REFERENCE
+  text: '* copy: see Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/testlimits.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/testparser.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/testrecurse.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/threads.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/tree.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/uri.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/valid.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/xinclude.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/xlink.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/xmlIO.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/xmlcatalog.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/xmllint.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/xmlmodule.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/xmlreader.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/xmlregexp.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/xmlsave.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/xmlschemas.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/xmlschemastypes.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/xmlstring.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/xpath.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/xpointer.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/xzlib.c'
+  reason: REFERENCE
+  text: '* See Copyright for the status of this software.'
+https://download.gnome.org/sources//pango/1.52/pango-1.52.1.tar.xz:
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/utils/GLASS.txt'
+  reason: null
+  text: to redistribute this file, with absolutely no warranty.
+https://download.savannah.gnu.org/releases/lzip/lzlib/lzlib-1.14.tar.gz:
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/INSTALL'
+  reason: null
+  text: 'This file is free documentation: you have unlimited permission to copy, distribute, and modify it.'
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/bbexample.c'
+  reason: null
+  text: 'This program is free software: you have unlimited permission to copy, distribute, and modify it.'
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/ffexample.c'
+  reason: null
+  text: 'This program is free software: you have unlimited permission to copy, distribute, and modify it.'
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/lzcheck.c'
+  reason: null
+  text: 'This program is free software: you have unlimited permission to copy, distribute, and modify it.'
+https://download.savannah.gnu.org/releases/quilt/quilt-0.67.tar.gz:
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/bash_completion'
+  reason: REFERENCE
+  text: '# This file is part of the distribution of quilt, and is distributed under # the same licence than quilt itsel'
+https://downloads.sourceforge.net/libjpeg-turbo/libjpeg-turbo-3.0.1.tar.gz:
+- category: B
+  concluded_license: NONE
+  inferred: false
+  path: '**/release/Distribution.xml.in'
+  reason: INCORRECT
+  text: <license file="License.rtf" />
+https://downloads.sourceforge.net/rpcbind/rpcbind-1.2.6.tar.bz2:
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/src/xlog.c'
+  reason: null
+  text: '* as is, with no warranty expressed or implied.'
+https://downloads.sourceforge.net/tcl/tcl-core8.6.13-src.tar.gz:
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/compat/dlfcn.h'
+  reason: null
+  text: '* This file is subject to the following copyright notice, which is * different from the notice used elsewhere '
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/compat/zlib/contrib/pascal/zlibpas.pas'
+  reason: REFERENCE
+  text: '* For conditions of distribution and use, see copyright notice in readme.txt'
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/unix/tclLoadAix.c'
+  reason: null
+  text: '* This file is subject to the following copyright notice, which is * different from the notice used elsewhere '
+https://files.pythonhosted.org/packages/source/s/setuptools/setuptools-69.1.1.tar.gz:
+- category: B
+  concluded_license: NONE
+  inferred: false
+  path: '**/setuptools/_distutils/dist.py'
+  reason: INCORRECT
+  text: self.license = None
+- category: B
+  concluded_license: NONE
+  inferred: false
+  path: '**/setuptools/config/_apply_pyprojecttoml.py'
+  reason: INCORRECT
+  text: '"license_file", "license_files",'
+https://ftpmirror.gnu.org/gnu/bash/bash-5.2.21.tar.gz:
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/support/man2html.c'
+  reason: null
+  text: '* Permission is granted to distribute, modify and use this program as long * as this comment is not removed or'
+https://ftpmirror.gnu.org/gnu/gcc/gcc-13.5.0/gcc-13.5.0.tar.xz:
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/libgcc/config/m68k/fpgnulib.c'
+  reason: null
+  text: '** Permission is granted to do *anything* you want with this file, ** commercial or otherwise, provided this m'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/zlib/contrib/pascal/zlibpas.pas'
+  reason: REFERENCE
+  text: '* For conditions of distribution and use, see copyright notice in readme.txt'
+https://ftpmirror.gnu.org/gnu/gettext/gettext-0.22.5.tar.gz:
+- category: B
+  concluded_license: NONE
+  inferred: false
+  path: '**/gettext-tools/misc/DISCLAIM'
+  reason: INCORRECT
+  text: Free Software Foundation 51 Franklin Street, Fifth Floor Boston, MA 02110-1301 USA
+https://ftpmirror.gnu.org/gnu/parted/parted-3.6.tar.xz:
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/libparted/fs/hfs/DOC'
+  reason: null
+  text: might also be there in 2.6, there is of course no warranty)
+https://git.kernel.org/pub/scm/fs/ext2/e2fsprogs.git:
+- category: B
+  concluded_license: NONE
+  inferred: false
+  path: '**/lib/ext2fs/tdb/patches/replace-includes'
+  reason: INCORRECT
+  text: Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+- category: B
+  concluded_license: NONE
+  inferred: false
+  path: '**/lib/ext2fs/tdb/patches/tdbtool-includes'
+  reason: INCORRECT
+  text: Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+- category: D
+  concluded_license: null
+  inferred: false
+  path: '**/lib/uuid/Android.bp'
+  reason: INCORRECT
+  text: '"SPDX-license-identifier-BSD",'
+https://git.u-boot-project.org/u-boot/u-boot.git:
+- category: D
+  concluded_license: GPL-2.0-or-later
+  inferred: false
+  path: '**/board/adi/sc573-ezlite/sc573-ezlite.env'
+  reason: INCORRECT
+  text: '/* SPDX-License-Identifier: GPL-2.0-or-later+ */'
+- category: D
+  concluded_license: GPL-2.0-or-later
+  inferred: false
+  path: '**/board/adi/sc584-ezkit/sc584-ezkit.env'
+  reason: INCORRECT
+  text: '/* SPDX-License-Identifier: GPL-2.0-or-later+ */'
+- category: D
+  concluded_license: GPL-2.0-or-later
+  inferred: false
+  path: '**/board/adi/sc589-ezkit/sc589-ezkit.env'
+  reason: INCORRECT
+  text: '/* SPDX-License-Identifier: GPL-2.0-or-later+ */'
+- category: D
+  concluded_license: GPL-2.0-or-later
+  inferred: false
+  path: '**/board/adi/sc589-mini/sc589-mini.env'
+  reason: INCORRECT
+  text: '/* SPDX-License-Identifier: GPL-2.0-or-later+ */'
+- category: D
+  concluded_license: GPL-2.0-or-later
+  inferred: false
+  path: '**/board/adi/sc594-som-ezkit/sc594-som-ezkit.env'
+  reason: INCORRECT
+  text: '/* SPDX-License-Identifier: GPL-2.0-or-later+ */'
+- category: D
+  concluded_license: GPL-2.0-or-later
+  inferred: false
+  path: '**/board/adi/sc594-som-ezlite/sc594-som-ezlite.env'
+  reason: INCORRECT
+  text: '/* SPDX-License-Identifier: GPL-2.0-or-later+ */'
+- category: D
+  concluded_license: GPL-2.0-or-later
+  inferred: false
+  path: '**/board/adi/sc598-som-ezkit/sc598-som-ezkit.env'
+  reason: INCORRECT
+  text: '/* SPDX-License-Identifier: GPL-2.0-or-later+ */'
+- category: D
+  concluded_license: GPL-2.0-or-later
+  inferred: false
+  path: '**/board/adi/sc598-som-ezlite/sc598-som-ezlite.env'
+  reason: INCORRECT
+  text: '/* SPDX-License-Identifier: GPL-2.0-or-later+ */'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/drivers/i2c/omap24xx_i2c.c'
+  reason: REFERENCE
+  text: '* This package is free software; you can redistribute it and/or * modify it under the terms of the license fou'
+- category: D
+  concluded_license: GPL-2.0-or-later
+  inferred: false
+  path: '**/drivers/sound/tegra_ahub.c'
+  reason: INCORRECT
+  text: '// SPDX-License-Identifier: GPL-2.0+159'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/net/tftp.c'
+  reason: REFERENCE
+  text: '* (See License)'
+https://github.com/ThomasDickey/ncurses-snapshots.git:
+- category: B
+  concluded_license: NONE
+  inferred: false
+  path: '**/ANNOUNCE'
+  reason: INCORRECT
+  text: '* A BSD-like tset utility is provided.'
+https://github.com/abseil/abseil-cpp.git:
+- category: B
+  concluded_license: NONE
+  inferred: false
+  path: '**/CONTRIBUTING.md'
+  reason: INCORRECT
+  text: '## Contributor License Agreement Contributions to this project must be accompanied by a Contributor License Ag'
+https://github.com/avahi/avahi/releases//download/v0.8/avahi-0.8.tar.gz:
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/common/doxygen.mk'
+  reason: null
+  text: '# This file is distributed under the same terms as the Automake macro files.'
+https://github.com/libevent/libevent/releases//download/release-2.1.13-stable/libevent-2.1.13-stable.tar.gz:
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/configure.ac'
+  reason: REFERENCE
+  text: dnl See LICENSE for copying information.
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/include.am'
+  reason: REFERENCE
+  text: '# See LICENSE for copying information.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/sample/include.am'
+  reason: REFERENCE
+  text: '# See LICENSE for copying information.'
+https://github.com/libsndfile/libsndfile/releases//download/1.2.2/libsndfile-1.2.2.tar.xz:
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/src/GSM610/add.c'
+  reason: REFERENCE
+  text: '* Universitaet Berlin. See the accompanying file "COPYRIGHT" for * details. THERE IS ABSOLUTELY NO WARRANTY FO'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/src/GSM610/code.c'
+  reason: REFERENCE
+  text: '* Universitaet Berlin. See the accompanying file "COPYRIGHT" for * details. THERE IS ABSOLUTELY NO WARRANTY FO'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/src/GSM610/config.h'
+  reason: REFERENCE
+  text: '* Universitaet Berlin. See the accompanying file "COPYRIGHT" for * details. THERE IS ABSOLUTELY NO WARRANTY FO'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/src/GSM610/decode.c'
+  reason: REFERENCE
+  text: '* Universitaet Berlin. See the accompanying file "COPYRIGHT" for * details. THERE IS ABSOLUTELY NO WARRANTY FO'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/src/GSM610/gsm.h'
+  reason: REFERENCE
+  text: '* Universitaet Berlin. See the accompanying file "COPYRIGHT" for * details. THERE IS ABSOLUTELY NO WARRANTY FO'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/src/GSM610/gsm610_priv.h'
+  reason: REFERENCE
+  text: '* Universitaet Berlin. See the accompanying file "COPYRIGHT" for * details. THERE IS ABSOLUTELY NO WARRANTY FO'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/src/GSM610/gsm_create.c'
+  reason: REFERENCE
+  text: '* Universitaet Berlin. See the accompanying file "COPYRIGHT" for * details. THERE IS ABSOLUTELY NO WARRANTY FO'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/src/GSM610/gsm_decode.c'
+  reason: REFERENCE
+  text: '* Universitaet Berlin. See the accompanying file "COPYRIGHT" for * details. THERE IS ABSOLUTELY NO WARRANTY FO'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/src/GSM610/gsm_destroy.c'
+  reason: REFERENCE
+  text: '* Universitaet Berlin. See the accompanying file "COPYRIGHT" for * details. THERE IS ABSOLUTELY NO WARRANTY FO'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/src/GSM610/gsm_encode.c'
+  reason: REFERENCE
+  text: '* Universitaet Berlin. See the accompanying file "COPYRIGHT" for * details. THERE IS ABSOLUTELY NO WARRANTY FO'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/src/GSM610/gsm_option.c'
+  reason: REFERENCE
+  text: '* Universitaet Berlin. See the accompanying file "COPYRIGHT" for * details. THERE IS ABSOLUTELY NO WARRANTY FO'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/src/GSM610/long_term.c'
+  reason: REFERENCE
+  text: '* Universitaet Berlin. See the accompanying file "COPYRIGHT" for * details. THERE IS ABSOLUTELY NO WARRANTY FO'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/src/GSM610/lpc.c'
+  reason: REFERENCE
+  text: '* Universitaet Berlin. See the accompanying file "COPYRIGHT" for * details. THERE IS ABSOLUTELY NO WARRANTY FO'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/src/GSM610/preprocess.c'
+  reason: REFERENCE
+  text: '* Universitaet Berlin. See the accompanying file "COPYRIGHT" for * details. THERE IS ABSOLUTELY NO WARRANTY FO'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/src/GSM610/rpe.c'
+  reason: REFERENCE
+  text: '* Universitaet Berlin. See the accompanying file "COPYRIGHT" for * details. THERE IS ABSOLUTELY NO WARRANTY FO'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/src/GSM610/short_term.c'
+  reason: REFERENCE
+  text: '* Universitaet Berlin. See the accompanying file "COPYRIGHT" for * details. THERE IS ABSOLUTELY NO WARRANTY FO'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/src/GSM610/table.c'
+  reason: REFERENCE
+  text: '* Universitaet Berlin. See the accompanying file "COPYRIGHT" for * details. THERE IS ABSOLUTELY NO WARRANTY FO'
+https://github.com/linux-nvme/libnvme.git:
+- category: D
+  concluded_license: MIT
+  inferred: false
+  path: '**/ccan/ccan/list/list.c'
+  reason: INCORRECT
+  text: /* Licensed under BSD-MIT - see LICENSE file for details */
+- category: D
+  concluded_license: MIT
+  inferred: false
+  path: '**/ccan/ccan/list/list.h'
+  reason: INCORRECT
+  text: /* Licensed under BSD-MIT - see LICENSE file for details */
+https://github.com/linux-nvme/nvme-cli.git:
+- category: D
+  concluded_license: MIT
+  inferred: false
+  path: '**/ccan/ccan/list/list.c'
+  reason: INCORRECT
+  text: /* Licensed under BSD-MIT - see LICENSE file for details */
+- category: D
+  concluded_license: MIT
+  inferred: false
+  path: '**/ccan/ccan/list/list.h'
+  reason: INCORRECT
+  text: /* Licensed under BSD-MIT - see LICENSE file for details */
+https://github.com/nghttp2/nghttp2/releases//download/v1.61.0/nghttp2-1.61.0.tar.xz:
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mrbconf.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/array.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/boxing_nan.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/boxing_no.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/boxing_word.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/class.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/common.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/compile.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/data.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/debug.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/dump.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/endian.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/error.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/gc.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/hash.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/internal.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/irep.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/istruct.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/khash.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/numeric.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/object.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/opcode.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/presym.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/presym/disable.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/presym/enable.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/presym/scanning.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/proc.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/range.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/re.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/string.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/throw.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/value.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/variable.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/include/mruby/version.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/mrbgems/mruby-bigint/core/bigint.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/mrbgems/mruby-cmath/src/cmath.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/mrbgems/mruby-compiler/core/codegen.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/mrbgems/mruby-compiler/core/node.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/mrbgems/mruby-compiler/core/parse.y'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/mrbgems/mruby-data/src/data.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/mrbgems/mruby-dir/src/dir.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/mrbgems/mruby-enum-chain/mrblib/chain.rb'
+  reason: REFERENCE
+  text: '# See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/mrbgems/mruby-enumerator/mrblib/enumerator.rb'
+  reason: REFERENCE
+  text: '# See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/mrbgems/mruby-hash-ext/src/hash-ext.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/mrbgems/mruby-math/src/math.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/mrbgems/mruby-socket/src/socket.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/mrbgems/mruby-sprintf/src/sprintf.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/mrbgems/mruby-struct/src/struct.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/mrbgems/mruby-time/include/mruby/time.h'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/mrbgems/mruby-time/src/time.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/src/allocf.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/src/array.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/src/backtrace.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/src/cdump.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/src/class.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/src/dump.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/src/enum.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/src/error.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/src/etc.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/src/gc.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/src/hash.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/src/init.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/src/kernel.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/src/load.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/src/numeric.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/src/numops.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/src/object.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/src/pool.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/src/print.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/src/proc.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/src/range.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/src/state.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/src/string.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/src/symbol.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/src/variable.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/third-party/mruby/src/vm.c'
+  reason: REFERENCE
+  text: '** See Copyright Notice in mruby.h'
+https://github.com/numpy/numpy/releases/download/v1.26.4/numpy-1.26.4.tar.gz:
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/numpy/core/src/common/array_assign.c'
+  reason: REFERENCE
+  text: '* See LICENSE.txt for the license.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/numpy/core/src/multiarray/array_assign_array.c'
+  reason: REFERENCE
+  text: '* See LICENSE.txt for the license.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/numpy/core/src/multiarray/array_assign_scalar.c'
+  reason: REFERENCE
+  text: '* See LICENSE.txt for the license.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/numpy/core/src/multiarray/datetime.c'
+  reason: REFERENCE
+  text: '* See LICENSE.txt for the license.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/numpy/core/src/multiarray/datetime_busday.c'
+  reason: REFERENCE
+  text: '* See LICENSE.txt for the license.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/numpy/core/src/multiarray/datetime_busdaycal.c'
+  reason: REFERENCE
+  text: '* See LICENSE.txt for the license.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/numpy/core/src/multiarray/datetime_strings.c'
+  reason: REFERENCE
+  text: '* See LICENSE.txt for the license.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/numpy/core/src/multiarray/nditer_api.c'
+  reason: REFERENCE
+  text: '* See LICENSE.txt for the license.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/numpy/core/src/multiarray/nditer_constr.c'
+  reason: REFERENCE
+  text: '* See LICENSE.txt for the license.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/numpy/core/src/umath/reduction.c'
+  reason: REFERENCE
+  text: '* See LICENSE.txt for the license.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/numpy/core/src/umath/ufunc_type_resolution.c'
+  reason: REFERENCE
+  text: '* See LICENSE.txt for the license.'
+https://github.com/opencv/opencv.git:
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/modules/features2d/src/kaze/KAZEFeatures.cpp'
+  reason: REFERENCE
+  text: // See LICENSE for the license information
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/modules/features2d/src/kaze/fed.cpp'
+  reason: REFERENCE
+  text: // See LICENSE for the license information
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/modules/features2d/src/kaze/nldiffusion_functions.cpp'
+  reason: REFERENCE
+  text: // See LICENSE for the license information
+https://github.com/protocolbuffers/protobuf.git:
+- category: B
+  concluded_license: NONE
+  inferred: false
+  path: '**/third_party/utf8_range/CONTRIBUTING.md'
+  reason: INCORRECT
+  text: '## Contributor License Agreement Contributions to this project must be accompanied by a Contributor License Ag'
+https://github.com/rcar-community/linux.git:
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/arch/arm/kernel/ftrace.c'
+  reason: REFERENCE
+  text: '* For licencing details, see COPYING.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/drivers/net/ethernet/chelsio/cxgb4/clip_tbl.c'
+  reason: REFERENCE
+  text: '* This program is distributed in the hope that it will be useful, but WITHOUT * ANY WARRANTY; without even the'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/drivers/net/ethernet/chelsio/cxgb4/clip_tbl.h'
+  reason: REFERENCE
+  text: '* This program is distributed in the hope that it will be useful, but WITHOUT * ANY WARRANTY; without even the'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/fs/aio.c'
+  reason: REFERENCE
+  text: '* See ../COPYING for licensing terms.'
+https://github.com/systemd/systemd-stable.git:
+- category: D
+  concluded_license: LicenseRef-scancode-public-domain
+  inferred: false
+  path: '**/src/libsystemd/sd-journal/lookup3.h'
+  reason: INCORRECT
+  text: '/* SPDX-License-Identifier: LicenseRef-lookup3-public-domain */'
+https://salsa.debian.org/debian/init-system-helpers.git:
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/debian/rules'
+  reason: null
+  text: '# As a special exception, when this file is copied by dh-make into a # dh-make output file, you may use that o'
+https://sourceware.org/elfutils/ftp/0.191/elfutils-0.191.tar.bz2:
+- category: B
+  concluded_license: NONE
+  inferred: false
+  path: '**/src/make-debug-archive.in'
+  reason: INCORRECT
+  text: 'echo "This is free software; see the source for copying conditions." echo "There is NO warranty; not even for '
+https://sourceware.org/git/binutils-gdb.git:
+- category: A
+  concluded_license: NONE
+  inferred: true
+  path: '**/zlib/contrib/pascal/zlibpas.pas'
+  reason: REFERENCE
+  text: For conditions of distribution and use, see copyright notice in readme.txt
+https://sourceware.org/git/glibc.git:
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/posix/runtests.c'
+  reason: null
+  text: Permission to use, copy, modify, and distribute this software and its documentation for any purpose and withou
+- category: B
+  concluded_license: NONE
+  inferred: false
+  path: '**/stdio-common/test-fwrite.c'
+  reason: INCORRECT
+  text: There is absolutely no warranty for GDB; type \"show warranty\" for details.\n\
+https://www.cpan.org/src/5.0/perl-5.38.4.tar.gz:
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/cpan/Text-Tabs/lib/Text/Wrap.pm'
+  reason: null
+  text: This module may be modified, used, copied, and redistributed at your own risk. Although allowed by the precedi
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/dist/Safe/Safe.pm'
+  reason: null
+  text: The authors make B<no warranty>, implied or otherwise, about the
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/ext/Opcode/Opcode.pm'
+  reason: null
+  text: The authors make B<no warranty>, implied or otherwise, about the
+- category: B
+  concluded_license: NONE
+  inferred: false
+  path: '**/t/porting/libperl.t'
+  reason: INCORRECT
+  text: '# With the -m option we get better information than the BSD-like'
+https://www.gnupg.org/ftp/gcrypt/gnupg/gnupg-2.4.9.tar.bz2:
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/regexp/utf8.c'
+  reason: REFERENCE
+  text: '* See LICENCE for licence details.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/regexp/utf8.h'
+  reason: REFERENCE
+  text: '* See LICENCE for licence details.'
+https://www.gnupg.org/ftp/gcrypt/libgcrypt/libgcrypt-1.10.4.tar.bz2:
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/random/jitterentropy-base.c'
+  reason: REFERENCE
+  text: '* License: see LICENSE file in root directory'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/random/jitterentropy-base.h'
+  reason: REFERENCE
+  text: '* License: see LICENSE file in root directory'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/random/jitterentropy-gcd.h'
+  reason: REFERENCE
+  text: '* License: see LICENSE file in root directory'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/random/jitterentropy-health.c'
+  reason: REFERENCE
+  text: '* License: see LICENSE file in root directory'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/random/jitterentropy-health.h'
+  reason: REFERENCE
+  text: '* License: see LICENSE file in root directory'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/random/jitterentropy-noise.c'
+  reason: REFERENCE
+  text: '* License: see LICENSE file in root directory'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/random/jitterentropy-noise.h'
+  reason: REFERENCE
+  text: '* License: see LICENSE file in root directory'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/random/jitterentropy-sha3.c'
+  reason: REFERENCE
+  text: '* License: see LICENSE file in root directory'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/random/jitterentropy-sha3.h'
+  reason: REFERENCE
+  text: '* License: see LICENSE file in root directory'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/random/jitterentropy-timer.c'
+  reason: REFERENCE
+  text: '* License: see LICENSE file in root directory'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/random/jitterentropy-timer.h'
+  reason: REFERENCE
+  text: '* License: see LICENSE file in root directory'
+https://www.open-mpi.org/software/hwloc/v2.9/downloads/hwloc-2.9.3.tar.bz2:
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/configure.ac'
+  reason: REFERENCE
+  text: '# See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/contrib/completion/bash/hwloc'
+  reason: REFERENCE
+  text: '# See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/contrib/hwloc-valgrind.supp'
+  reason: REFERENCE
+  text: '# See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/contrib/misc/hwloc-export-sysfs'
+  reason: REFERENCE
+  text: '# See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/contrib/misc/hwloc-tweak-osindex.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/contrib/systemd/hwloc-dump-hwdata.service.in'
+  reason: REFERENCE
+  text: '# See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/contrib/windows/hwloc_config.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/bind.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/bitmap.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/components.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/cpukinds.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/diff.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/distances.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/hwloc.dtd'
+  reason: REFERENCE
+  text: See COPYING in top-level directory.
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/hwloc2-diff.dtd'
+  reason: REFERENCE
+  text: See COPYING in top-level directory.
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/hwloc2.dtd'
+  reason: REFERENCE
+  text: See COPYING in top-level directory.
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/memattrs.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/misc.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/pci-common.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/shmem.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/topology-aix.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/topology-bgq.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/topology-cuda.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/topology-darwin.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/topology-fake.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/topology-freebsd.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/topology-gl.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/topology-hardwired.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/topology-hpux.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/topology-levelzero.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/topology-linux.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/topology-netbsd.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/topology-noos.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/topology-nvml.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/topology-opencl.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/topology-pci.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/topology-rsmi.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/topology-solaris.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/topology-synthetic.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/topology-windows.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/topology-x86.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/topology-xml-libxml.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/topology-xml-nolibxml.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/topology-xml.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/topology.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/hwloc/traversal.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/hwloc.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/hwloc/autogen/config.h.in'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/hwloc/bitmap.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/hwloc/cpukinds.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/hwloc/cuda.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/hwloc/cudart.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/hwloc/deprecated.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/hwloc/diff.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/hwloc/distances.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/hwloc/export.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/hwloc/gl.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/hwloc/glibc-sched.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/hwloc/helper.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/hwloc/inlines.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/hwloc/levelzero.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/hwloc/linux-libnuma.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/hwloc/linux.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/hwloc/memattrs.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/hwloc/nvml.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/hwloc/opencl.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/hwloc/openfabrics-verbs.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/hwloc/plugins.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/hwloc/rename.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/hwloc/rsmi.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/hwloc/shmem.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/hwloc/windows.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/netloc.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/netlocscotch.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/private/components.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/private/cpuid-x86.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/private/debug.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/private/internal-components.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/private/misc.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/private/netloc.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/private/private.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/private/windows.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/include/private/xml.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/netloc/architecture.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/netloc/edge.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/netloc/hwloc.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/netloc/mpicomm.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/netloc/node.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/netloc/path.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/netloc/physical_link.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/netloc/scotch.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/netloc/support.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/netloc/topology.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/common-ps.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/common-ps.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/hwloc-annotate.1in'
+  reason: REFERENCE
+  text: .\" See COPYING in top-level directory.
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/hwloc-annotate.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/hwloc-bind.1in'
+  reason: REFERENCE
+  text: .\" See COPYING in top-level directory.
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/hwloc-bind.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/hwloc-calc.1in'
+  reason: REFERENCE
+  text: .\" See COPYING in top-level directory.
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/hwloc-calc.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/hwloc-calc.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/hwloc-compress-dir.1in'
+  reason: REFERENCE
+  text: .\" See COPYING in top-level directory.
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/hwloc-compress-dir.in'
+  reason: REFERENCE
+  text: '# See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/hwloc-diff.1in'
+  reason: REFERENCE
+  text: .\" See COPYING in top-level directory.
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/hwloc-diff.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/hwloc-distrib.1in'
+  reason: REFERENCE
+  text: .\" See COPYING in top-level directory.
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/hwloc-distrib.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/hwloc-dump-hwdata-knl.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/hwloc-dump-hwdata.1in'
+  reason: REFERENCE
+  text: .\" See COPYING in top-level directory.
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/hwloc-dump-hwdata.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/hwloc-gather-cpuid.1in'
+  reason: REFERENCE
+  text: .\" See COPYING in top-level directory.
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/hwloc-gather-cpuid.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/hwloc-gather-topology.1in'
+  reason: REFERENCE
+  text: .\" See COPYING in top-level directory.
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/hwloc-gather-topology.in'
+  reason: REFERENCE
+  text: '# See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/hwloc-info.1in'
+  reason: REFERENCE
+  text: .\" See COPYING in top-level directory.
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/hwloc-info.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/hwloc-patch.1in'
+  reason: REFERENCE
+  text: .\" See COPYING in top-level directory.
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/hwloc-patch.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/hwloc-ps.1in'
+  reason: REFERENCE
+  text: .\" See COPYING in top-level directory.
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/hwloc-ps.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/hwloc.7in'
+  reason: REFERENCE
+  text: .\" See COPYING in top-level directory.
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/misc.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/test-build-custom-topology.sh.in'
+  reason: REFERENCE
+  text: '# See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/test-fake-plugin.sh.in'
+  reason: REFERENCE
+  text: '# See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/test-hwloc-annotate.sh.in'
+  reason: REFERENCE
+  text: '# See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/test-hwloc-calc.sh.in'
+  reason: REFERENCE
+  text: '# See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/test-hwloc-compress-dir.sh.in'
+  reason: REFERENCE
+  text: '# See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/test-hwloc-diffpatch.sh.in'
+  reason: REFERENCE
+  text: '# See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/test-hwloc-distrib.sh.in'
+  reason: REFERENCE
+  text: '# See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/test-hwloc-dump-hwdata/test-hwloc-dump-hwdata.sh.in'
+  reason: REFERENCE
+  text: '# See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/test-hwloc-info.sh.in'
+  reason: REFERENCE
+  text: '# See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/hwloc/test-parsing-flags.sh.in'
+  reason: REFERENCE
+  text: '# See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/lstopo/lstopo-android.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/lstopo/lstopo-ascii.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/lstopo/lstopo-cairo.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/lstopo/lstopo-draw.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/lstopo/lstopo-fig.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/lstopo/lstopo-no-graphics.1in'
+  reason: REFERENCE
+  text: .\" See COPYING in top-level directory.
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/lstopo/lstopo-shmem.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/lstopo/lstopo-svg.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/lstopo/lstopo-text.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/lstopo/lstopo-tikz.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/lstopo/lstopo-windows.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/lstopo/lstopo-xml.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/lstopo/lstopo.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/lstopo/lstopo.h'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/lstopo/test-lstopo-shmem.sh.in'
+  reason: REFERENCE
+  text: '# See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/lstopo/test-lstopo.sh.in'
+  reason: REFERENCE
+  text: '# See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/netloc/draw/netloc_draw.html'
+  reason: REFERENCE
+  text: See COPYING in top-level directory.
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/netloc/draw/netloc_draw_to_json.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/netloc/infiniband/netloc_ib_extract_dats.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/netloc/infiniband/netloc_ib_gather_raw.in'
+  reason: REFERENCE
+  text: '# See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/netloc/mpi/netloc_mpi_find_hosts.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/netloc/mpi/netloc_mpi_rank_file.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+- category: A
+  concluded_license: NONE
+  inferred: false
+  path: '**/utils/netloc/mpi/netloc_rank_order.c'
+  reason: REFERENCE
+  text: '* See COPYING in top-level directory.'
+https://www.x.org/releases//individual/data/xkeyboard-config/xkeyboard-config-2.41.tar.xz:
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/symbols/hu'
+  reason: null
+  text: // Permission is granted to anyone to use, distribute and modify // this file in any way, provided that the ab
+- category: C
+  concluded_license: null
+  inferred: false
+  path: '**/symbols/tr'
+  reason: null
+  text: // This file distributed without any expressed or implied warranty.
