@@ -1,0 +1,65 @@
+name: ORT scan time test
+run-name: ORT scan time test
+on:
+  push:
+    branches:
+      - 'test/ort-ci'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  Scan:
+    name: ORT scan (time measurement)
+    if: github.repository_owner == 'rcar-community'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 360
+    env:
+      ORT_WORK: ${{ github.workspace }}/ort-work
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Free runner space
+        uses: justinthelaw/maximize-github-runner-space@c66ba0f3ad90f3f74aa2250d8ea645080be24da3 # v0.12.3
+        with:
+          swapfile-size: 4GiB
+
+      - name: Prepare
+        shell: bash
+        run: |
+          nproc; free -h; df -h /
+          mkdir -p "$ORT_WORK/in"
+          cp scripts/ort/test-input/image.spdx.json "$ORT_WORK/in/"
+          pip3 install pyyaml
+
+      - name: Analyze
+        shell: bash
+        run: scripts/ort/run.sh analyze
+
+      - name: Scan (time boxed)
+        shell: bash
+        run: |
+          # Stop before the job limit so that the results are kept.
+          START=$(date +%s)
+          ( while sleep 600; do
+              echo "--- $(( ($(date +%s) - START) / 60 )) min: scanner storage $(du -sm "$ORT_WORK/ortdata/scanner" 2>/dev/null | cut -f1) MB"
+              df -h / | tail -1
+            done ) &
+          timeout 320m scripts/ort/run.sh scan || echo "scan stopped rc=$?"
+          # timeout does not stop the container
+          docker ps -q | xargs -r docker stop
+          echo "scan time: $(( ($(date +%s) - START) / 60 )) min"
+          ls -la "$ORT_WORK/scan" || true
+          du -sm "$ORT_WORK/ortdata/scanner" || true
+
+      - name: Upload scanner storage
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ort-scanner-storage
+          path: ${{ env.ORT_WORK }}/ortdata/scanner
+          retention-days: 7
+          if-no-files-found: ignore
