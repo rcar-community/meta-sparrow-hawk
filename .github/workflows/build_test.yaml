@@ -57,7 +57,7 @@ jobs:
             }
             ( while true; do sleep 900; snap; done ) &
             MONITOR_PID=$!
-            trap 'kill ${MONITOR_PID} 2>/dev/null; snap' EXIT
+            trap 'kill ${MONITOR_PID} 2>/dev/null || true; snap || true' EXIT
           fi
           ${{ matrix.commands }}
 
