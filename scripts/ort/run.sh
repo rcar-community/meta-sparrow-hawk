@@ -24,6 +24,7 @@ if [ ! -d "$ORT_CONFIG_DIR" ]; then
     git -C "$ORT_CONFIG_DIR" checkout "${ORT_CONFIG_REV:-sparrow-hawk-work}"
 fi
 mkdir -p "$ORT_WORK/home" "$ORT_WORK/ortdata/tmp"
+[ -n "${ORT_USER:-}" ] && chmod -R a+rwX "$ORT_WORK"
 
 # ORT in docker. /w = work directory, /cfg = ort-config. ORT_DATA_DIR keeps the scanner storage (scan results, sources).
 ort() {
