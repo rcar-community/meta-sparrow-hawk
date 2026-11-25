@@ -22,15 +22,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
-      - name: Free runner space
-        uses: justinthelaw/maximize-github-runner-space@c66ba0f3ad90f3f74aa2250d8ea645080be24da3 # v0.12.3
-        with:
-          swapfile-size: 4GiB
-
       - name: Prepare
         shell: bash
         run: |
-          nproc; free -h; df -h /
+          nproc; free -h; df -h /; docker --version
           mkdir -p "$ORT_WORK/in"
           cp scripts/ort/test-input/image.spdx.json "$ORT_WORK/in/"
           pip3 install pyyaml
