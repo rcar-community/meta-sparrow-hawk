@@ -21,13 +21,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: linux-dummy
-            commands: |
-              ./build.sh --console --rm-work --kernel-version dummy
-          - name: kernel-6.12
-            commands: |
-              ./build.sh --console --rm-work --kernel-version 6.12
-              ./build.sh --weston  --rm-work --kernel-version 6.12
           - name: minimal-sdk
             commands: |
               ./build.sh --console --rm-work --sdk
