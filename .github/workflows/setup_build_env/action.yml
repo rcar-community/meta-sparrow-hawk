@@ -1,12 +1,17 @@
 name: Setup build environment
 description: Setup build environment for Sparrow Hawk BSP
+inputs:
+  swapfile-size:
+    description: Size of the swap file (it uses the same disk as the build)
+    required: false
+    default: 8GiB
 runs:
   using: "composite"
   steps:
     - name: Free runner space
       uses: justinthelaw/maximize-github-runner-space@c66ba0f3ad90f3f74aa2250d8ea645080be24da3 # v0.12.3
       with:
-        swapfile-size: 8GiB
+        swapfile-size: ${{ inputs.swapfile-size }}
 
     - name: Setup package
       shell: bash

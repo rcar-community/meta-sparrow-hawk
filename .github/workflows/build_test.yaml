@@ -31,19 +31,42 @@ jobs:
           - name: minimal-sdk
             commands: |
               ./build.sh --console --rm-work --sdk
+            swapfile: 4GiB
+            monitor: 'yes'
           - name: weston-sdk
             commands: |
               ./build.sh --weston --rm-work --sdk
+            swapfile: 4GiB
+            monitor: 'yes'
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
 
       - name: Setup build environment
         uses: ./.github/workflows/setup_build_env
+        with:
+          swapfile-size: ${{ matrix.swapfile || '8GiB' }}
 
       - name: Run build
         shell: bash
-        run: ${{ matrix.commands }}
+        run: |
+          if [ "${{ matrix.monitor }}" = "yes" ]; then
+            # Log the disk usage every 15 minutes to find what fills the disk.
+            B="${GITHUB_WORKSPACE}/build/build-sparrow-hawk"
+            snap() {
+              echo "::group::disk usage $(date -u +%H:%M:%S)"
+              df -h / | tail -1
+              [ -d "${B}" ] && nice -n 19 ionice -c 3 du -sh \
+                "${B}/tmp/work" "${B}/tmp/deploy" "${B}/tmp/sysroots-components" \
+                "${B}/sstate-cache" "${B}/downloads" 2>/dev/null
+              [ -d "${B}/tmp/work" ] && nice -n 19 ionice -c 3 du -sm "${B}"/tmp/work/*/* 2>/dev/null | sort -rn | head -5
+              echo "::endgroup::"
+            }
+            ( while true; do sleep 900; snap; done ) &
+            MONITOR_PID=$!
+            trap 'kill ${MONITOR_PID} 2>/dev/null; snap' EXIT
+          fi
+          ${{ matrix.commands }}
 
       - name: Upload build logs
         if: failure()
