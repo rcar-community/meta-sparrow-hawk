@@ -44,12 +44,15 @@ jobs:
               echo "--- $(( ($(date +%s) - START) / 60 )) min: scanner storage $(du -sm "$ORT_WORK/ortdata/scanner" 2>/dev/null | cut -f1) MB"
               df -h / | tail -1
             done ) &
-          timeout 320m scripts/ort/run.sh scan || echo "scan stopped rc=$?"
+          rc=0; timeout 320m scripts/ort/run.sh scan || rc=$?
+          echo "scan stopped rc=$rc"
           # timeout does not stop the container
           docker ps -q | xargs -r docker stop
           echo "scan time: $(( ($(date +%s) - START) / 60 )) min"
           ls -la "$ORT_WORK/scan" || true
           du -sm "$ORT_WORK/ortdata/scanner" || true
+          # 124 = stopped by the time box (expected). Anything else is a failure.
+          [ "$rc" = 0 ] || [ "$rc" = 124 ]
 
       - name: Upload scanner storage
         if: always()
