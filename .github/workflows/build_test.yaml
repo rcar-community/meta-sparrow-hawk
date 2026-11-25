@@ -16,19 +16,21 @@ jobs:
   Build:
     name: Build (${{ matrix.name }})
     if: github.repository_owner == 'rcar-community'
-    runs-on: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - name: minimal-sdk
+          - name: minimal-sdk-x86-on-arm
+            runner: ubuntu-24.04-arm
             commands: |
-              ./build.sh --console --rm-work --sdk
+              ./build.sh --console --rm-work --sdk --sdk-machine x86_64
             swapfile: 4GiB
             monitor: 'yes'
-          - name: weston-sdk
+          - name: minimal-sdk-x86-on-x86
+            runner: ubuntu-24.04
             commands: |
-              ./build.sh --weston --rm-work --sdk
+              ./build.sh --console --rm-work --sdk --sdk-machine x86_64
             swapfile: 4GiB
             monitor: 'yes'
     steps:
