@@ -18,6 +18,7 @@ jobs:
     timeout-minutes: 360
     env:
       ORT_WORK: ${{ github.workspace }}/ort-work
+      ORT_USER: '1000:1000'
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
