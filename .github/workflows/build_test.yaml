@@ -21,16 +21,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: weston-sdk-x86-on-arm
+          - name: minimal-sdk-sbom-x86-on-arm
             runner: ubuntu-24.04-arm
             commands: |
-              ./build.sh --weston --rm-work --sdk --sdk-machine x86_64
+              ./build.sh --console --sbom --rm-work --sdk --sdk-machine x86_64
             swapfile: 4GiB
             monitor: 'yes'
-          - name: weston-sdk
+          - name: weston-sdk-sbom-x86-on-arm
             runner: ubuntu-24.04-arm
             commands: |
-              ./build.sh --weston --rm-work --sdk
+              ./build.sh --weston --sbom --rm-work --sdk --sdk-machine x86_64
             swapfile: 4GiB
             monitor: 'yes'
     steps:
