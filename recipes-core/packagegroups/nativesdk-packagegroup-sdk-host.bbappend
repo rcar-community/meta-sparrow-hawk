@@ -3,3 +3,9 @@ RDEPENDS:${PN}:append = " \
     nativesdk-perl-modules \
     nativesdk-bmaptool \
 "
+
+# QEMU is not used with the SDK. Drop it to reduce the build time.
+RDEPENDS:${PN}:remove = " \
+    nativesdk-qemu \
+    nativesdk-qemu-helper \
+"
