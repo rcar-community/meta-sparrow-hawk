@@ -27,12 +27,6 @@ jobs:
               ./build.sh --console --rm-work --sdk --sdk-machine x86_64
             swapfile: 4GiB
             monitor: 'yes'
-          - name: minimal-sdk-x86-on-x86
-            runner: ubuntu-24.04
-            commands: |
-              ./build.sh --console --rm-work --sdk --sdk-machine x86_64
-            swapfile: 4GiB
-            monitor: 'yes'
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -62,6 +56,17 @@ jobs:
             trap 'kill ${MONITOR_PID} 2>/dev/null || true; snap || true' EXIT
           fi
           ${{ matrix.commands }}
+
+      - name: Upload SDK installer
+        if: success()
+        uses: actions/upload-artifact@v7
+        with:
+          name: sdk-${{ matrix.name }}
+          path: |
+            build/build-sparrow-hawk/tmp/deploy/sdk/*.sh
+            build/build-sparrow-hawk/tmp/deploy/sdk/*.manifest
+          retention-days: 3
+          compression-level: 0
 
       - name: Upload build logs
         if: failure()
