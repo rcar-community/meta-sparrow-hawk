@@ -18,6 +18,7 @@ IS_QUIET_BUILD=no
 TEMPLATE_POSTFIX=""
 KERNEL_VERSION=""
 FETCHALL_OPT=""
+SDK_MACHINE=""
 
 Usage () {
     echo "Usage:"
@@ -32,6 +33,7 @@ Usage () {
     echo "       | --sbom:          Build SBOM files"
     echo "       | --sstate-mirror: Use sstate mirror server. This may decrease build time."
     echo "       | --rm-work:       Remove working directory while building to reduce storage space."
+    echo "       | --sdk-machine:   Host architecture of the SDK (e.g. x86_64, aarch64). Default is the build host."
     echo "       | --fetchall:      Download source code only"
     exit
 }
@@ -58,6 +60,9 @@ while [[ $# -gt 0 ]]; do
             USE_SSTATE_MIRROR=yes ;;
         --kernel-version)
             KERNEL_VERSION=$2
+            shift ;;
+        --sdk-machine)
+            SDK_MACHINE=$2
             shift ;;
         --fetchall)
             FETCHALL_OPT=" --runall=fetch -k" ;;
@@ -164,6 +169,10 @@ fi
 QUIET_FLAG=""
 if [[ "${IS_QUIET_BUILD}" == "yes" ]]; then
     QUIET_FLAG="-q"
+fi
+
+if [[ "${SDK_MACHINE}" != "" ]]; then
+    echo "SDKMACHINE = \"${SDK_MACHINE}\"" >> conf/local.conf
 fi
 
 if [[ "${IS_BUILD_SDK}" == "yes" ]]; then
