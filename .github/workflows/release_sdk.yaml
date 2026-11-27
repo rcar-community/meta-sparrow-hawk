@@ -1,0 +1,80 @@
+name: Release SDK for Sparrow-hawk
+run-name: Release SDK for Sparrow-hawk (${{ inputs.tag_name }})
+# Started by release.yaml. Add the SDK with the SBOM to the release page.
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: Tag of the release to add the SDK to
+        required: true
+
+# release.yaml recreates the release page, so the old SDK build is useless
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  SDK:
+    name: SDK (${{ matrix.name }})
+    if: github.repository_owner == 'rcar-community'
+    runs-on: ubuntu-24.04-arm
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: minimal
+            image: console
+          - name: weston
+            image: weston
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup build environment
+        uses: ./.github/workflows/setup_build_env
+
+      - name: Check the release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view "${{ inputs.tag_name }}" --repo ${{ github.repository }} >/dev/null
+
+      - name: Run build
+        shell: bash
+        run: ./build.sh --${{ matrix.image }} --sbom --rm-work --sdk --sdk-machine x86_64
+
+      - name: Upload build logs
+        if: failure()
+        uses: ./.github/workflows/upload_build_logs
+        with:
+          suffix: -${{ matrix.name }}
+
+      - name: Generate zip archive to release
+        shell: bash
+        run: |
+          cd ${GITHUB_WORKSPACE}/build/build-sparrow-hawk/tmp/deploy
+          zip -ry -s 1900m sdk_${{ matrix.name }}_spdx_split.zip spdx/
+          zip -ry -s 1900m sdk_${{ matrix.name }}_sources_split.zip sources/
+          # The limit of a release asset is 2 GiB
+          for f in sdk/*.sh sdk/*.manifest sdk_${{ matrix.name }}_*.z*; do
+            size=$(stat -c %s "$f")
+            echo "$f: $size"
+            if [ "$size" -ge $((2 * 1024 * 1024 * 1024)) ]; then
+              echo "::error::$f is too large for a release asset"
+              exit 1
+            fi
+          done
+
+      - name: Add the SDK to the release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd ${GITHUB_WORKSPACE}/build/build-sparrow-hawk/tmp/deploy
+          gh release upload "${{ inputs.tag_name }}" --repo ${{ github.repository }} --clobber \
+            sdk/*.sh \
+            sdk/*.manifest \
+            sdk_${{ matrix.name }}_spdx_split.z* \
+            sdk_${{ matrix.name }}_sources_split.z*

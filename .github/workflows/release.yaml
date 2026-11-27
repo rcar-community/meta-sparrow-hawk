@@ -12,6 +12,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
+permissions:
+  contents: write
+  # for release_sdk.yaml
+  actions: write
+
 jobs:
   Release:
     name: Release
@@ -152,3 +157,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Start the SDK build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          # The SDK build takes hours. Separate it from the release.
+          gh workflow run release_sdk.yaml --repo ${{ github.repository }} \
+            --ref ${{ github.ref_name }} -f tag_name=${{ env.TAG_NAME }}
