@@ -30,10 +30,10 @@ jobs:
               ./build.sh --weston  --rm-work --kernel-version 6.12
           - name: minimal-sdk
             commands: |
-              ./build.sh --console --rm-work --sdk
+              ./build.sh --console --rm-work --sdk --sdk-machine x86_64
           - name: weston-sdk
             commands: |
-              ./build.sh --weston --rm-work --sdk
+              ./build.sh --weston --rm-work --sdk --sdk-machine x86_64
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
