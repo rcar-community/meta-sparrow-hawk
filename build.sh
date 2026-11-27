@@ -167,7 +167,13 @@ if [[ "${IS_QUIET_BUILD}" == "yes" ]]; then
 fi
 
 if [[ "${IS_BUILD_SDK}" == "yes" ]]; then
-    bitbake ${QUIET_FLAG} ${TARGET_IMAGE}-sdk -c populate_sdk ${FETCHALL_OPT}
+    if [[ "${REMOVE_WORKDIR}" == "yes" ]]; then
+        # "-c populate_sdk" does not run do_build, so add do_rm_work_all explicitly
+        echo "RM_WORK_EXCLUDE += \"${TARGET_IMAGE}-sdk\"" >> conf/local.conf
+        bitbake ${QUIET_FLAG} ${TARGET_IMAGE}-sdk:do_populate_sdk ${TARGET_IMAGE}-sdk:do_rm_work_all ${FETCHALL_OPT}
+    else
+        bitbake ${QUIET_FLAG} ${TARGET_IMAGE}-sdk -c populate_sdk ${FETCHALL_OPT}
+    fi
 else
     bitbake ${QUIET_FLAG} ${TARGET_IMAGE} ${FETCHALL_OPT}
 fi
