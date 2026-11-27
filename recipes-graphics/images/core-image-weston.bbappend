@@ -10,3 +10,6 @@ IMAGE_INSTALL:append:rcar-gen4 = " \
 # which pulls in librsvg-native and the Rust toolchain.
 # core-image-weston-sdk.bbappend is a link to this file.
 CORE_IMAGE_BASE_INSTALL:remove:sparrow-hawk = "gtk+3-demo"
+
+# Test applications are not needed in the SDK (core-image-minimal-sdk too)
+IMAGE_FEATURES:remove = "tools-testapps"
