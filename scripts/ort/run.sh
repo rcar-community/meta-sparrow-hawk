@@ -30,7 +30,7 @@ mkdir -p "$ORT_WORK/home" "$ORT_WORK/ortdata/tmp"
 # ORT in docker. /w = work directory, /cfg = ort-config. ORT_DATA_DIR keeps the scanner storage (scan results, sources).
 ort() {
     docker run --rm -u "${ORT_USER:-$(id -u):$(id -g)}" -v "$ORT_WORK":/w -v "$ORT_CONFIG_DIR":/cfg:ro \
-        -e HOME=/w/home -e ORT_DATA_DIR=/w/ortdata -e JAVA_TOOL_OPTIONS=-Djava.io.tmpdir=/w/ortdata/tmp \
+        -e HOME=/w/home -e ORT_DATA_DIR=/w/ortdata -e JAVA_TOOL_OPTIONS="-Djava.io.tmpdir=/w/ortdata/tmp ${ORT_JAVA_OPTS:-}" ${ORT_DOCKER_OPTS:-} \
         "$ORT_IMAGE" "$@"
 }
 
@@ -43,7 +43,7 @@ stage_analyze() {
 }
 stage_scan() {  # resumable: the results are kept in $ORT_WORK/ortdata
     mkdir -p "$ORT_WORK/scan"
-    ort scan -i /w/analyze/analyzer-result.yml -o /w/scan -s ScanCode || echo "scan exit=$? (failed downloads are expected)"
+    ort ${ORT_LOG_OPT:-} scan -i /w/analyze/analyzer-result.yml -o /w/scan -s ScanCode || echo "scan exit=$? (failed downloads are expected)"
     [ -f "$ORT_WORK/scan/scan-result.yml" ] || { echo "no scan result was made" >&2; return 1; }
 }
 stage_pkgconf() {
