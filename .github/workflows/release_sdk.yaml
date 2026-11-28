@@ -82,3 +82,29 @@ jobs:
             sdk/*.manifest \
             sdk_${{ matrix.name }}_spdx_split.z* \
             sdk_${{ matrix.name }}_sources_split.z*
+
+  Notes:
+    name: Add the SDK to the release notes
+    needs: SDK
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Add the SDK section
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Keep the notes made by release.yaml and replace the old SDK section, if any
+          gh release view "${{ inputs.tag_name }}" --repo ${{ github.repository }} \
+            --json body --jq .body | sed '/^<!-- SDK -->$/,$d' > notes.md
+          cat >> notes.md << 'EOS'
+          <!-- SDK -->
+          ## SDK
+
+          The SDK for x86_64 Linux hosts is added to this release by a separate workflow, some hours after the release.
+
+          - `poky-glibc-x86_64-core-image-minimal-sdk-*-toolchain-*.sh`: SDK of `core-image-minimal`
+          - `poky-glibc-x86_64-core-image-weston-sdk-*-toolchain-*.sh`: SDK of `core-image-weston`
+          - `sdk_*_spdx_split.zip`, `sdk_*_sources_split.zip`: SPDX files and sources of the SDK (split zip, see Downloads)
+
+          Run the installer, then `source` the `environment-setup-*` file in the install directory.
+          EOS
+          gh release edit "${{ inputs.tag_name }}" --repo ${{ github.repository }} --notes-file notes.md
