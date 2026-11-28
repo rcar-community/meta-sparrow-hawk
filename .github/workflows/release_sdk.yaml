@@ -36,6 +36,10 @@ jobs:
       - name: Setup build environment
         uses: ./.github/workflows/setup_build_env
 
+      - name: Install GitHub CLI
+        shell: bash
+        run: sudo apt install -y gh
+
       - name: Check the release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
